@@ -1,1 +1,0 @@
-# drdstech.github.io
