@@ -1,6 +1,7 @@
-baseURL = "http://example.org/"
+baseURL = "http://dbkernel.github.io/"
 languageCode = "en-us"
 theme = "hugo-theme-yelee"
+
 disablePathToLower = true
 
 [params]
@@ -20,8 +21,11 @@ open_in_new = true
 animate = false
 
 [params.friends]
-"友链1" = "http://www.baidu.com"
-"友链2" = "http://www.baidu.com"
+"知乎" = "https://zhuanlan.zhihu.com/mysqldb"
+"segmentfault" = "https://segmentfault.com/u/dbtech"
+"oschina" = "https://my.oschina.net/dbtech"
+"掘金" = "https://juejin.im/user/5e9d3ed251882538083fed1f/posts"
+"博客园" = "https://www.cnblogs.com/dbtech/"
 
 [params.subnav]
 Email = "mailto:wenshuang_lu@163.com"
@@ -36,7 +40,7 @@ label = "所有文章"
 link = "/post/"
 
 [[params.menu]]
-label = "标签云"
+label = "标签"
 link = "/tags/"
 
 [[params.menu]]
