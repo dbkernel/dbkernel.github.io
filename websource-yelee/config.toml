@@ -1,0 +1,52 @@
+baseURL = "http://example.org/"
+languageCode = "en-us"
+title = "My New Hugo Site"
+theme = "hugo-theme-yelee"
+
+disablePathToLower = true
+
+[params]
+author = "NightFarmer"
+title = "NightFarmer'blog"
+subtitle = "理论指导实践，实践深化理论"
+root_url = "/"
+avatar = "img/avatar.png"
+tagcloud = true
+aboutme = "我就是我，是不一样的烟火"
+jquery_ui = false
+mathjax = false
+background_image = 5
+google_analytics = ""
+fancybox = true
+open_in_new = true
+animate = false
+
+  [params.friends]
+  "友链1" = "http://www.baidu.com"
+  "友链2" = "http://www.baidu.com"
+
+  [params.subnav]
+  Email = "mailto:nightfarmer@163.com"
+  GitHub = "https://github.com/NightFarmer"
+
+  [[params.menu]]
+  label = "主页"
+  link = "/"
+
+  [[params.menu]]
+  label = "所有文章"
+  link = "/post/"
+
+  [[params.menu]]
+  label = "标签云"
+  link = "/tags/"
+
+  [[params.menu]]
+  label = "关于我"
+  link = "/about/"
+
+  [params.visit_counter]
+  on = true
+  site_visit = "本站到访数"
+  page_visit = "本页阅读量"
+

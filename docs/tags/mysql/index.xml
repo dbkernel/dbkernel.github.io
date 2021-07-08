@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>MySQL on My New Hugo Site</title>
+    <link>http://example.org/tags/MySQL/</link>
+    <description>Recent content in MySQL on My New Hugo Site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 08 Jul 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://example.org/tags/MySQL/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</title>
+      <link>http://example.org/post/MySQL-select-count-count1count%E5%88%97-%E8%AF%A6%E8%A7%A31%E6%A6%82%E5%BF%B5%E5%8F%8A%E5%8C%BA%E5%88%AB/</link>
+      <pubDate>Thu, 08 Jul 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/post/MySQL-select-count-count1count%E5%88%97-%E8%AF%A6%E8%A7%A31%E6%A6%82%E5%BF%B5%E5%8F%8A%E5%8C%BA%E5%88%AB/</guid>
+      <description>一、前言 从接触MySQL开始断断续续的看过一些文章，对count()操作众说纷纭，其中分歧点主要在于count(1)和count(*)哪个效率高，有说count(1)比count(*)快的（这种说法更普遍），有说二者一样快的。个人理解这两种行为可能适用于的是不同的版本，我只关心较新的MySQL版本是什么行为，详见下文。
+二、含义 首先，先说明一下常见count()操作及含义：
+ count(*)：计算包括NULL值在内的行数，SQL92定义的标准统计行数的语法。 count(1)：计算包括NULL值在内的行数，其中的1是恒真表达式。 count(列名)：计算指定列的行数，但不包含NULL值。
+ 三、具体区别 MySQL手册中相关描述如下：
+ For transactional storage engines such as InnoDB, storing an exact row count is problematic. Multiple transactions may be occurring at the same time, each of which may affect the count.
+InnoDB does not keep an internal count of rows in a table because concurrent transactions might “see” different numbers of rows at the same time. Consequently, SELECT COUNT(*) statements only count rows visible to the current transaction.</description>
+    </item>
+    
+  </channel>
+</rss>

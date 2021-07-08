@@ -1,3 +1,3 @@
-[submodule "themes/cayman-hugo-theme"]
-	path = themes/cayman-hugo-theme
-	url = https://github.com/zwbetz-gh/cayman-hugo-theme.git
+[submodule "websource-yelee/themes/hugo-theme-yelee"]
+	path = websource-yelee/themes/hugo-theme-yelee
+	url = https://github.com/NightFarmer/hugo-theme-yelee.git
