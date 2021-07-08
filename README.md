@@ -1,55 +1,25 @@
+## 喜欢的主题
 
-![](https://visitor-badge.glitch.me/badge?page_id=drdstech.readme)
+**hugo：**
 
+| theme                                                                      | demo                                                       | 备注           |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------- |
+| [cayman](https://themes.gohugo.io/themes/cayman-hugo-theme/)               | https://cayman-hugo-theme.netlify.app/                     | 已试用，还不错 |
+| [Blackburn](https://themes.gohugo.io/themes/blackburn/)                    |                                                            |                |
+| [Chunky Poster](https://themes.gohugo.io/themes/hugo-theme-chunky-poster/) | https://hugo-theme-chunky-poster.netlify.app/              |                |
+| [pixyll](https://themes.gohugo.io/themes/hugo-theme-pixyll/)               |                                                            |                |
+| [Onepress](https://themes.gohugo.io/themes/onepress/)                      |                                                            |                |
+| [DPSG](https://themes.gohugo.io/themes/hugo-dpsg/)                         |                                                            |                |
+| [Toha](https://themes.gohugo.io/themes/toha/)                              | https://hugo-toha.github.io/                               | 适合做个人简历 |
+| [Noteworthy](https://themes.gohugo.io/themes/hugo-theme-noteworthy/)       |                                                            |                |
+| [Eureka](https://themes.gohugo.io/themes/hugo-eureka/)                     |                                                            |                |
+| [Bootstrap-BP](https://themes.gohugo.io/themes/bootstrap-bp-hugo-theme/)   |                                                            |                |
+| [edidor](https://themes.gohugo.io/themes/edidor/)                          | https://github.com/sfengyuan/edidor/blob/main/README-zh.md |                |
+| [Northendlab Hugo](https://themes.gohugo.io/themes/northendlab-hugo/)      |                                                            |                |
+| [Geekblog](https://themes.gohugo.io/themes/hugo-geekblog/)                 | https://hugo-geekblog.geekdocs.de/tags/documentation/      | 挺好的         |
+| [Hugo Theme Pure](https://themes.gohugo.io/themes/hugo-theme-pure/)        |                                                            |                |
+| [MemE](https://themes.gohugo.io/themes/hugo-theme-meme/)                   |                                                            | 挺好的         |
+| [yelee](https://github.com/NightFarmer/hugo-theme-yelee)                   |                                                            | 挺好的         |
 
-<h1 align="center">Hi 👋, I'm drdstech</h1>
-<h3 align="center">A Senior Database Software Development Engineer From China</h3>
+**hexo：**
 
-<p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=drdstech" alt="drdstech" /></a> </p>
-
-- 💬 Ask me about **[here](https://github.com/drdstech/drdstech/issues)**
-
-
-<h3 align="left">Languages and Tools:</h3>
-<p align="left">
-  <a href="https://www.linux.org/" target="_blank"> <img src="./svg/linux.svg" alt="linux" width="50" height="50"/> </a>
-  <a href="https://www.docker.com/" target="_blank"> <img src="./svg/docker.svg" alt="docker" width="50" height="50"/> </a> 
-  <a href="https://kubernetes.io" target="_blank"><img src="./svg/kubernetes.svg" alt="kubernetes" width="50" height="50"/> </a>
-</p>
-<p align="left"> 
-  <a href="https://www.cprogramming.com/" target="_blank"> <img src="./svg/cplusplus.svg" alt="c" width="50" height="50"/> </a>
-  <a href="https://golang.org" target="_blank"> <img src="./svg/golang.svg" alt="go" width="50" height="50"/> </a> 
-  <a href="https://www.python.org" target="_blank"> <img src="./svg/python.svg" alt="python" width="50" height="50"/> </a>
-  <a href="https://www.rust-lang.org/" target="_blank"> <img src="./svg/rust.svg" alt="rust" width="50" height="50"/></a>
-</p>
-<p>
-  <a href="https://www.mysql.com/" target="_blank"><img src="./svg/mysql.svg" alt="MySQL" width="50" height="50"/>
-  <a href="https://redis.io/" target="_blank"><img src="./svg/redis.svg" alt="Redis" width="50" height="50"/>
-  <a href="https://www.postgresql.org/" target="_blank"> <img src="./svg/postgresql.svg" alt="PostgreSQL" width="50" height="50"/></a> 
-  <a href="https://clickhouse.tech/" target="_blank"> <img src="./svg/clickhouse.svg" alt="ClickHouse" width="50" height="50"/></a> 
-</p>
-  
-
-<p><img align="center" src="https://github-readme-stats.vercel.app/api/top-langs?username=drdstech&show_icons=true&locale=en&layout=compact&count_private=true&theme=radical" alt="drdstech" /></p>
-
-<p>&nbsp;<img align="center" src="https://github-readme-stats.vercel.app/api?username=drdstech&show_icons=true&locale=en&count_private=true&theme=radical" alt="drdstech" /></p>
-
-<p><img align="left" src="https://github-readme-streak-stats.herokuapp.com/?user=drdstech&count_private=true&theme=radical" alt="drdstech" /></p>
-
-
-
-
-<!--
-**drdstech/drdstech** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
