@@ -1,3 +1,9 @@
 [submodule "hugo-yelee/themes/hugo-theme-yelee"]
 	path = hugo-yelee/themes/hugo-theme-yelee
-	url = https://github.com/NightFarmer/hugo-theme-yelee.git
+	url = https://github.com/lu-front-end/hugo-theme-yelee.git
+[submodule "hexo/themes/yelee"]
+	path = hexo/themes/yelee
+	url = https://github.com/lu-front-end/hexo-theme-yelee.git
+[submodule "hexo/themes/pure"]
+	path = hexo/themes/pure
+	url = https://github.com/lu-front-end/hexo-theme-pure.git
