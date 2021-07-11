@@ -7,3 +7,4 @@
 [submodule "hexo/themes/pure"]
 	path = hexo/themes/pure
 	url = https://github.com/lu-front-end/hexo-theme-pure.git
+	branch = master

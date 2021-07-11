@@ -245,8 +245,27 @@ INFO  Created: ~/work/github/blogs-of-github/DBKernel.github.io/hexo/source/link
 ```yaml
 ---
 title: 友情链接
-date: 2021-07-10 22:15:53
 layout: links
+comments: true
+sidebar: none
+---
+个人说明部分。
+```
+3. 保存并关闭文件。
+
+#### 2.6.4. 生成“项目”页
+
+1. 在博客所在文件夹执行：
+```bash
+$ hexo new page repository
+INFO  Validating config
+INFO  Created: ~/work/github/blogs-of-github/DBKernel.github.io/hexo/source/repository/index.md
+```
+2. 根据上面的路径，找到index.md这个文件，修改为如下内容（参考`themes/pure/_source/repository/index.md`）：
+```yaml
+---
+title: 项目
+layout: repository
 comments: true
 sidebar: none
 ---
