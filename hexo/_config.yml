@@ -3,11 +3,11 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
+title: DBKernel
 subtitle: ''
-description: ''
+description: '专注于数据库技术分享'
 keywords:
-author: John Doe
+author: DBKernel
 language: zh-CN
 timezone: ''
 
