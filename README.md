@@ -339,4 +339,10 @@ hexo s
 **hexo：**
 
 - [yelee](https://github.com/MOxFIVE/hexo-theme-yelee)
+  - [demo](http://moxfive.xyz/)
 - [pure](https://github.com/cofess/hexo-theme-pure)
+- [hexo-theme-matery](https://github.com/blinkfox/hexo-theme-matery)
+  - [demo](https://blinkfox.github.io/)
+  - 动画效果很好
+- [hexo-theme-fluid](https://github.com/fluid-dev/hexo-theme-fluid)
+  - [demo](https://hexo.fluid-dev.com/)
