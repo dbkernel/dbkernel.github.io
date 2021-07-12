@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 #if [ "$1" == "" ];then
 #  echo "Usage: $0 websource-hexo-path"
 #  exit 1
@@ -15,4 +16,4 @@ cd hexo
 hexo g
 mv public ../docs
 cd ..
-
+set +x

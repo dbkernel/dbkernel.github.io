@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 if [ "$1" == "" ];then
   echo "Usage: $0 websource-hugo-path"
   exit 1
@@ -14,4 +15,5 @@ cd $1
 hugo
 mv public ../docs
 cd ..
+set +x
 
