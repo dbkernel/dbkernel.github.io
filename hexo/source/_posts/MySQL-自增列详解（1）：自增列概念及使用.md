@@ -1,6 +1,6 @@
 ---
 title: MySQL-自增列详解（1）：自增列概念及使用
-date: 2019-12-09 11:37:10
+date: 2019-12-09 19:37:10
 categories:
 - MySQL
 tags:
@@ -8,6 +8,10 @@ tags:
 - auto_increment
 toc: true
 ---
+
+一直想写一些关于自增列的文章，今天下班比较早，Let's do this.
+
+<!-- more -->
 
 ### 1. 概念
 
