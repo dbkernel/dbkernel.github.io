@@ -40,8 +40,14 @@ external_link:
   exclude: ''
 filename_case: 0
 render_drafts: false
-post_asset_folder: false
-relative_link: false
+
+# 每次hexo new都会生成文件夹，除了生成md，还会生成同名文件夹，用于存放图片等资源
+post_asset_folder: true
+marked:
+  prependRoot: true
+  postAsset: true
+
+relative_link: true
 future: true
 highlight:
   enable: true

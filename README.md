@@ -85,6 +85,19 @@ $ npm install hexo-generator-sitemap --save
 $ npm install hexo-generator-baidu-sitemap --save
 ```
 
+[hexo-renderer-marked](https://github.com/hexojs/hexo-renderer-marked) - markdown图片插件：
+```bash
+$ npm install hexo-renderer-marked --save
+```
+安装后在`_config.yaml`中更改配置如下：
+```json
+post_asset_folder: true
+marked:
+  prependRoot: true
+  postAsset: true
+```
+之后就可以在使用![](image.jpg)的方式愉快的插入图片了。
+
 ### 2.4. 优化博客的插件
 
 [hexo-neat](https://github.com/rozbo/hexo-neat)
