@@ -79,6 +79,7 @@ $ npm install hexo-generator-feed --save
 ```bash
 $ npm install hexo-generator-sitemap --save
 ```
+>具体用法参考链接中的 README 。
 
 [hexo-generator-baidu-sitemap](https://github.com/coneycode/hexo-generator-baidu-sitemap)
 ```bash
