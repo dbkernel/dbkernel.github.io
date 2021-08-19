@@ -1,11 +1,12 @@
 ---
-title: ClickHouse和他的朋友们（1）编译、开发、测试
+title: 源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试
 date: 2020-06-05 19:37:10
 categories:
 - ClickHouse
 tags:
 - ClickHouse和他的朋友们
 - ClickHouse
+- 源码分析
 toc: true
 ---
 
@@ -136,3 +137,18 @@ ClickHouse Upstream迭代非常快，一定要多关注master分支进度，尽�
 
 建议把[doc/development](https://github.com/ClickHouse/ClickHouse/tree/master/docs/en/development)读一遍。
 
+----
+
+欢迎关注我的微信公众号【MySQL数据库技术】。
+
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+| 标题                 | 网址                                                  |
+| -------------------- | ----------------------------------------------------- |
+| GitHub                 | https://dbkernel.github.io           |
+| 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
+| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
+| 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
+| InfoQ                | https://www.infoq.cn/u/dbkernel/publish               |
+| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

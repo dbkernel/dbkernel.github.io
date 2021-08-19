@@ -11,10 +11,9 @@ tags:
 toc: true
 ---
 
-近期公司全面拥抱开源，在选择开源协议方面遇到了一些问题，查阅了很多资源，特此总结~~
+近期公司全面拥抱开源，在选择开源协议方面遇到了一些问题，查阅了很多资料，特此总结~~
 
 <!-- more -->
-
 
 
 ## 前言
@@ -162,7 +161,7 @@ GPL协议的主要内容是只要在一个软件中使用（”使用”指类�
 - [Linux](https://github.com/torvalds/linux)
 
 
-# 更多开源协议对比
+## 更多开源协议对比
 
 下方表格中出现的用词的解释：
 
@@ -170,23 +169,23 @@ GPL协议的主要内容是只要在一个软件中使用（”使用”指类�
 - **声明变更**(State Changes)：在代码中声明对原来代码的重大修改及变更。
 - **公开源码**(Disclose Source)：代码必需公开。
 - **库引用**(Library usage)：该库可以用于商业软件中。
-- **责任承担**(Hold Liable)：代码的作者承担代码使用后的风险及产生的后果。
+- **责任承担**(Hold Liable)：代码的作者承担代码使用后的风险及产生的后果。如果禁止，那么作者将不会承担责任，可以理解为免责条款。
 - **商标使用**(Use Trademark)：可以使用作者的姓名，作品的Logo，或商标。
 - **附加协议**(Sublicensing)：允许在软件分发传播过程中附加上原来没有的协议条款等。
 
 
 | 协议                                                     | 描述                                                     | 要求                       | 允许                         | 禁止                                                 |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------ | -------------------------------- | -------------------------------------------------------- |
-| [Apache](http://choosealicense.com/licenses/apache/)         | 一个比较宽松且简明地指出了专利授权的协议。 | 1. <font color=#0000FF>协议和版权信息</font><br/>2. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>（禁止让作者承担责任，可以理解为免责）<br/>2. <font color=#FF3030>商标使用</font> |
-| [GPL](http://choosealicense.com/licenses/gpl-v2/)            | 此协议是应用最广泛的开源协议，拥有较强的版权自由（copyleft）要求。衍生代码的分发需开源并且也要遵守此协议。此协议有许多变种，不同变种的要求略有不同。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font><br/>3. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>附加协议</font> |
-| [MIT](http://choosealicense.com/licenses/mit/)               | 此协议宽松简单。在适当标明来源及免责的情况下，它允许你对代码进行任何形式的使用。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                      |
-| [Artistic](http://choosealicense.com/licenses/artistic/)     | Perl社区最钟爱此协议。要求更改后的软件不能影响原软件的使用。 | 1. <font color=#0000FF>协议和版权信息</font><br/>2. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>商标使用</font> |
-| [BSD](http://choosealicense.com/licenses/bsd/)               | 较为宽松的协议，包含两个变种[**BSD 2-Clause**](http://choosealicense.com/licenses/bsd) 和[**BSD 3-Clause**](http://choosealicense.com/licenses/bsd-3-clause)，两者都与MIT协议只存在细微差异。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>  |
-| [Eclipse](http://choosealicense.com/licenses/eclipse/)       | 对商用非常友好的一种协议，可以用于软件的商业授权。包含对专利的优雅授权，并且也可以对相关代码应用商业协议。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                       |
-| [LGPL](http://choosealicense.com/licenses/lgpl-v2.1/)        | 主要用于一些代码库。衍生代码可以以此协议发布（言下之意你可以用其他协议），但与此协议相关的代码必需遵循此协议。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>库引用</font><br/>3. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                       |
-| [Mozilla](http://choosealicense.com/licenses/mozilla/)       | Mozilla Public License(MPL 2.0)是由Mozilla基金创建维护的。此协议旨在较为宽松的BSD协议和更加互惠的GPL协议中寻找一个折衷点。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>商标使用</font> |
-| [No license](http://choosealicense.com/licenses/no-license/) | 你保留所有权利，不允许他人分发，复制或者创造衍生物。<br/>当你将代码发表在一些网站上时需要遵守该网站的协议，此协议可能包含了一些对你劳动成果的授权许可。比如你将代码发布到GitHub，那么你就必需同意别人可以查看和Fork你的代码。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>分发</font><br/>2. <font color=#FF3030>修改</font><br/>3. <font color=#FF3030>附加协议</font> |
-| [Public domain dedication](http://choosealicense.com/licenses/unlicense/) | 在许多国家，默认版权归作者自动拥有，所以[Unlicense](http://unlicense.org/)协议提供了一种通用的模板，此协议表明你放弃版权，将劳动成果无私贡献出来。你将丧失对作品的全部权利，包括在MIT/X11中定义的无担保权利。 | 1. <font color=#0000FF>N/A</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>责任承担</font>  |
+| [Apache](http://choosealicense.com/licenses/apache/)         | 一个比较宽松且简明地指出了专利授权的协议。 | 1. <font color=#0000FF>协议和版权信息</font><br/>2. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>（作者免责）<br/>2. <font color=#FF3030>商标使用</font> |
+| [GPL](http://choosealicense.com/licenses/gpl-v2/)            | 应用最广泛的开源协议，拥有较强的版权自由（copyleft）要求。<br/>衍生代码的分发需开源并且也要遵守此协议。<br/>此协议有许多变种，不同变种的要求略有不同。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font><br/>3. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>附加协议</font> |
+| [MIT](http://choosealicense.com/licenses/mit/)               | 此协议宽松简单。在适当标明来源及免责的情况下，<br/>它允许你对代码进行任何形式的使用。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                      |
+| [Artistic](http://choosealicense.com/licenses/artistic/)     | Perl社区最钟爱此协议。<br/>要求更改后的软件不能影响原软件的使用。 | 1. <font color=#0000FF>协议和版权信息</font><br/>2. <font color=#0000FF>声明变更</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>商标使用</font> |
+| [BSD](http://choosealicense.com/licenses/bsd/)               | 较为宽松的协议，有两个变种[**BSD 2-Clause**](http://choosealicense.com/licenses/bsd) 和[**BSD 3-Clause**](http://choosealicense.com/licenses/bsd-3-clause)，<br/>两者都与MIT协议只存在细微差异。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font><br/>5. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>  |
+| [Eclipse](http://choosealicense.com/licenses/eclipse/)       | 对商用非常友好的协议，可以用于软件的商业授权。<br/>包含对专利的优雅授权，也可以对相关代码应用商业协议。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                       |
+| [LGPL](http://choosealicense.com/licenses/lgpl-v2.1/)        | 主要用于一些代码库。<br/>衍生代码可以以此协议发布（也可以用其他协议），<br/>但与此协议相关的代码必需遵循此协议。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>库引用</font><br/>3. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font>                       |
+| [Mozilla](http://choosealicense.com/licenses/mozilla/)       | Mozilla Public License(MPL 2.0)是由Mozilla基金创建维护的，<br/>旨在较为宽松的BSD协议和更加互惠的GPL协议中找一个折衷点。 | 1. <font color=#0000FF>公开源码</font><br/>2. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>专利授权</font><br/>5. <font color=#00EE00>私用</font><br/>6. <font color=#00EE00>附加协议</font> | 1. <font color=#FF3030>责任承担</font><br/>2. <font color=#FF3030>商标使用</font> |
+| [No license](http://choosealicense.com/licenses/no-license/) | 作者保留所有权利，不允许他人分发，复制或者创造衍生物。<br/>当你将代码发表在一些网站上时需要遵守该网站的协议，<br/>此协议可能包含了一些对你劳动成果的授权许可。<br/>比如将代码发布到GitHub，那么就必须同意别人查看和fork。 | 1. <font color=#0000FF>协议和版权信息</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>分发</font><br/>2. <font color=#FF3030>修改</font><br/>3. <font color=#FF3030>附加协议</font> |
+| [Public domain dedication](http://choosealicense.com/licenses/unlicense/) | 在许多国家，默认版权归作者自动拥有，<br/>所以[Unlicense](http://unlicense.org/)协议提供了一种通用的模板。<br/>此协议表明作者放弃版权，将劳动成果无私贡献出来，<br/>会丧失作品全部权利，包括在MIT/X11中定义的无担保权利。 | 1. <font color=#0000FF>N/A</font> | 1. <font color=#00EE00>商用</font><br/>2. <font color=#00EE00>分发</font><br/>3. <font color=#00EE00>修改</font><br/>4. <font color=#00EE00>私用</font> | 1. <font color=#FF3030>责任承担</font>  |
 
 
 ## 参考链接
@@ -200,7 +199,7 @@ GPL协议的主要内容是只要在一个软件中使用（”使用”指类�
 
 欢迎关注我的微信公众号【MySQL数据库技术】。
 
-![MySQL数据库技术](https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png)
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |

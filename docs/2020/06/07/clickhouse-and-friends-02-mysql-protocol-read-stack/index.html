@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;07&#x2F;clickhouse-and-friends-mysql-protocol-read-stack&#x2F;以下为正文。  作为一个 OLAP 的 DBMS 来说，有2个端非常重要：  用户如何方便的链进来，这是入口端 ClickHouse 除了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈">
+<meta property="og:url" content="http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;07&#x2F;clickhouse-and-friends-mysql-protocol-read-stack&#x2F;以下为正文。  作为一个 OLAP 的 DBMS 来说，有2个端非常重要：  用户如何方便的链进来，这是入口端 ClickHouse 除了">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2020-06-07T09:17:10.000Z">
+<meta property="article:modified_time" content="2021-08-19T04:58:44.203Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="ClickHouse和他的朋友们">
+<meta property="article:tag" content="ClickHouse">
+<meta property="article:tag" content="源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/ClickHouse/" style="font-size: 14px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 14px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/MySQL/" style="font-size: 13.5px;">MySQL</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 14px;">源码分析</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">如何实现？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%A1%E6%89%8B%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.1.</span> <span class="toc-text">握手协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Query%E8%AF%B7%E6%B1%82"><span class="toc-number">1.2.</span> <span class="toc-text">Query请求</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%83%E7%94%A8%E6%A0%88%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">调用栈分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E6%BA%90"><span class="toc-number">2.1.</span> <span class="toc-text">1. 获取数据源</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Pipeline%E6%9E%84%E9%80%A0"><span class="toc-number">2.2.</span> <span class="toc-text">2. Pipeline构造</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Pipeline%E6%89%A7%E8%A1%8C"><span class="toc-number">2.3.</span> <span class="toc-text">3. Pipeline执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Output%E6%89%A7%E8%A1%8C%E5%8F%91%E9%80%81"><span class="toc-number">2.4.</span> <span class="toc-text">4. Output执行发送</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-clickhouse-and-friends-02-mysql-protocol-read-stack" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a>, <a class="article-tag-link-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 2.1k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 11(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+<blockquote>
+<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/07/clickhouse-and-friends-mysql-protocol-read-stack/">https://bohutang.me/2020/06/07/clickhouse-and-friends-mysql-protocol-read-stack/</a><br>以下为正文。</p>
+</blockquote>
+<p>作为一个 OLAP 的 DBMS 来说，有2个端非常重要：</p>
+<ul>
+<li>用户如何方便的链进来，这是入口端<ul>
+<li>ClickHouse 除了自己的 client 外，还提供了 MySQL/PG/GRPC/HTTP 等接入方式</li>
+</ul>
+</li>
+<li>数据如何方便的挂上去，这是数据源端<ul>
+<li>ClickHouse 除了自己的引擎外，还可以挂载 MySQL/Kafka 等外部数据源</li>
+</ul>
+</li>
+</ul>
+<p>这样内外互通，多条朋友多条路，以实现“数据”级的编排能力。</p>
+<p>今天谈的是入口端的 MySQL 协议，也是本系列 ClickHouse 的第一个好朋友，用户可通过 MySQL 客户端或相关 Driver 直接链接到 ClickHouse，进行数据读写等操作。</p>
+<p>本文通过 MySQL的 Query 请求，借用调用栈来了解下 ClickHouse 的数据读取全过程。</p>
+<h2 id="如何实现？"><a href="#如何实现？" class="headerlink" title="如何实现？"></a><strong>如何实现？</strong></h2><p>入口文件在:<br><a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/master/src/Server/MySQLHandler.cpp">MySQLHandler.cpp</a></p>
+<h3 id="握手协议"><a href="#握手协议" class="headerlink" title="握手协议"></a><strong>握手协议</strong></h3><ol>
+<li>MySQLClient 发送 Greeting 数据报文到 MySQLHandler</li>
+<li>MySQLHandler 回复一个 Greeting-Response 报文</li>
+<li>MySQLClient 发送认证报文</li>
+<li>MySQLHandler 对认证报文进行鉴权，并返回鉴权结果</li>
+</ol>
+<p>MySQL Protocol 实现在: <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/master/src/Core/MySQLProtocol.h">Core/MySQLProtocol.h</a></p>
+<blockquote>
+<p>最近的代码中调整为了 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/master/src/Core/MySQL/PacketsProtocolText.h">Core/MySQL/PacketsProtocolText.h</a></p>
+</blockquote>
+<h3 id="Query请求"><a href="#Query请求" class="headerlink" title="Query请求"></a><strong>Query请求</strong></h3><p>当认证通过后，就可以进行正常的数据交互了。</p>
+<ol>
+<li><p>当 MySQLClient 发送请求:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> system.numbers LIMIT <span class="number">5</span>;</span><br></pre></td></tr></table></figure></li>
+<li><p>MySQLHandler 的调用栈：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-&gt;MySQLHandler::comQuery -&gt; executeQuery -&gt; pipeline-&gt;execute -&gt; MySQLOutputFormat::consume</span><br></pre></td></tr></table></figure></li>
+<li><p>MySQLClient 接收到结果</p>
+</li>
+</ol>
+<p>在步骤2里，executeQuery(executeQuery.cpp)非常重要。<br>它是所有前端 Server 和 ClickHouse 内核的接入口，第一个参数是 SQL 文本(‘select 1’)，第二个参数是结果集要发送到哪里去(socket net)。</p>
+<h2 id="调用栈分析"><a href="#调用栈分析" class="headerlink" title="调用栈分析"></a><strong>调用栈分析</strong></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM system.numbers LIMIT 5</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-获取数据源"><a href="#1-获取数据源" class="headerlink" title="1. 获取数据源"></a>1. 获取数据源</h3><p>StorageSystemNumbers 数据源：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">DB::StorageSystemNumbers::<span class="built_in">read</span>(std::__1::vector&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt;, std::__1::allocator&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; &gt; &gt; <span class="keyword">const</span>&amp;, std::__1::shared_ptr&lt;DB::StorageInMemoryMetadata <span class="keyword">const</span>&gt; <span class="keyword">const</span>&amp;, DB::SelectQueryInfo <span class="keyword">const</span>&amp;, DB::Context <span class="keyword">const</span>&amp;, DB::QueryProcessingStage::Enum, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">int</span>) StorageSystemNumbers.cpp:<span class="number">135</span></span><br><span class="line">DB::ReadFromStorageStep::<span class="built_in">ReadFromStorageStep</span>(std::__1::shared_ptr&lt;DB::RWLockImpl::LockHolderImpl&gt;, std::__1::shared_ptr&lt;DB::StorageInMemoryMetadata <span class="keyword">const</span>&gt;&amp;, DB::SelectQueryOptions,</span><br><span class="line">DB::InterpreterSelectQuery::<span class="built_in">executeFetchColumns</span>(DB::QueryProcessingStage::Enum, DB::QueryPlan&amp;, std::__1::shared_ptr&lt;DB::PrewhereInfo&gt; <span class="keyword">const</span>&amp;, std::__1::vector&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt;, std::__1::allocator&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; &gt; &gt; <span class="keyword">const</span>&amp;) memory:<span class="number">3028</span></span><br><span class="line">DB::InterpreterSelectQuery::<span class="built_in">executeFetchColumns</span>(DB::QueryProcessingStage::Enum, DB::QueryPlan&amp;, std::__1::shared_ptr&lt;DB::PrewhereInfo&gt; <span class="keyword">const</span>&amp;, std::__1::vector&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt;, std::__1::allocator&lt;std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; &gt; &gt; <span class="keyword">const</span>&amp;) InterpreterSelectQuery.cpp:<span class="number">1361</span></span><br><span class="line">DB::InterpreterSelectQuery::<span class="built_in">executeImpl</span>(DB::QueryPlan&amp;, std::__1::shared_ptr&lt;DB::IBlockInputStream&gt; <span class="keyword">const</span>&amp;, std::__1::optional&lt;DB::Pipe&gt;) InterpreterSelectQuery.cpp:<span class="number">791</span></span><br><span class="line">DB::InterpreterSelectQuery::<span class="built_in">buildQueryPlan</span>(DB::QueryPlan&amp;) InterpreterSelectQuery.cpp:<span class="number">472</span></span><br><span class="line">DB::InterpreterSelectWithUnionQuery::<span class="built_in">buildQueryPlan</span>(DB::QueryPlan&amp;) InterpreterSelectWithUnionQuery.cpp:<span class="number">183</span></span><br><span class="line">DB::InterpreterSelectWithUnionQuery::<span class="built_in">execute</span>() InterpreterSelectWithUnionQuery.cpp:<span class="number">198</span></span><br><span class="line">DB::<span class="built_in">executeQueryImpl</span>(<span class="keyword">const</span> <span class="keyword">char</span> *, <span class="keyword">const</span> <span class="keyword">char</span> *, DB::Context &amp;, <span class="keyword">bool</span>, DB::QueryProcessingStage::Enum, <span class="keyword">bool</span>, DB::ReadBuffer *) executeQuery.cpp:<span class="number">385</span></span><br><span class="line">DB::<span class="built_in">executeQuery</span>(DB::ReadBuffer&amp;, DB::WriteBuffer&amp;, <span class="keyword">bool</span>, DB::Context&amp;, std::__1::function&lt;<span class="built_in"><span class="keyword">void</span></span> (std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;,</span><br><span class="line">DB::MySQLHandler::<span class="built_in">comQuery</span>(DB::ReadBuffer&amp;) MySQLHandler.cpp:<span class="number">307</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">run</span>() MySQLHandler.cpp:<span class="number">141</span></span><br></pre></td></tr></table></figure>
+
+<p>这里最主要的是 ReadFromStorageStep 函数，从不同 storage 里获取数据源 pipe:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pipes pipes = storage-&gt;<span class="built_in">read</span>(required_columns, metadata_snapshot, query_info, *context, processing_stage, max_block_size, max_streams);</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Pipeline构造"><a href="#2-Pipeline构造" class="headerlink" title="2. Pipeline构造"></a>2. Pipeline构造</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DB::LimitTransform::<span class="built_in">LimitTransform</span>(DB::Block <span class="keyword">const</span>&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">bool</span>, <span class="keyword">bool</span>, std::__1::vector&lt;DB::SortColumnDescription, std::__1::allocator&lt;DB::SortColumnDescription&gt; &gt;) LimitTransform.cpp:<span class="number">21</span></span><br><span class="line">DB::LimitStep::<span class="built_in">transformPipeline</span>(DB::QueryPipeline&amp;) memory:<span class="number">2214</span></span><br><span class="line">DB::LimitStep::<span class="built_in">transformPipeline</span>(DB::QueryPipeline&amp;) memory:<span class="number">2299</span></span><br><span class="line">DB::LimitStep::<span class="built_in">transformPipeline</span>(DB::QueryPipeline&amp;) memory:<span class="number">3570</span></span><br><span class="line">DB::LimitStep::<span class="built_in">transformPipeline</span>(DB::QueryPipeline&amp;) memory:<span class="number">4400</span></span><br><span class="line">DB::LimitStep::<span class="built_in">transformPipeline</span>(DB::QueryPipeline&amp;) LimitStep.cpp:<span class="number">33</span></span><br><span class="line">DB::ITransformingStep::<span class="built_in">updatePipeline</span>(std::__1::vector&lt;std::__1::unique_ptr&lt;DB::QueryPipeline, std::__1::default_delete&lt;DB::QueryPipeline&gt; &gt;, std::__1::allocator&lt;std::__1::unique_ptr&lt;DB::QueryPipeline, std::__1::default_delete&lt;DB::QueryPipeline&gt; &gt; &gt; &gt;) ITransformingStep.cpp:<span class="number">21</span></span><br><span class="line">DB::QueryPlan::<span class="built_in">buildQueryPipeline</span>() QueryPlan.cpp:<span class="number">154</span></span><br><span class="line">DB::InterpreterSelectWithUnionQuery::<span class="built_in">execute</span>() InterpreterSelectWithUnionQuery.cpp:<span class="number">200</span></span><br><span class="line">DB::<span class="built_in">executeQueryImpl</span>(<span class="keyword">const</span> <span class="keyword">char</span> *, <span class="keyword">const</span> <span class="keyword">char</span> *, DB::Context &amp;, <span class="keyword">bool</span>, DB::QueryProcessingStage::Enum, <span class="keyword">bool</span>, DB::ReadBuffer *) executeQuery.cpp:<span class="number">385</span></span><br><span class="line">DB::<span class="built_in">executeQuery</span>(DB::ReadBuffer&amp;, DB::WriteBuffer&amp;, <span class="keyword">bool</span>, DB::Context&amp;, std::__1::function&lt;<span class="built_in"><span class="keyword">void</span></span> (std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;)&gt;) executeQuery.cpp:<span class="number">722</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">comQuery</span>(DB::ReadBuffer&amp;) MySQLHandler.cpp:<span class="number">307</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">run</span>() MySQLHandler.cpp:<span class="number">141</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Pipeline执行"><a href="#3-Pipeline执行" class="headerlink" title="3. Pipeline执行"></a>3. Pipeline执行</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">DB::LimitTransform::<span class="built_in">prepare</span>(std::__1::vector&lt;<span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::allocator&lt;<span class="keyword">unsigned</span> <span class="keyword">long</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::vector&lt;<span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::allocator&lt;<span class="keyword">unsigned</span> <span class="keyword">long</span>&gt; &gt; <span class="keyword">const</span>&amp;) LimitTransform.cpp:<span class="number">67</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">291</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">tryAddProcessorToStackIfUpdated</span>(DB::PipelineExecutor::Edge&amp;, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">264</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">373</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">tryAddProcessorToStackIfUpdated</span>(DB::PipelineExecutor::Edge&amp;, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">264</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">373</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">tryAddProcessorToStackIfUpdated</span>(DB::PipelineExecutor::Edge&amp;, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">264</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">373</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">tryAddProcessorToStackIfUpdated</span>(DB::PipelineExecutor::Edge&amp;, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">264</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">373</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">tryAddProcessorToStackIfUpdated</span>(DB::PipelineExecutor::Edge&amp;, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">264</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">prepareProcessor</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::queue&lt;DB::PipelineExecutor::ExecutionState*, std::__1::deque&lt;DB::PipelineExecutor::ExecutionState*, std::__1::allocator&lt;DB::PipelineExecutor::ExecutionState*&gt; &gt; &gt;&amp;, std::__1::unique_lock&lt;std::__1::mutex&gt;) PipelineExecutor.cpp:<span class="number">373</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">initializeExecution</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">747</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">executeImpl</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">764</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">execute</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">479</span></span><br><span class="line">DB::<span class="built_in">executeQuery</span>(DB::ReadBuffer&amp;, DB::WriteBuffer&amp;, <span class="keyword">bool</span>, DB::Context&amp;, std::__1::function&lt;<span class="built_in"><span class="keyword">void</span></span> (std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;)&gt;) executeQuery.cpp:<span class="number">833</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">comQuery</span>(DB::ReadBuffer&amp;) MySQLHandler.cpp:<span class="number">307</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">run</span>() MySQLHandler.cpp:<span class="number">141</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-Output执行发送"><a href="#4-Output执行发送" class="headerlink" title="4. Output执行发送"></a>4. Output执行发送</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">DB::MySQLOutputFormat::<span class="built_in">consume</span>(DB::Chunk) MySQLOutputFormat.cpp:<span class="number">53</span></span><br><span class="line">DB::IOutputFormat::<span class="built_in">work</span>() IOutputFormat.cpp:<span class="number">62</span></span><br><span class="line">DB::<span class="built_in">executeJob</span>(DB::IProcessor *) PipelineExecutor.cpp:<span class="number">155</span></span><br><span class="line"><span class="built_in"><span class="keyword">operator</span></span>() PipelineExecutor.cpp:<span class="number">172</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">executeStepImpl</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, std::__1::atomic&lt;<span class="keyword">bool</span>&gt;*) PipelineExecutor.cpp:<span class="number">630</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">executeSingleThread</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">546</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">executeImpl</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">812</span></span><br><span class="line">DB::PipelineExecutor::<span class="built_in">execute</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) PipelineExecutor.cpp:<span class="number">479</span></span><br><span class="line">DB::<span class="built_in">executeQuery</span>(DB::ReadBuffer&amp;, DB::WriteBuffer&amp;, <span class="keyword">bool</span>, DB::Context&amp;, std::__1::function&lt;<span class="built_in"><span class="keyword">void</span></span> (std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;)&gt;) executeQuery.cpp:<span class="number">800</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">comQuery</span>(DB::ReadBuffer&amp;) MySQLHandler.cpp:<span class="number">311</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">run</span>() MySQLHandler.cpp:<span class="number">141</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>ClickHouse 的模块化比较清晰，像乐高积木一样可以组合拼装，当我们执行:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> system.numbers LIMIT <span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<p>首先内核解析 SQL 语句生成 AST，然后根据 AST 获取数据源 Source，pipeline.Add(Source)。<br>其次根据 AST 信息生成 QueryPlan，根据 QueryPlan 再生成相应的 Transform，pipeline.Add(LimitTransform)。<br>然后添加 Output Sink 作为数据发送对象，pipeline.Add(OutputSink)。<br>执行 pipeline, 各个 Transformer 开始工作。</p>
+<p>ClickHouse 的 Transformer 调度系统叫做 Processor，也是决定性能的重要模块，详情见 <a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/">Pipeline 处理器和调度器</a>。<br>ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！</p>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>InfoQ</td>
+<td><a target="_blank" rel="noopener" href="https://www.infoq.cn/u/dbkernel/publish">https://www.infoq.cn/u/dbkernel/publish</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" title="源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈" target="_blank" rel="external">http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../08/clickhouse-and-friends-03-mysql-protocol-write-stack/" title="源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../05/clickhouse-and-friends-01-development/" title="源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

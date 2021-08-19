@@ -1,5 +1,5 @@
 ---
-title: MySQL-自增列详解（1）：自增列概念及使用
+title: 引擎特性 | MySQL-自增列详解（1）：自增列概念及使用
 date: 2019-12-09 19:37:10
 categories:
 - MySQL
@@ -263,4 +263,18 @@ mysql> select * from t2;
 4. 使用 alter table 修改 AUTO_INCREMENT 列时，其值会取`自增列当前最大记录值+1`与`将要设置的值`的最大值。
 5. 在MySQL 5.7 中，将列设置成 AUTO_INCREMENT 之后，必须将其设置成主键/或者是主键的一部分，否则会报错`ERROR 1075 (42000): Incorrect table definition; there can be only one auto column and it must be defined as a key`。
 
+----
 
+欢迎关注我的微信公众号【MySQL数据库技术】。
+
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+| 标题                 | 网址                                                  |
+| -------------------- | ----------------------------------------------------- |
+| GitHub                 | https://dbkernel.github.io           |
+| 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
+| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
+| 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
+| InfoQ                | https://www.infoq.cn/u/dbkernel/publish               |
+| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
