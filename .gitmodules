@@ -1,5 +1,5 @@
-[submodule "hugo-yelee/themes/hugo-theme-yelee"]
-	path = hugo-yelee/themes/hugo-theme-yelee
+[submodule "hugo/themes/hugo-theme-yelee"]
+	path = hugo/themes/hugo-theme-yelee
 	url = https://github.com/lu-front-end/hugo-theme-yelee.git
 [submodule "hexo/themes/yelee"]
 	path = hexo/themes/yelee
