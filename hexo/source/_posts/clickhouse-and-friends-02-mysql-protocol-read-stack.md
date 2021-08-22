@@ -182,7 +182,6 @@ ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| InfoQ                | https://www.infoq.cn/u/dbkernel/publish               |
 | 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
 
