@@ -20,10 +20,12 @@ toc: true
 #include <mntent.h>
 #include <string.h>
 #include <sys/vfs.h>
+
 static const unsigned long long G = 1024*1024*1024ull;
 static const unsigned long long M = 1024*1024;
 static const unsigned long long K = 1024;
 static char str[20];
+
 char* kscale(unsigned long b, unsigned long bs)
 {
     unsigned long long size = b * (unsigned long long)bs;
@@ -48,6 +50,7 @@ char* kscale(unsigned long b, unsigned long bs)
         return str;
     }
 }
+
 int main(int argc, char *argv[])
 {
     FILE* mount_table;
@@ -58,11 +61,13 @@ int main(int argc, char *argv[])
     const char *disp_units_hdr = NULL;
     mount_table = NULL;
     mount_table = setmntent("/etc/mtab", "r");
+
     if (!mount_table)
     {
         fprintf(stderr, "set mount entry error\n");
         return -1;
     }
+
     disp_units_hdr = "     Size";
     printf("Filesystem           %-15sUsed Available %s Mounted on\n",
             disp_units_hdr, "Use%");
@@ -114,6 +119,7 @@ int main(int argc, char *argv[])
                     blocks_percent_used, mount_point);
         }
     }
+
     return 0;
 }
 ```
@@ -121,7 +127,7 @@ int main(int argc, char *argv[])
 ## 编译
 
 ```bash
-$ g++ -g -Wall main.cpp -o testdf
+$ gcc -g -Wall testdf.c -o testdf
 ```
 
 ## 运行

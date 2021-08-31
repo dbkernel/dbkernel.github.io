@@ -19,26 +19,25 @@
   <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
   
   
-  <title>源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;05&#x2F;clickhouse-and-friends-development&#x2F;以下为正文。  一次偶然的机会，和ClickHouse团队做了一次线下沟通，Alexey提到ClickHouse的设计哲学:  The product must so">
+  <title>程序人生 | UNIX环境高级编程技巧之 du 指令实现 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;glob.h&amp;">
 <meta property="og:type" content="article">
-<meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试">
-<meta property="og:url" content="http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/index.html">
+<meta property="og:title" content="程序人生 | UNIX环境高级编程技巧之 du 指令实现">
+<meta property="og:url" content="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;05&#x2F;clickhouse-and-friends-development&#x2F;以下为正文。  一次偶然的机会，和ClickHouse团队做了一次线下沟通，Alexey提到ClickHouse的设计哲学:  The product must so">
+<meta property="og:description" content="代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;glob.h&amp;">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/github-ck-ci.jpeg">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
-<meta property="article:published_time" content="2020-06-05T11:37:10.000Z">
-<meta property="article:modified_time" content="2021-08-22T05:58:57.049Z">
+<meta property="article:published_time" content="2014-07-10T02:00:41.000Z">
+<meta property="article:modified_time" content="2021-08-31T15:31:32.169Z">
 <meta property="article:author" content="DBKernel">
-<meta property="article:tag" content="ClickHouse和他的朋友们">
-<meta property="article:tag" content="ClickHouse">
-<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="APUE">
+<meta property="article:tag" content="UNIX">
+<meta property="article:tag" content="du">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/github-ck-ci.jpeg">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
   <!-- Canonical links -->
-  <link rel="canonical" href="http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/index.html">
+  <link rel="canonical" href="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/index.html">
   
     <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
   
@@ -273,7 +272,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="../../08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
@@ -288,7 +287,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="../../07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
@@ -303,7 +302,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
@@ -318,7 +317,7 @@
                 <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
               </p>
               <p class="item-title">
-                <a href="../../../05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
@@ -341,21 +340,21 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%9C%AC%E5%9C%B0%E7%BC%96%E8%AF%91%E5%92%8C%E6%B5%8B%E8%AF%95ClickHouse%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">如何本地编译和测试ClickHouse？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%BA%90%E7%A0%81%E8%8E%B7%E5%8F%96"><span class="toc-number">1.1.</span> <span class="toc-text">源码获取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%87%86%E5%A4%87"><span class="toc-number">1.2.</span> <span class="toc-text">编译准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%A7%8B%E7%BC%96%E8%AF%91"><span class="toc-number">1.3.</span> <span class="toc-text">开始编译</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">测试方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-Functional-Tests"><span class="toc-number">1.4.1.</span> <span class="toc-text">1. Functional Tests</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Integration-Tests"><span class="toc-number">1.4.2.</span> <span class="toc-text">2. Integration Tests</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-Unit-Tests"><span class="toc-number">1.4.3.</span> <span class="toc-text">3. Unit Tests</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E7%BB%99ClickHouse%E7%A4%BE%E5%8C%BA%E6%8F%90Patch%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">如何给ClickHouse社区提Patch？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-fork"><span class="toc-number">2.0.1.</span> <span class="toc-text">1. fork</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-clone%E5%88%B0%E6%9C%AC%E5%9C%B0"><span class="toc-number">2.0.2.</span> <span class="toc-text">2. clone到本地</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E5%88%86%E6%94%AF"><span class="toc-number">2.0.3.</span> <span class="toc-text">3. 创建新的分支</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E5%8A%9F%E8%83%BD%E5%BC%80%E5%8F%91"><span class="toc-number">2.0.4.</span> <span class="toc-text">4. 功能开发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-can-be-testd%E6%A0%87%E7%AD%BE"><span class="toc-number">2.0.5.</span> <span class="toc-text">5. can be testd标签</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-%E5%BC%80%E5%8F%91%E5%AE%8C%E6%AF%95"><span class="toc-number">2.0.6.</span> <span class="toc-text">6. 开发完毕</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-Merge%E5%88%B0Master"><span class="toc-number">2.0.7.</span> <span class="toc-text">7. Merge到Master</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">2.0.8.</span> <span class="toc-text">8. 注意事项</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.</span> <span class="toc-text">代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91"><span class="toc-number">2.</span> <span class="toc-text">编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C"><span class="toc-number">3.</span> <span class="toc-text">运行</span></a></li></ol>
     </nav>
   </div>
 </aside>
 
 <main class="main" role="main">
   <div class="content">
-  <article id="post-clickhouse-and-friends-01-development" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+  <article id="post-advanced-programming-in-the-unix-environment-du" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
     
     <div class="article-header">
       
         
   
     <h1 class="article-title" itemprop="name">
-      源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试
+      程序人生 | UNIX环境高级编程技巧之 du 指令实现
     </h1>
   
 
@@ -364,19 +363,19 @@
         <span class="article-date">
     <i class="icon icon-calendar-check"></i>
 	<a href="" class="article-date">
-	  <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+	  <time datetime="2014-07-10T02:00:41.000Z" itemprop="datePublished">2014-07-10</time>
 	</a>
 </span>
         
   <span class="article-category">
     <i class="icon icon-folder"></i>
-    <a class="article-category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+    <a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/">程序人生</a>►<a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/APUE/">APUE</a>
   </span>
 
         
   <span class="article-tag">
     <i class="icon icon-tags"></i>
-	<a class="article-tag-link-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a>, <a class="article-tag-link-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a>
+	<a class="article-tag-link-link" href="../../../../tags/APUE/" rel="tag">APUE</a>, <a class="article-tag-link-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a>, <a class="article-tag-link-link" href="../../../../tags/du/" rel="tag">du</a>
   </span>
 
 
@@ -391,16 +390,16 @@
 
 	<span class="article-read hidden-xs">
     	<i class="icon icon-eye-fill" aria-hidden="true"></i>
-    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试">0</span>
+    	<span id="" class="leancloud_visitors"  data-flag-title="程序人生 | UNIX环境高级编程技巧之 du 指令实现">0</span>
     </span>
 
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1k(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 331(字)</span>
 	
 	
-		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 4(分)</span>
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 1(分)</span>
 	
 
       </div>
@@ -409,46 +408,14 @@
       
         <span id="more"></span>
 
-<blockquote>
-<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/05/clickhouse-and-friends-development/">https://bohutang.me/2020/06/05/clickhouse-and-friends-development/</a><br>以下为正文。</p>
-</blockquote>
-<p>一次偶然的机会，和ClickHouse团队做了一次线下沟通，Alexey提到ClickHouse的设计哲学:</p>
-<ol>
-<li>The product must solve actual problem</li>
-<li>And do it better than others</li>
-</ol>
-<p>用工程思维解决商业问题的典范啊！</p>
-<p>对用户来说，他们关心的不是什么天花乱坠、上天入地的高科技，只是需要一个能很好解决自己问题的方案，这在开源社区是非常难得的，靠实力“野蛮式”生长。</p>
-<p>于是，我对这个散发着伏特加味道的利器充满了好奇，并参与到ClickHouse的社区中一探究竟，第一感觉是开放、友好、战斗力强(AK47 vs CK16, ClickHouse 2016年开源)。</p>
-<p>本文先从编译和测试入手，再到如何为社区贡献Patch，希望对那些想参与CK社区的同学有所帮助。</p>
-<h2 id="如何本地编译和测试ClickHouse？"><a href="#如何本地编译和测试ClickHouse？" class="headerlink" title="如何本地编译和测试ClickHouse？"></a><strong>如何本地编译和测试ClickHouse？</strong></h2><h3 id="源码获取"><a href="#源码获取" class="headerlink" title="源码获取"></a><strong>源码获取</strong></h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone --recursive https://github.com/ClickHouse/ClickHouse</span><br></pre></td></tr></table></figure>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;glob.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PATHSIZE 1024</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">path_noloop</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *path)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">char</span> *pos;</span><br><span class="line"></span><br><span class="line">    pos = <span class="built_in">strrchr</span>(path,<span class="string">&#x27;/&#x27;</span>);<span class="comment">//定位最右边的&#x27;/&#x27;的位置</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">strcmp</span>(pos+<span class="number">1</span>,<span class="string">&quot;.&quot;</span>) == <span class="number">0</span> || (<span class="built_in">strcmp</span>(pos+<span class="number">1</span>,<span class="string">&quot;..&quot;</span>) == <span class="number">0</span>))</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int64_t</span> <span class="title">mydu</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *path)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">glob_t</span> globres;</span><br><span class="line">    <span class="keyword">int64_t</span> sum;</span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">stat</span> <span class="title">statres</span>;</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">char</span> nextpath[PATHSIZE];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">lstat</span>(path, &amp;statres) &lt; <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">perror</span>(<span class="string">&quot;lstat()&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;<span class="comment">//exit(1);</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(!<span class="built_in">S_ISDIR</span>(statres.st_mode))</span><br><span class="line">        <span class="keyword">return</span> statres.st_blocks;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">strncpy</span>(nextpath, path,PATHSIZE);</span><br><span class="line">    <span class="built_in">strncat</span>(nextpath, <span class="string">&quot;/*&quot;</span> , PATHSIZE);</span><br><span class="line">    <span class="built_in">glob</span>(nextpath,GLOB_NOSORT, <span class="literal">NULL</span>, &amp;globres);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">strncpy</span>(nextpath, path,PATHSIZE);</span><br><span class="line">    <span class="built_in">strncat</span>(nextpath, <span class="string">&quot;/.*&quot;</span> , PATHSIZE);</span><br><span class="line">    <span class="built_in">glob</span>(nextpath,GLOB_NOSORT|GLOB_APPEND, <span class="literal">NULL</span>, &amp;globres);</span><br><span class="line"></span><br><span class="line">    sum = statres.st_blocks;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(i = <span class="number">0</span> ;i &lt; globres.gl_pathc ; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span>(<span class="built_in">path_noloop</span>(globres.gl_pathv[i]))</span><br><span class="line">            sum += <span class="built_in">mydu</span>(globres.gl_pathv[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc,<span class="keyword">char</span> **argv)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(argc &lt; <span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(stderr,<span class="string">&quot;Usage...\n&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%lld 512B blocks\n&quot;</span>, (<span class="keyword">long</span> <span class="keyword">long</span> <span class="keyword">int</span>)<span class="built_in">mydu</span>(argv[<span class="number">1</span>]));</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="编译准备"><a href="#编译准备" class="headerlink" title="编译准备"></a><strong>编译准备</strong></h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install build-essential</span><br><span class="line">sudo apt-get install software-properties-common</span><br><span class="line">sudo apt-add-repository ppa:ubuntu-toolchain-r/<span class="built_in">test</span></span><br><span class="line">sudo apt-get update</span><br><span class="line"></span><br><span class="line">sudo apt-get install gcc-9 g++-9 git python ninja-build</span><br><span class="line">sudo snap install cmake</span><br></pre></td></tr></table></figure>
+<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -g -Wall testdu.c -o testdu</span><br></pre></td></tr></table></figure>
 
-<h3 id="开始编译"><a href="#开始编译" class="headerlink" title="开始编译"></a><strong>开始编译</strong></h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ClickHouse</span><br><span class="line">mkdir build</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line"><span class="built_in">export</span> CC=gcc-9</span><br><span class="line"><span class="built_in">export</span> CXX=g++-9</span><br><span class="line">cmake ..</span><br><span class="line">ninja</span><br></pre></td></tr></table></figure>
-
-<h3 id="测试方法"><a href="#测试方法" class="headerlink" title="测试方法"></a><strong>测试方法</strong></h3><p>ClickHouse的测试在官方<a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/master/docs/en/development/tests.md">development/tests</a>文档里有详细的介绍，这里列举3个常用的测试模式：</p>
-<h4 id="1-Functional-Tests"><a href="#1-Functional-Tests" class="headerlink" title="1. Functional Tests"></a>1. Functional Tests</h4><p>功能测试，主要用于ClickHouse内部功能测试，方式：输入一个sql文件，输出一个result，类似MySQL里的mtr，<a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/tree/master/tests/queries">测试集合</a></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> tests</span><br><span class="line">./clickhouse-test -c <span class="string">&quot;../build/programs/clickhouse-client&quot;</span> 00001_select_1</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Integration-Tests"><a href="#2-Integration-Tests" class="headerlink" title="2. Integration Tests"></a>2. Integration Tests</h4><p>集成测试，主要用于涉及第三方服务的测试，比如MySQL/Postgres/MongoDB等，以容器化方式编排调度(pytest)运行，<a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/tree/master/tests/integration">测试集合</a></p>
-<p>由于涉及模块较多，集成测试环境的搭建有一定的难度，建议使用官方的docker镜像。比如要跑test_mysql_protocol下的集成测试集：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> tests/integration</span><br><span class="line">docker pull yandex/clickhouse-integration-tests-runner</span><br><span class="line">./runner --binary /your/ClickHouse/build/programs/clickhouse  --bridge-binary /your/ClickHouse/build/programs/clickhouse-odbc-bridge --configs-dir /your/ClickHouse/programs/server/ <span class="string">&#x27;test_mysql_protocol/test.py::test_java_client -ss -vv&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Unit-Tests"><a href="#3-Unit-Tests" class="headerlink" title="3. Unit Tests"></a>3. Unit Tests</h4><p>单元测试，主要用于代码模块的测试，测试集在各个模块的tests目录，比如: <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/tree/master/src/Core/tests">Core/tests</a></p>
-<p>如果大家想了解某个模块是如何工作的，强烈建议去翻翻该模块的tests目录，比如想了解processor的工作机制，跟踪调试 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/master/src/Processors/tests/processors_test.cpp">Processors/tests/</a> 即可。</p>
-<h2 id="如何给ClickHouse社区提Patch？"><a href="#如何给ClickHouse社区提Patch？" class="headerlink" title="如何给ClickHouse社区提Patch？"></a><strong>如何给ClickHouse社区提Patch？</strong></h2><h4 id="1-fork"><a href="#1-fork" class="headerlink" title="1. fork"></a>1. fork</h4><p>首先在自己的github上fork一份ClickHouse代码，比如 <a target="_blank" rel="noopener" href="https://github.com/BohuTANG/ClickHouse">https://github.com/BohuTANG/ClickHouse</a></p>
-<h4 id="2-clone到本地"><a href="#2-clone到本地" class="headerlink" title="2. clone到本地"></a>2. clone到本地</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> --recursive https://github.com/BohuTANG/ClickHouse</span><br><span class="line">git checkout -B mysql_replica(branch名字)</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-创建新的分支"><a href="#3-创建新的分支" class="headerlink" title="3. 创建新的分支"></a>3. 创建新的分支</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -B mysql_replica(branch名字)</span><br></pre></td></tr></table></figure>
-
-<h4 id="4-功能开发"><a href="#4-功能开发" class="headerlink" title="4. 功能开发"></a>4. 功能开发</h4><p>开发者可以提交一个Draft Pull Request到官方，github会显示这个Pull Request处于Draft状态，官方是无法Merge的</p>
-<h4 id="5-can-be-testd标签"><a href="#5-can-be-testd标签" class="headerlink" title="5. can be testd标签"></a>5. can be testd标签</h4><p>等待Upstream打[can be tested]标签，一旦被标记CI狂魔们就强势开跑，跑一轮大概需要几十个小时。<br>协助开发者发现一些代码Style、编译以及测试等错误，这样开发者就可以在自己的分支不停的迭代、修正。<br><img src="github-ck-ci.jpeg" alt="img"></p>
-<p>如果只是修改typo，这个标签Upstream通常不会添加。</p>
-<h4 id="6-开发完毕"><a href="#6-开发完毕" class="headerlink" title="6. 开发完毕"></a>6. 开发完毕</h4><p>开发完成，测试OK，把Draft提升为正式Pull Request，等待Upstraem Review。</p>
-<h4 id="7-Merge到Master"><a href="#7-Merge到Master" class="headerlink" title="7. Merge到Master"></a>7. Merge到Master</h4><p>如果Upstream通过，你的代码会被Merge到Master，恭喜你成为ClickHouse贡献者</p>
-<h4 id="8-注意事项"><a href="#8-注意事项" class="headerlink" title="8. 注意事项"></a>8. 注意事项</h4><p>ClickHouse Upstream迭代非常快，一定要多关注master分支进度，尽量保持自己的分支代码与master同步。否则Upstream Docker更新，自己的test可能就过不了。</p>
-<p>建议把<a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/tree/master/docs/en/development">doc/development</a>读一遍。</p>
+<h2 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h2><ul>
+<li><code>testdf</code>执行效果：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./testdu /usr/bin</span><br><span class="line">1766184 512B blocks</span><br></pre></td></tr></table></figure></li>
+<li><code>原生df</code>执行效果：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ du -sh /usr/bin</span><br><span class="line">859M	/usr/bin</span><br></pre></td></tr></table></figure></li>
+</ul>
 <hr>
 <p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
@@ -494,7 +461,7 @@
     
     <li class="post-copyright-link hidden-xs">
       <strong>本文链接：</strong>
-      <a href="http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/" title="源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试" target="_blank" rel="external">http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/</a>
+      <a href="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/" title="程序人生 | UNIX环境高级编程技巧之 du 指令实现" target="_blank" rel="external">http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/</a>
     </li>
     
     <li class="post-copyright-license">
@@ -541,12 +508,12 @@
   <ul class="pager pull-left">
     
     <li class="prev">
-      <a href="../../07/clickhouse-and-friends-02-mysql-protocol-read-stack/" title="源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+      <a href="../../../../2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/" title="引擎特性 | MySQL-自增列详解（1）：自增列概念及使用"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
     </li>
     
     
     <li class="next">
-      <a href="../../../05/06/mysql-select-count-functions-01-concepts-and-differences/" title="引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+      <a href="../advanced-programming-in-the-unix-environment-df/" title="程序人生 | UNIX环境高级编程技巧之 df 指令实现"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
     </li>
     
     
