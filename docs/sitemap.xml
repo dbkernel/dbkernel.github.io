@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2014/07/10/makefile-common-templates/</loc>
+    
+    <lastmod>2021-09-04</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/</loc>
     
     <lastmod>2021-09-04</lastmod>
@@ -227,6 +234,13 @@
     <priority>0.6</priority>
   </url>
   
+  <url>
+    <loc>http://dbkernel.github.io/tags/Makefile/</loc>
+    <lastmod>2021-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
 
   
   <url>
@@ -273,6 +287,13 @@
   
   <url>
     <loc>http://dbkernel.github.io/categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/Linux/</loc>
+    <lastmod>2021-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/Makefile/</loc>
     <lastmod>2021-09-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
