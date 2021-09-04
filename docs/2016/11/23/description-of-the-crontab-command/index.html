@@ -19,25 +19,24 @@
   <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
   
   
-  <title>程序人生 | UNIX环境高级编程技巧之 du 指令实现 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;glob.h&amp;">
+  <title>实用工具 | Linux定时任务crontab命令详解 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="概述Linux 下的任务调度分为两类：系统任务调度和用户任务调度。Linux 系统任务是由 cron (crond) 这个系统服务来控制的，这个系统服务是默认启动的。用户自己设置的计划任务则使用 crontab 命令。 cron 配置文件在 Ubuntu&#x2F;Debian 中，配置文件路径为 &#x2F;etc&#x2F;crontab（CentOS也类似），其内容为： 1234567891011121314151">
 <meta property="og:type" content="article">
-<meta property="og:title" content="程序人生 | UNIX环境高级编程技巧之 du 指令实现">
-<meta property="og:url" content="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/index.html">
+<meta property="og:title" content="实用工具 | Linux定时任务crontab命令详解">
+<meta property="og:url" content="http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;glob.h&amp;">
+<meta property="og:description" content="概述Linux 下的任务调度分为两类：系统任务调度和用户任务调度。Linux 系统任务是由 cron (crond) 这个系统服务来控制的，这个系统服务是默认启动的。用户自己设置的计划任务则使用 crontab 命令。 cron 配置文件在 Ubuntu&#x2F;Debian 中，配置文件路径为 &#x2F;etc&#x2F;crontab（CentOS也类似），其内容为： 1234567891011121314151">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
-<meta property="article:published_time" content="2014-07-10T02:00:41.000Z">
-<meta property="article:modified_time" content="2021-08-31T15:31:32.169Z">
+<meta property="article:published_time" content="2016-11-23T02:24:45.000Z">
+<meta property="article:modified_time" content="2021-09-04T15:04:50.473Z">
 <meta property="article:author" content="DBKernel">
-<meta property="article:tag" content="APUE">
-<meta property="article:tag" content="UNIX">
-<meta property="article:tag" content="du">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="crontab">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
   <!-- Canonical links -->
-  <link rel="canonical" href="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/index.html">
+  <link rel="canonical" href="http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/index.html">
   
     <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
   
@@ -340,21 +339,21 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.</span> <span class="toc-text">代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91"><span class="toc-number">2.</span> <span class="toc-text">编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C"><span class="toc-number">3.</span> <span class="toc-text">运行</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#cron-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">cron 配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#crontab-%E6%96%87%E4%BB%B6%E5%90%AB%E4%B9%89"><span class="toc-number">3.</span> <span class="toc-text">crontab 文件含义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#crontab%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3"><span class="toc-number">4.</span> <span class="toc-text">crontab命令详解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#crontab-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">5.</span> <span class="toc-text">crontab 注意事项</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#crontab-%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B"><span class="toc-number">6.</span> <span class="toc-text">crontab 配置示例</span></a></li></ol>
     </nav>
   </div>
 </aside>
 
 <main class="main" role="main">
   <div class="content">
-  <article id="post-advanced-programming-in-the-unix-environment-du" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+  <article id="post-description-of-the-crontab-command" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
     
     <div class="article-header">
       
         
   
     <h1 class="article-title" itemprop="name">
-      程序人生 | UNIX环境高级编程技巧之 du 指令实现
+      实用工具 | Linux定时任务crontab命令详解
     </h1>
   
 
@@ -363,19 +362,19 @@
         <span class="article-date">
     <i class="icon icon-calendar-check"></i>
 	<a href="" class="article-date">
-	  <time datetime="2014-07-10T02:00:41.000Z" itemprop="datePublished">2014-07-10</time>
+	  <time datetime="2016-11-23T02:24:45.000Z" itemprop="datePublished">2016-11-23</time>
 	</a>
 </span>
         
   <span class="article-category">
     <i class="icon icon-folder"></i>
-    <a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/">程序人生</a>►<a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/APUE/">APUE</a>
+    <a class="article-category-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a>►<a class="article-category-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/Linux/">Linux</a>
   </span>
 
         
   <span class="article-tag">
     <i class="icon icon-tags"></i>
-	<a class="article-tag-link-link" href="../../../../tags/APUE/" rel="tag">APUE</a>, <a class="article-tag-link-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a>, <a class="article-tag-link-link" href="../../../../tags/du/" rel="tag">du</a>
+	<a class="article-tag-link-link" href="../../../../tags/Linux/" rel="tag">Linux</a>, <a class="article-tag-link-link" href="../../../../tags/crontab/" rel="tag">crontab</a>
   </span>
 
 
@@ -390,16 +389,16 @@
 
 	<span class="article-read hidden-xs">
     	<i class="icon icon-eye-fill" aria-hidden="true"></i>
-    	<span id="" class="leancloud_visitors"  data-flag-title="程序人生 | UNIX环境高级编程技巧之 du 指令实现">0</span>
+    	<span id="" class="leancloud_visitors"  data-flag-title="实用工具 | Linux定时任务crontab命令详解">0</span>
     </span>
 
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 331(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1.8k(字)</span>
 	
 	
-		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 1(分)</span>
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 7(分)</span>
 	
 
       </div>
@@ -408,13 +407,86 @@
       
         <span id="more"></span>
 
-<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;glob.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PATHSIZE 1024</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">path_noloop</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *path)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">char</span> *pos;</span><br><span class="line"></span><br><span class="line">    pos = <span class="built_in">strrchr</span>(path,<span class="string">&#x27;/&#x27;</span>);<span class="comment">//定位最右边的&#x27;/&#x27;的位置</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">strcmp</span>(pos+<span class="number">1</span>,<span class="string">&quot;.&quot;</span>) == <span class="number">0</span> || (<span class="built_in">strcmp</span>(pos+<span class="number">1</span>,<span class="string">&quot;..&quot;</span>) == <span class="number">0</span>))</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int64_t</span> <span class="title">mydu</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *path)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">glob_t</span> globres;</span><br><span class="line">    <span class="keyword">int64_t</span> sum;</span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">stat</span> <span class="title">statres</span>;</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">char</span> nextpath[PATHSIZE];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">lstat</span>(path, &amp;statres) &lt; <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">perror</span>(<span class="string">&quot;lstat()&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;<span class="comment">//exit(1);</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(!<span class="built_in">S_ISDIR</span>(statres.st_mode))</span><br><span class="line">        <span class="keyword">return</span> statres.st_blocks;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">strncpy</span>(nextpath, path,PATHSIZE);</span><br><span class="line">    <span class="built_in">strncat</span>(nextpath, <span class="string">&quot;/*&quot;</span> , PATHSIZE);</span><br><span class="line">    <span class="built_in">glob</span>(nextpath,GLOB_NOSORT, <span class="literal">NULL</span>, &amp;globres);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">strncpy</span>(nextpath, path,PATHSIZE);</span><br><span class="line">    <span class="built_in">strncat</span>(nextpath, <span class="string">&quot;/.*&quot;</span> , PATHSIZE);</span><br><span class="line">    <span class="built_in">glob</span>(nextpath,GLOB_NOSORT|GLOB_APPEND, <span class="literal">NULL</span>, &amp;globres);</span><br><span class="line"></span><br><span class="line">    sum = statres.st_blocks;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(i = <span class="number">0</span> ;i &lt; globres.gl_pathc ; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span>(<span class="built_in">path_noloop</span>(globres.gl_pathv[i]))</span><br><span class="line">            sum += <span class="built_in">mydu</span>(globres.gl_pathv[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc,<span class="keyword">char</span> **argv)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(argc &lt; <span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(stderr,<span class="string">&quot;Usage...\n&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%lld 512B blocks\n&quot;</span>, (<span class="keyword">long</span> <span class="keyword">long</span> <span class="keyword">int</span>)<span class="built_in">mydu</span>(argv[<span class="number">1</span>]));</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -g -Wall testdu.c -o testdu</span><br></pre></td></tr></table></figure>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Linux 下的任务调度分为两类：<strong>系统任务调度</strong>和<strong>用户任务调度</strong>。Linux 系统任务是由 <code>cron (crond)</code> 这个系统服务来控制的，这个系统服务是默认启动的。用户自己设置的计划任务则使用 <code>crontab</code> 命令。</p>
+<h2 id="cron-配置文件"><a href="#cron-配置文件" class="headerlink" title="cron 配置文件"></a>cron 配置文件</h2><p>在 Ubuntu/Debian 中，配置文件路径为 <code>/etc/crontab</code>（CentOS也类似），其内容为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /etc/crontab: system-wide crontab</span></span><br><span class="line"><span class="comment"># Unlike any other crontab you don&#x27;t have to run the `crontab&#x27;</span></span><br><span class="line"><span class="comment"># command to install the new version when you edit this file</span></span><br><span class="line"><span class="comment"># and files in /etc/cron.d. These files also have username fields,</span></span><br><span class="line"><span class="comment"># that none of the other crontabs do.</span></span><br><span class="line"></span><br><span class="line">SHELL=/bin/sh</span><br><span class="line">PATH=/usr/<span class="built_in">local</span>/sbin:/usr/<span class="built_in">local</span>/bin:/sbin:/bin:/usr/sbin:/usr/bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example of job definition:</span></span><br><span class="line"><span class="comment"># .---------------- minute (0 - 59)</span></span><br><span class="line"><span class="comment"># |  .------------- hour (0 - 23)</span></span><br><span class="line"><span class="comment"># |  |  .---------- day of month (1 - 31)</span></span><br><span class="line"><span class="comment"># |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...</span></span><br><span class="line"><span class="comment"># |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat</span></span><br><span class="line"><span class="comment"># |  |  |  |  |</span></span><br><span class="line"><span class="comment"># *  *  *  *  * user-name command to be executed</span></span><br><span class="line">17 *	* * *	root    <span class="built_in">cd</span> / &amp;&amp; run-parts --report /etc/cron.hourly</span><br><span class="line">25 6	* * *	root	<span class="built_in">test</span> -x /usr/sbin/anacron || ( <span class="built_in">cd</span> / &amp;&amp; run-parts --report /etc/cron.daily )</span><br><span class="line">47 6	* * 7	root	<span class="built_in">test</span> -x /usr/sbin/anacron || ( <span class="built_in">cd</span> / &amp;&amp; run-parts --report /etc/cron.weekly )</span><br><span class="line">52 6	1 * *	root	<span class="built_in">test</span> -x /usr/sbin/anacron || ( <span class="built_in">cd</span> / &amp;&amp; run-parts --report /etc/cron.monthly )</span><br><span class="line"><span class="comment">#</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h2><ul>
-<li><code>testdf</code>执行效果：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./testdu /usr/bin</span><br><span class="line">1766184 512B blocks</span><br></pre></td></tr></table></figure></li>
-<li><code>原生df</code>执行效果：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ du -sh /usr/bin</span><br><span class="line">859M	/usr/bin</span><br></pre></td></tr></table></figure></li>
+<ul>
+<li><code>SHELL</code> 环境变量用于指定系统要使用的shell，此处为<code>/bin/sh</code>。</li>
+<li><code>PATH</code> 环境变量指定了系统执行命令的路径。</li>
+<li>也可以添加<code>MAILTO</code>变量，如果指定，则表示 crond 的任务执行信息将通过电子邮件发送给指定的用户。</li>
+<li>其他部分在后文详细讲述。</li>
+</ul>
+<p>用户定期要执行的工作，比如用户数据备份、定时邮件提醒等，都可以使用 crontab 工具来定制自己的计划任务。所有<code>非root用户</code>定义的 crontab 文件都被保存在 <code>/var/spool/cron</code> 目录中，其文件名与用户名一致。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls /var/spool/cron/crontabs/admin</span><br></pre></td></tr></table></figure>
+
+<p>除此之外，还有两个文件<code>/etc/cron.deny</code>和<code>/etc/cron.allow</code>，前者中可列出不允许哪些用户使用 crontab 命令，后者中可列出允许哪些用户使用 crontab 命令。</p>
+<h2 id="crontab-文件含义"><a href="#crontab-文件含义" class="headerlink" title="crontab 文件含义"></a>crontab 文件含义</h2><p>用户所建立的crontab文件中，每一行都代表一项任务，每行的每个字段代表一项设置，它的格式共分为六个字段，前五段是时间设定段，第六段是要执行的命令段，格式如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">minute hour day month week <span class="built_in">command</span></span><br></pre></td></tr></table></figure>
+
+<p>各字段含义如下：</p>
+<ul>
+<li>minute：表示分钟，可以是从0到59之间的任何整数。</li>
+<li>hour：表示小时，可以是从0到23之间的任何整数。</li>
+<li>day：表示日期，可以是从1到31之间的任何整数。</li>
+<li>month：表示月份，可以是从1到12之间的任何整数。</li>
+<li>week：表示星期几，可以是从0到7之间的任何整数，这里的0或7代表星期日。</li>
+<li>command：要执行的命令，可以是系统命令，也可以是自己编写的脚本文件。</li>
+</ul>
+<p>在以上各个字段中，还可以使用以下特殊字符：</p>
+<ul>
+<li><code>星号(*)</code>：代表所有可能的值，例如 month 字段如果是星号，则表示在满足其它字段的制约条件后每月都执行该命令操作。</li>
+<li><code>逗号(,)</code>：可以用逗号隔开的值指定一个列表范围，例如：<code>1,2,5,7,8,9</code> 。</li>
+<li><code>中杠(-)</code>：可以用整数之间的中杠表示一个整数范围，例如：<code>2-6</code> 表示<code>2,3,4,5,6</code> 。</li>
+<li><code>正斜线(/)</code>：可以用正斜线指定时间的间隔频率，例如：<code>0-23/2</code>表示每两小时执行一次。同时正斜线可以和星号一起使用，例如：<code>*/10</code>，如果用在minute字段，表示<strong>每十分钟执行一次</strong>。</li>
+</ul>
+<h2 id="crontab命令详解"><a href="#crontab命令详解" class="headerlink" title="crontab命令详解"></a>crontab命令详解</h2><p><strong>命令格式：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">usage:	crontab [-u user] file</span><br><span class="line">	crontab [ -u user ] [ -i ] &#123; -e | -l | -r &#125;</span><br><span class="line">		(default operation is replace, per 1003.2)</span><br><span class="line">	-e	(edit user<span class="string">&#x27;s crontab)</span></span><br><span class="line"><span class="string">	-l	(list user&#x27;</span>s crontab)</span><br><span class="line">	-r	(delete user<span class="string">&#x27;s crontab)</span></span><br><span class="line"><span class="string">	-i	(prompt before deleting user&#x27;</span>s crontab)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>-u user：用于设定某个用户的crontab服务。</li>
+<li>file: file 为命令文件名，表示将 file 作为 crontab 的任务列表文件并载入 crontab ；如果在命令行中没有指定这个文件，crontab 命令将接受标准输入（键盘）上键入的命令，并将它们载入crontab 。</li>
+<li>-e：编辑某个用户的 crontab 文件内容，如不指定用户则表示当前用户。</li>
+<li>-l：显示某个用户的 crontab 文件内容，如不指定用户则表示当前用户。</li>
+<li>-r：从 /var/spool/cron 目录中删除某个用户的crontab文件，如不指定用户，则默认删除当前用户 crontab 文件。</li>
+<li>-i：在删除用户的 crontab 文件时给确认提示。</li>
+</ul>
+<h2 id="crontab-注意事项"><a href="#crontab-注意事项" class="headerlink" title="crontab 注意事项"></a>crontab 注意事项</h2><ol>
+<li>crontab有2种编辑方式：<strong>直接编辑/etc/crontab文件</strong>与<strong>crontab –e</strong>，其中<code>/etc/crontab</code>里的计划任务是<strong>系统的计划任务</strong>，而<strong>用户的计划任务</strong>需要通过<code>crontab –e</code>来编辑。</li>
+<li>每次编辑完某个用户的 cron 设置后，cron 自动在 /var/spool/cron 下生成一个与此用户同名的文件，此用户的 cron 信息都记录在这个文件中，<code>这个文件是不可以直接编辑的，只可以用 crontab -e 来编辑</code>。</li>
+<li>crontab 中的 command 尽量使用绝对路径，否则会经常因为路径错误导致任务无法执行。</li>
+<li>新创建的 cron job 不会马上执行，至少要等2分钟才能执行，可重启 cron 来立即执行。</li>
+<li><code>%</code> 在crontab文件中表示<code>换行</code>，因此假如脚本或命令含有<code>%</code>，需要使用<code>\%</code>来进行转义。</li>
+<li><code>crontab -e</code>的默认编辑器是 nano ，如需使用 vim，可在<code>/etc/profile</code>或<code>~/.bashrc</code>中添加 <code>export EDITOR=vi</code> 来解决。</li>
+</ol>
+<h2 id="crontab-配置示例"><a href="#crontab-配置示例" class="headerlink" title="crontab 配置示例"></a>crontab 配置示例</h2><ul>
+<li><p>每分钟执行1次 command（因cron默认每1分钟扫描一次，因此全为<code>*</code>即可）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">* * * * * <span class="built_in">command</span></span><br></pre></td></tr></table></figure></li>
+<li><p>每小时的第3和第15分钟执行 command ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">3,15 * * * * <span class="built_in">command</span></span><br></pre></td></tr></table></figure></li>
+<li><p>每天上午8-11点的第3和15分钟执行 command ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">3,15 8-11 * * * <span class="built_in">command</span></span><br></pre></td></tr></table></figure></li>
+<li><p>每隔2天的上午8-11点的第3和15分钟执行 command ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">3,15 8-11 */2 * * <span class="built_in">command</span></span><br></pre></td></tr></table></figure></li>
+<li><p>每个星期一的上午8点到11点的第3和第15分钟执行 command ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">3,15 8-11 * * 1 <span class="built_in">command</span></span><br></pre></td></tr></table></figure></li>
+<li><p>每晚的21:30分重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">30 21 * * * /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每月1、10、22日的 4:45 重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">45 4 1,10,22 * * /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每周六、周日的 1:10 重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10 1 * * 6,0 /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每天 18:00 至 23:00 之间每隔30分钟重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0,30 18-23 * * * /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每隔1小时重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">* */1 * * * /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>晚上23点到早上7点之间，每隔1小时重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">* 23-7/1 * * * /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每月的4号与每周一到周三的11点重启 smb ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0 11 4 * mon-wed /etc/init.d/smb restart</span><br></pre></td></tr></table></figure></li>
+<li><p>每小时执行<code>/etc/cron.hourly</code>目录内的脚本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0 1 * * * root run-parts /etc/cron.hourly</span><br></pre></td></tr></table></figure></li>
 </ul>
 <hr>
 <p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
@@ -461,7 +533,7 @@
     
     <li class="post-copyright-link hidden-xs">
       <strong>本文链接：</strong>
-      <a href="http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/" title="程序人生 | UNIX环境高级编程技巧之 du 指令实现" target="_blank" rel="external">http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/</a>
+      <a href="http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/" title="实用工具 | Linux定时任务crontab命令详解" target="_blank" rel="external">http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/</a>
     </li>
     
     <li class="post-copyright-license">
@@ -508,12 +580,12 @@
   <ul class="pager pull-left">
     
     <li class="prev">
-      <a href="../../../../2016/11/23/description-of-the-crontab-command/" title="实用工具 | Linux定时任务crontab命令详解"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+      <a href="../../../../2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/" title="引擎特性 | MySQL-自增列详解（1）：自增列概念及使用"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
     </li>
     
     
     <li class="next">
-      <a href="../advanced-programming-in-the-unix-environment-df/" title="程序人生 | UNIX环境高级编程技巧之 df 指令实现"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+      <a href="../../../../2014/07/10/advanced-programming-in-the-unix-environment-du/" title="程序人生 | UNIX环境高级编程技巧之 du 指令实现"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
     </li>
     
     
