@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/</loc>
+    
+    <lastmod>2021-09-06</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/</loc>
     
     <lastmod>2021-09-06</lastmod>

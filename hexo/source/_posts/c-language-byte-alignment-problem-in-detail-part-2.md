@@ -14,7 +14,6 @@ toc: true
 
 <!-- more -->
 
-[TOC]
 
 # 6. 附录
 

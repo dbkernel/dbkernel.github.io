@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>程序人生 | 我的《C陷阱与缺陷》读书笔记 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="第一章 词法“陷阱”1. &#x3D;不同于&#x3D;&#x3D;12if(x &#x3D; y)         break; 实际上是将y赋给x，再检查x是否为0。 如果真的是这样预期，那么应该改为： 12if((x &#x3D; y) !&#x3D; 0)         break;  2. &amp;和| 不同于 &amp;&amp; 和 ||3. 词法分析中的“贪心法”编译器将程序分解成符号的方法是：从左到有一个一个字符的读入，如果该">
+<meta property="og:type" content="article">
+<meta property="og:title" content="程序人生 | 我的《C陷阱与缺陷》读书笔记">
+<meta property="og:url" content="http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="第一章 词法“陷阱”1. &#x3D;不同于&#x3D;&#x3D;12if(x &#x3D; y)         break; 实际上是将y赋给x，再检查x是否为0。 如果真的是这样预期，那么应该改为： 12if((x &#x3D; y) !&#x3D; 0)         break;  2. &amp;和| 不同于 &amp;&amp; 和 ||3. 词法分析中的“贪心法”编译器将程序分解成符号的方法是：从左到有一个一个字符的读入，如果该">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2014-08-04T09:56:55.000Z">
+<meta property="article:modified_time" content="2021-09-06T15:47:46.651Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="C语言">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a><span class="category-list-count">1</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/Linux/">Linux</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/">程序人生</a><span class="category-list-count">6</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/APUE/">APUE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/Makefile/">Makefile</a><span class="category-list-count">1</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.5px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 14px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 14px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 14px;">C语言</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13px;">Linux</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.5px;">MySQL</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.5px;">UNIX</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.5px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.5px;">字节序</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 14px;">源码分析</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.5px;">网络序</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E8%AF%8D%E6%B3%95%E2%80%9C%E9%99%B7%E9%98%B1%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">第一章 词法“陷阱”</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%8D%E5%90%8C%E4%BA%8E"><span class="toc-number">1.1.</span> <span class="toc-text">1. &#x3D;不同于&#x3D;&#x3D;</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-amp-%E5%92%8C-%E4%B8%8D%E5%90%8C%E4%BA%8E-amp-amp-%E5%92%8C"><span class="toc-number">1.2.</span> <span class="toc-text">2. &amp;和| 不同于 &amp;&amp; 和 ||</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%AD%E7%9A%84%E2%80%9C%E8%B4%AA%E5%BF%83%E6%B3%95%E2%80%9D"><span class="toc-number">1.3.</span> <span class="toc-text">3. 词法分析中的“贪心法”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%95%B4%E5%9E%8B%E5%B8%B8%E9%87%8F"><span class="toc-number">1.4.</span> <span class="toc-text">4. 整型常量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%AD%97%E7%AC%A6%E4%B8%8E%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-number">1.5.</span> <span class="toc-text">5. 字符与字符串</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%AB%A0-%E8%AF%AD%E6%B3%95%E2%80%9C%E9%99%B7%E9%98%B1%E2%80%9D"><span class="toc-number">2.</span> <span class="toc-text">第二章 语法“陷阱”</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%90%86%E8%A7%A3%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E"><span class="toc-number">2.1.</span> <span class="toc-text">1. 理解函数声明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.2.</span> <span class="toc-text">2. 运算符优先级的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%B6%E4%BB%96"><span class="toc-number">2.3.</span> <span class="toc-text">3. 其他</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E7%AB%A0-%E8%AF%AD%E4%B9%89%E2%80%9C%E9%99%B7%E9%98%B1%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">第三章 语义“陷阱”</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%8C%87%E9%92%88%E4%B8%8E%E6%95%B0%E7%BB%84"><span class="toc-number">3.1.</span> <span class="toc-text">1. 指针与数组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D"><span class="toc-number">3.2.</span> <span class="toc-text">2. 内存分配</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E7%AB%A0-%E8%BF%9E%E6%8E%A5"><span class="toc-number">4.</span> <span class="toc-text">第四章 连接</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E7%AB%A0-%E5%BA%93%E5%87%BD%E6%95%B0"><span class="toc-number">5.</span> <span class="toc-text">第五章 库函数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E7%AB%A0-%E9%A2%84%E5%A4%84%E7%90%86%E5%99%A8"><span class="toc-number">6.</span> <span class="toc-text">第六章 预处理器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%83%E7%AB%A0-%E5%8F%AF%E7%A7%BB%E6%A4%8D%E6%80%A7%E7%BC%BA%E9%99%B7"><span class="toc-number">7.</span> <span class="toc-text">第七章 可移植性缺陷</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AB%E7%AB%A0-%E6%83%AF%E7%94%A8%E4%B8%8E%E7%AD%94%E6%A1%88"><span class="toc-number">8.</span> <span class="toc-text">第八章 惯用与答案</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-c-traps-and-pitfalls-reading-notes" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      程序人生 | 我的《C陷阱与缺陷》读书笔记
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2014-08-04T09:56:55.000Z" itemprop="datePublished">2014-08-04</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/">程序人生</a>►<a class="article-category-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/C%E8%AF%AD%E8%A8%80/">C语言</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="程序人生 | 我的《C陷阱与缺陷》读书笔记">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 2.6k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 9(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+
+
+<h1 id="第一章-词法“陷阱”"><a href="#第一章-词法“陷阱”" class="headerlink" title="第一章 词法“陷阱”"></a>第一章 词法“陷阱”</h1><h2 id="1-不同于"><a href="#1-不同于" class="headerlink" title="1. =不同于=="></a>1. =不同于==</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(x = y)</span><br><span class="line">         <span class="keyword">break</span>;</span><br></pre></td></tr></table></figure>
+<p>实际上是将y赋给x，再检查x是否为0。</p>
+<p>如果真的是这样预期，那么应该改为：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>((x = y) != <span class="number">0</span>)</span><br><span class="line">         <span class="keyword">break</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-amp-和-不同于-amp-amp-和"><a href="#2-amp-和-不同于-amp-amp-和" class="headerlink" title="2. &amp;和| 不同于 &amp;&amp; 和 ||"></a>2. &amp;和| 不同于 &amp;&amp; 和 ||</h2><h2 id="3-词法分析中的“贪心法”"><a href="#3-词法分析中的“贪心法”" class="headerlink" title="3. 词法分析中的“贪心法”"></a>3. 词法分析中的“贪心法”</h2><p>编译器将程序分解成符号的方法是：从左到有一个一个字符的读入，如果该字符可能组成一个符号，那么再读入下一个字符，判断已经读入的两个字符组成的字符床是否可能是一个符号的组成部分；如果可能，继续读入下一个字符，重复上述判断，直到读入的字符组成的字符串已不再可能组成一个有意义的符号。例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">y = x<span class="comment">/*p; 会被解析为：/* 注释符号</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="4-整型常量"><a href="#4-整型常量" class="headerlink" title="4. 整型常量"></a>4. 整型常量</h2><p>010(八进制数) 不同于 10（十进制）。</p>
+<h2 id="5-字符与字符串"><a href="#5-字符与字符串" class="headerlink" title="5. 字符与字符串"></a>5. 字符与字符串</h2><p>首先是单引号与双引号的区别：</p>
+<ul>
+<li>用单引号括起来的一个字符表示一个整数（ASCII码），而双引号括起来表示一个指针。</li>
+</ul>
+<h1 id="第二章-语法“陷阱”"><a href="#第二章-语法“陷阱”" class="headerlink" title="第二章 语法“陷阱”"></a>第二章 语法“陷阱”</h1><h2 id="1-理解函数声明"><a href="#1-理解函数声明" class="headerlink" title="1. 理解函数声明"></a>1. 理解函数声明</h2><p>弄懂<code>(*(void(*)())0)();</code>  //首地址为0的函数。</p>
+<p><code>float (*h)()</code>: h是一个指向返回值为浮点型的函数的指针</p>
+<p>所以，<code>(float (*)())</code> 表示一个“指向返回值为浮点型的函数的指针”的类型转换符。</p>
+<p><code>fp()</code>: 是<code>(*fp)( )</code>的简写。</p>
+<p><code>*fp()</code>: 是 <code>*( (*fp) ( ) )</code>的简写。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">( *<span class="number">0</span> )( );</span><br></pre></td></tr></table></figure>
+
+<p>虽然上式编译器不认，但可以把0转换为指向“返回值为void的”函数的指针，所以0可变为： <code>( void(*) ( ) ) 0</code> ，代入<code>(*0)()</code>，得到：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(*( <span class="built_in"><span class="keyword">void</span></span>(*) ( ) ) <span class="number">0</span>) ( )</span><br></pre></td></tr></table></figure>
+
+<p>该式子用等价于：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span>  <span class="params">( *func )</span> <span class="params">( )</span></span>;</span><br><span class="line">( *( func ) <span class="number">0</span> ) ( );</span><br></pre></td></tr></table></figure>
+
+<p>类似的，signal.h中对signal函数的声明：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*<span class="keyword">sighandler_t</span>)</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">sighandler_t</span> <span class="title">signal</span><span class="params">(<span class="keyword">int</span> signum, <span class="keyword">sighandler_t</span> handler)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-运算符优先级的问题"><a href="#2-运算符优先级的问题" class="headerlink" title="2. 运算符优先级的问题"></a>2. 运算符优先级的问题</h2><table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>运算符</th>
+<th>名称或含义</th>
+<th>使用形式</th>
+<th>结合方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>[]</td>
+<td>数组下标</td>
+<td>数组名[常量表达式]</td>
+<td>左到右</td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>()</td>
+<td>圆括号</td>
+<td>(表达式) 函数名(形参表)</td>
+<td>左到右</td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>.</td>
+<td>成员选择（对象）</td>
+<td>对象.成员名</td>
+<td>左到右</td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>-&gt;</td>
+<td>成员选择（指针）</td>
+<td>对象指针-&gt;成员名</td>
+<td>左到右</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>-</td>
+<td>负号运算符</td>
+<td>-表达式</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>(类型)</td>
+<td>强制类型转换</td>
+<td>(数据类型)表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>++</td>
+<td>自增运算符</td>
+<td>++变量名 变量名++</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>–</td>
+<td>自减运算符</td>
+<td>–变量名 变量名–</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>*</td>
+<td>取值运算符</td>
+<td>*指针变量</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>&amp;</td>
+<td>取地址运算符</td>
+<td>&amp;变量名</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>!</td>
+<td>逻辑非运算符</td>
+<td>!表达式</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>~</td>
+<td>按位取反运算符</td>
+<td>~表达式</td>
+<td>右到左</td>
+<td>单目运算符</td>
+</tr>
+<tr>
+<td>2</td>
+<td>sizeof</td>
+<td>长度运算符</td>
+<td>sizeof(表达式)</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>/</td>
+<td>除</td>
+<td>表达式 / 表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>3</td>
+<td>*</td>
+<td>乘</td>
+<td>表达式*表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>3</td>
+<td>%</td>
+<td>余数（取模）</td>
+<td>整型表达式%整型表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>4</td>
+<td>+</td>
+<td>加</td>
+<td>表达式+表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>4</td>
+<td>-</td>
+<td>减</td>
+<td>表达式-表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>5</td>
+<td>&lt;&lt;</td>
+<td>左移</td>
+<td>变量&lt;&lt;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>5</td>
+<td>&gt;&gt;</td>
+<td>右移</td>
+<td>变量&gt;&gt;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&gt;</td>
+<td>大于</td>
+<td>表达式&gt;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&gt;=</td>
+<td>大于等于</td>
+<td>表达式&gt;=表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&lt;</td>
+<td>小于</td>
+<td>表达式&lt;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&lt;=</td>
+<td>小于等于</td>
+<td>表达式&lt;=表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>7</td>
+<td>==</td>
+<td>等于</td>
+<td>表达式==表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>7</td>
+<td>!=</td>
+<td>不等于</td>
+<td>表达式!= 表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>8</td>
+<td>&amp;</td>
+<td>按位与</td>
+<td>表达式&amp;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>9</td>
+<td>^</td>
+<td>按位异或</td>
+<td>表达式^表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>10</td>
+<td>|</td>
+<td>按位或</td>
+<td>表达式|表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>11</td>
+<td>&amp;&amp;</td>
+<td>逻辑与</td>
+<td>表达式&amp;&amp;表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>12</td>
+<td>||</td>
+<td>逻辑或</td>
+<td>表达式||表达式</td>
+<td>左到右</td>
+<td>双目运算符</td>
+</tr>
+<tr>
+<td>13</td>
+<td>?:</td>
+<td>条件运算符</td>
+<td>表达式1? 表达式2: 表达式3</td>
+<td>右到左</td>
+<td>三目运算符</td>
+</tr>
+<tr>
+<td>14</td>
+<td>=</td>
+<td>赋值运算符</td>
+<td>变量=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>/=</td>
+<td>除后赋值</td>
+<td>变量/=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>*=</td>
+<td>乘后赋值</td>
+<td>变量*=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>%=</td>
+<td>取模后赋值</td>
+<td>变量%=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>+=</td>
+<td>加后赋值</td>
+<td>变量+=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>-=</td>
+<td>减后赋值</td>
+<td>变量-=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>&lt;&lt;=</td>
+<td>左移后赋值</td>
+<td>变量&lt;&lt;=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>&gt;&gt;=</td>
+<td>右移后赋值</td>
+<td>变量&gt;&gt;=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>&amp;=</td>
+<td>按位与后赋值</td>
+<td>变量&amp;=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>^=</td>
+<td>按位异或后赋值</td>
+<td>变量^=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>|=</td>
+<td>按位或后赋值</td>
+<td>变量|=表达式</td>
+<td>右到左</td>
+<td></td>
+</tr>
+<tr>
+<td>15</td>
+<td>,</td>
+<td>逗号运算符</td>
+<td>表达式,表达式,…</td>
+<td>左到右</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="3-其他"><a href="#3-其他" class="headerlink" title="3. 其他"></a>3. 其他</h2><p>主要是别多写分号，switch别忘了break，别写空else分支。</p>
+<h1 id="第三章-语义“陷阱”"><a href="#第三章-语义“陷阱”" class="headerlink" title="第三章 语义“陷阱”"></a>第三章 语义“陷阱”</h1><h2 id="1-指针与数组"><a href="#1-指针与数组" class="headerlink" title="1. 指针与数组"></a>1. 指针与数组</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    Int p[<span class="number">4</span>];</span><br><span class="line">    Double x;</span><br><span class="line">&#125;b[<span class="number">17</span>];</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> calendar[<span class="number">12</span>][<span class="number">31</span>];</span><br><span class="line"><span class="built_in"><span class="keyword">int</span></span> (*p)[<span class="number">31</span>];</span><br><span class="line"><span class="built_in"><span class="keyword">sizeof</span></span>(calendar):<span class="number">12</span>*<span class="number">31</span>=<span class="number">372</span></span><br><span class="line"></span><br><span class="line">calendar[<span class="number">0</span>] <span class="comment">// 指向该一维数组，对应*p</span></span><br><span class="line">calendar[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line">......</span><br><span class="line">calendar[<span class="number">0</span>][<span class="number">30</span>]</span><br><span class="line">calendar[<span class="number">1</span>] <span class="comment">// 指向该一维数组，对应*(p+1)</span></span><br><span class="line">calendar[<span class="number">1</span>][<span class="number">0</span>]</span><br><span class="line">......</span><br><span class="line">calendar[<span class="number">1</span>][<span class="number">30</span>]</span><br><span class="line">......</span><br><span class="line">......</span><br><span class="line">......</span><br><span class="line">calendar[<span class="number">11</span>] <span class="comment">// 指向该一维数组，对应*(p+11)</span></span><br><span class="line">calendar[<span class="number">11</span>][<span class="number">0</span>]</span><br><span class="line">......</span><br><span class="line">calendar[<span class="number">11</span>][<span class="number">30</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-内存分配"><a href="#2-内存分配" class="headerlink" title="2. 内存分配"></a>2. 内存分配</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">free</span>(r);</span><br></pre></td></tr></table></figure>
+
+<p>用malloc显式分配的空间，不会再退出本函数后自动释放掉，而是会等程序员显式释放后才消失。</p>
+<p>注意检查，malloc分配的内存可能失败。</p>
+<p>C语言中会自动地将作为函数参数的数组声明转换为对应的指针声明，如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">strlen</span><span class="params">(<span class="keyword">char</span> s[ ])</span></span>&#123; &#125;等价于<span class="function"><span class="keyword">int</span> <span class="title">strlen</span><span class="params">(<span class="keyword">char</span> *s)</span></span>&#123; &#125;</span><br><span class="line">但在其他情形下不会自动转换，也就是说不等价，如：</span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">char</span> hello[ ];和<span class="keyword">extern</span> <span class="keyword">char</span> *hello;完全不同。</span><br></pre></td></tr></table></figure>
+
+<p><strong>边界计算</strong><br>自己实现一个memcpy函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">memcpy</span><span class="params">(<span class="keyword">char</span> *dest, <span class="keyword">const</span> <span class="keyword">char</span> *source, <span class="keyword">int</span> k)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>( --k &gt;= <span class="number">0</span> )</span><br><span class="line">        *dest++ = *source++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重点是：操作时一定要知道操作数据的长度。</p>
+<p><strong>整数溢出</strong></p>
+<ul>
+<li>两个有符号整数相加会发生溢出。</li>
+<li>两个无符号整数相加不会发生溢出。</li>
+<li>一个有符号和一个无符号整数相加，因为有符号被自动转换成无符号，所以也不会溢出。</li>
+</ul>
+<h1 id="第四章-连接"><a href="#第四章-连接" class="headerlink" title="第四章 连接"></a>第四章 连接</h1><p>编译器一般每次只处理一个文件。编译器的责任是把C源程序翻译成对连接器有意义的形式。</p>
+<p>许多系统中的连接器是独立于C语言实现的，因此如果链接时候错误原因是与C语言相关的，连接器无法判断错误原因。但连接器能够理解机器语言和内存布局。</p>
+<p>典型的连接器把由汇编器或编译器生成的若干个目标模块，整合成一个被称为载入模块或可执行文件的实体。</p>
+<p>连接器通常把目标模块看成是由一组外部对象组成的。每个外部对象代表着机器内存中的某个部分，并通过一个外部名称来识别。因此，程序中的每个函数和每个外部变量，如果没有被声明为static，就都是一个外部对象。static的不会与其它源程序文件中的同名函数或同名变量发生冲突。对于非satatic的函数或变量的名称冲突的解决办法将在后面讨论。</p>
+<p><strong>除了外部对象外，目标模块中还可能包括了对其他模块中的外部对象的引用，当连接器读入一个目标模块时，它必须解析出这些引用，并作出标记说明这些外部对象不再是未定义的。</strong></p>
+<p>连接器的输入是一组目标模块文件和库文件。输出是一个载入模块。</p>
+<p><strong>避免外部变量的函数的冲突和不一致等问题的办法：</strong></p>
+<blockquote>
+<p><code>每个外部对象只在一个头文件里声明，需要用到该外部对象的所有模块都应该包括这个头文件。</code></p>
+<p><code>定义该外部对象的模块也应该包括这个头文件。</code></p>
+</blockquote>
+<h1 id="第五章-库函数"><a href="#第五章-库函数" class="headerlink" title="第五章 库函数"></a>第五章 库函数</h1><p>没什么好说的，就是apue的一些函数而已。</p>
+<h1 id="第六章-预处理器"><a href="#第六章-预处理器" class="headerlink" title="第六章 预处理器"></a>第六章 预处理器</h1><p>宏定义：主要是理解<strong>宏不是函数，而是直接替换</strong>。</p>
+<ol>
+<li>不能忽视宏定义中的空格：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> f (x) ( (x)-1 )：因为f后面多了一个空格，所以f(x)代表(x) ( (x)-1 )</span></span><br></pre></td></tr></table></figure></li>
+<li>宏并不是函数，所以注意那些括号：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> abs(x) ( ( (x) &gt;= 0)?(x):-(x) )</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> max(a,b) ( (a)&gt;(b)?(a):(b) )</span></span><br></pre></td></tr></table></figure></li>
+<li>宏并不是语句：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> assert(e) <span class="meta-keyword">if</span> (!e) assert_error(__FILE__, __LINE__)</span></span><br></pre></td></tr></table></figure></li>
+<li>宏不是类型定义</li>
+</ol>
+<ul>
+<li>错误用法：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> int_8_ int*</span></span><br><span class="line">        int_8 a,b; <span class="comment">//则a是指针，b是int型</span></span><br></pre></td></tr></table></figure></li>
+<li>正确用法：应该用typedef<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> * int_8_;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1 id="第七章-可移植性缺陷"><a href="#第七章-可移植性缺陷" class="headerlink" title="第七章 可移植性缺陷"></a>第七章 可移植性缺陷</h1><p>主要是：</p>
+<ol>
+<li>应对C语言标准的变更；</li>
+<li>标识符名称的限制；</li>
+<li>整数的大小；</li>
+<li>字符是有符号整数还是无符号整数；</li>
+<li>移位运算符；<ol>
+<li>在向右移位时，空出的位是由0填充还是1，还是由符号位的副本填充？如果被移位对象是无符号数，那么由0填充；如果是有符号数，那么是0或符号位的副本。</li>
+<li>移位操作的位数允许的取值范围是什么？如果被移位对象的长度是n位，那么移位计数必须大于或等于0，而严格小于n。</li>
+</ol>
+</li>
+<li>移植性需考虑的地方：<ol>
+<li>机器的字符表不同。</li>
+<li>有的机器是one’s complement，有的机器是two’s complement的。基于2的补码的计算机，所允许表示的附属取值范围要大于正数取值范围，所以有时取负值的运算会导致溢出。</li>
+<li>各机器对取模运算的定义不同。</li>
+</ol>
+</li>
+</ol>
+<h1 id="第八章-惯用与答案"><a href="#第八章-惯用与答案" class="headerlink" title="第八章 惯用与答案"></a>第八章 惯用与答案</h1><p>将惯用的<code>c == &#39;\t&#39;</code>写作<code>&#39;\t&#39; == c</code>。</p>
+<p>一旦写错成=号，编译器就能检查出来。</p>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/" title="程序人生 | 我的《C陷阱与缺陷》读书笔记" target="_blank" rel="external">http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../../2016/11/23/description-of-the-crontab-command/" title="实用工具 | Linux定时任务crontab命令详解"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../07/21/c-language-byte-alignment-problem-in-detail-part-2/" title="程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
