@@ -19,25 +19,24 @@
   <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
   
   
-  <title>引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="一、前言从接触MySQL开始断断续续的看过一些文章，对count()操作众说纷纭，其中分歧点主要在于count(1)和count(*)哪个效率高，有说count(1)比count(*)快的（这种说法更普遍），有说二者一样快的。个人理解这两种行为可能适用于的是不同的版本，我只关心较新的MySQL版本是什么行为，详见下文。 二、含义首先，先说明一下常见count()操作及含义：  count(*)：计">
+  <title>系统运维 | Ubuntu下安装配置samba服务的详细过程 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="1. Samba作用Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。 当然，也可用于VMWare虚拟机与宿主机之间的资源共享。 2. 安装我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两句命令，就可以安装Samba的软件包 12sudo">
 <meta property="og:type" content="article">
-<meta property="og:title" content="引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别">
-<meta property="og:url" content="http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/index.html">
+<meta property="og:title" content="系统运维 | Ubuntu下安装配置samba服务的详细过程">
+<meta property="og:url" content="http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="一、前言从接触MySQL开始断断续续的看过一些文章，对count()操作众说纷纭，其中分歧点主要在于count(1)和count(*)哪个效率高，有说count(1)比count(*)快的（这种说法更普遍），有说二者一样快的。个人理解这两种行为可能适用于的是不同的版本，我只关心较新的MySQL版本是什么行为，详见下文。 二、含义首先，先说明一下常见count()操作及含义：  count(*)：计">
+<meta property="og:description" content="1. Samba作用Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。 当然，也可用于VMWare虚拟机与宿主机之间的资源共享。 2. 安装我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两句命令，就可以安装Samba的软件包 12sudo">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
-<meta property="article:published_time" content="2020-05-06T07:55:15.000Z">
-<meta property="article:modified_time" content="2021-08-22T05:59:50.136Z">
+<meta property="article:published_time" content="2014-08-05T02:14:48.000Z">
+<meta property="article:modified_time" content="2021-09-07T04:02:22.231Z">
 <meta property="article:author" content="DBKernel">
-<meta property="article:tag" content="MySQL">
-<meta property="article:tag" content="Select">
-<meta property="article:tag" content="Count">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="系统运维">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
   <!-- Canonical links -->
-  <link rel="canonical" href="http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/index.html">
+  <link rel="canonical" href="http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/index.html">
   
     <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
   
@@ -272,7 +271,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="../../../06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
@@ -287,7 +286,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="../../../06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
@@ -302,7 +301,7 @@
                 <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
               </p>
               <p class="item-title">
-                <a href="../../../06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
@@ -317,7 +316,7 @@
                 <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
               </p>
               <p class="item-title">
-                <a href="" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
               </p>
               <p class="item-date">
                 <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
@@ -340,21 +339,21 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%90%AB%E4%B9%89"><span class="toc-number">2.</span> <span class="toc-text">二、含义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%85%B7%E4%BD%93%E5%8C%BA%E5%88%AB"><span class="toc-number">3.</span> <span class="toc-text">三、具体区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%BB%BA%E8%AE%AE"><span class="toc-number">4.</span> <span class="toc-text">四、建议</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Samba%E4%BD%9C%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">1. Samba作用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">2. 安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Samba%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9E%84%E6%88%90"><span class="toc-number">3.</span> <span class="toc-text">3. Samba服务的构成</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Samba%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">4.</span> <span class="toc-text">4. Samba配置文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.</span> <span class="toc-text">5. 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%AE%BE%E7%BD%AE%E5%85%B1%E4%BA%AB%E7%9B%AE%E5%BD%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. 设置共享目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. 修改配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%B7%BB%E5%8A%A0Samba%E7%94%A8%E6%88%B7"><span class="toc-number">5.3.</span> <span class="toc-text">5.3. 添加Samba用户</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-%E9%87%8D%E5%90%AF%E6%9C%8D%E5%8A%A1"><span class="toc-number">5.4.</span> <span class="toc-text">5.4. 重启服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E4%BD%BF%E7%94%A8"><span class="toc-number">5.5.</span> <span class="toc-text">5.5. 使用</span></a></li></ol></li></ol>
     </nav>
   </div>
 </aside>
 
 <main class="main" role="main">
   <div class="content">
-  <article id="post-mysql-select-count-functions-01-concepts-and-differences" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+  <article id="post-how-to-install-configure-samba-service-in-ubuntu" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
     
     <div class="article-header">
       
         
   
     <h1 class="article-title" itemprop="name">
-      引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别
+      系统运维 | Ubuntu下安装配置samba服务的详细过程
     </h1>
   
 
@@ -363,19 +362,19 @@
         <span class="article-date">
     <i class="icon icon-calendar-check"></i>
 	<a href="" class="article-date">
-	  <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+	  <time datetime="2014-08-05T02:14:48.000Z" itemprop="datePublished">2014-08-05</time>
 	</a>
 </span>
         
   <span class="article-category">
     <i class="icon icon-folder"></i>
-    <a class="article-category-link" href="../../../../categories/MySQL/">MySQL</a>
+    <a class="article-category-link" href="../../../../categories/Linux/">Linux</a>►<a class="article-category-link" href="../../../../categories/Linux/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/">系统运维</a>
   </span>
 
         
   <span class="article-tag">
     <i class="icon icon-tags"></i>
-	<a class="article-tag-link-link" href="../../../../tags/Count/" rel="tag">Count</a>, <a class="article-tag-link-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a>, <a class="article-tag-link-link" href="../../../../tags/Select/" rel="tag">Select</a>
+	<a class="article-tag-link-link" href="../../../../tags/Linux/" rel="tag">Linux</a>, <a class="article-tag-link-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a>
   </span>
 
 
@@ -390,66 +389,87 @@
 
 	<span class="article-read hidden-xs">
     	<i class="icon icon-eye-fill" aria-hidden="true"></i>
-    	<span id="" class="leancloud_visitors"  data-flag-title="引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别">0</span>
+    	<span id="" class="leancloud_visitors"  data-flag-title="系统运维 | Ubuntu下安装配置samba服务的详细过程">0</span>
     </span>
 
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1.4k(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 847(字)</span>
 	
 	
-		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 6(分)</span>
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 3(分)</span>
 	
 
       </div>
     </div>
     <div class="article-entry marked-body" itemprop="articleBody">
       
-        <h3 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h3><p>从接触MySQL开始断断续续的看过一些文章，对<code>count()</code>操作众说纷纭，其中分歧点主要在于<code>count(1)</code>和<code>count(*)</code>哪个效率高，有说<code>count(1)</code>比<code>count(*)</code>快的（<code>这种说法更普遍</code>），有说二者一样快的。个人理解这两种行为可能适用于的是不同的版本，我只关心较新的MySQL版本是什么行为，详见下文。</p>
-<h3 id="二、含义"><a href="#二、含义" class="headerlink" title="二、含义"></a>二、含义</h3><p>首先，先说明一下常见<code>count()</code>操作及含义：</p>
+        <span id="more"></span>
+
+
+
+<h1 id="1-Samba作用"><a href="#1-Samba作用" class="headerlink" title="1. Samba作用"></a>1. Samba作用</h1><p>Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。</p>
+<p>当然，也可用于VMWare虚拟机与宿主机之间的资源共享。</p>
+<h1 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h1><p>我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两句命令，就可以安装Samba的软件包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install smaba</span><br><span class="line">sudo apt-get install smbfs</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-Samba服务的构成"><a href="#3-Samba服务的构成" class="headerlink" title="3. Samba服务的构成"></a>3. Samba服务的构成</h1><p>Samba的核心是两个守护进程<code>smbd</code>和<code>nmbd</code> 。它们的配置信息都保存在<code>/etc/samba/smb.conf</code>里面。</p>
+<p>其中<code>smbd</code>处理Samba软件与Linux协商，<code>nmbd</code>使其他主机能浏览Linux服务器。</p>
+<h1 id="4-Samba配置文件"><a href="#4-Samba配置文件" class="headerlink" title="4. Samba配置文件"></a>4. Samba配置文件</h1><p>配置文件为<code>/etc/samba/smb.conf</code>，如果担心改了之后有问题，可以先备份一下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo cp /etc/samba/smb.conf /etc/samba/smb_conf_backup</span><br></pre></td></tr></table></figure>
+
+<p><strong>一个完整的Samba配置文件包含两部分：</strong></p>
+<ul>
+<li><p>Samba Global Settings 全局参数设置</p>
 <blockquote>
-<p><code>count(*)</code>：计算包括NULL值在内的行数，SQL92定义的标准统计行数的语法。</p>
-<p><code>count(1)</code>：计算包括NULL值在内的行数，其中的1是恒真表达式。</p>
-<p><code>count(列名)</code>：计算指定列的行数，但不包含NULL值。</p>
+<p>该部分由<code>[global]段</code>来完成配置，主要是设置整体的规则。其中参数<code>workgroup</code>比较特殊，用于提供<code>NT域名或者工作组名</code>，需要根据实际情况修改：</p>
 </blockquote>
-<h3 id="三、具体区别"><a href="#三、具体区别" class="headerlink" title="三、具体区别"></a>三、具体区别</h3><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.7/en/group-by-functions.html#function_count">MySQL手册</a>中相关描述如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">workgroup=mygroup</span><br></pre></td></tr></table></figure></li>
+<li><p>Share Definitions 共享定义</p>
 <blockquote>
-<p>For transactional storage engines such as InnoDB, storing an exact row count is problematic. Multiple transactions may be occurring at the same time, each of which may affect the count.</p>
-<p>InnoDB does not keep an internal count of rows in a table because concurrent transactions might “see” different numbers of rows at the same time. Consequently, <code>SELECT COUNT(*)</code> statements only count rows visible to the current transaction.</p>
-<p>Prior to <code>MySQL 5.7.18</code>, InnoDB processes <code>SELECT COUNT(*)</code> statements by scanning the clustered index. As of <code>MySQL 5.7.18</code>, InnoDB processes <code>SELECT COUNT(*)</code> statements by traversing the smallest available secondary index unless an index or optimizer hint directs the optimizer to use a different index. If a secondary index is not present, the clustered index is scanned.</p>
-<p>Processing <code>SELECT COUNT(*)</code> statements takes some time if index records are not entirely in the buffer pool. For a faster count, create a counter table and let your application update it according to the inserts and deletes it does. However, this method may not scale well in situations where thousands of concurrent transactions are initiating updates to the same counter table. If an approximate row count is sufficient, use <code>SHOW TABLE STATUS</code>.</p>
-<p>InnoDB handles <code>SELECT COUNT(*)</code> and <code>SELECT COUNT(1)</code> operations in the same way. There is no performance difference.</p>
-<p>For <code>MyISAM</code> tables, <code>COUNT(*)</code> is optimized to return very quickly if the SELECT retrieves from one table, no other columns are retrieved, and there is no WHERE clause. For example:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span>mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> student;</span><br></pre></td></tr></table></figure>
-<p>This optimization only applies to MyISAM tables, because an exact row count is stored for this storage engine and can be accessed very quickly.COUNT(1) is only subject to the same optimization if the first column is defined as NOT NULL.</p>
-</blockquote>
-<p><strong>官方这段描述要点如下：</strong></p>
-<blockquote>
-<ol>
-<li>InnoDB是事务引擎，支持MVCC，并发事务可能同时“看到”不同的行数，所以，<strong>InnoDB不保留表中的行数</strong>，<code>SELECT COUNT(*)</code>语句只计算当前事务可见的行数。</li>
-<li>在MySQL 5.7.18之前，InnoDB通过<strong>扫描聚集索引</strong>处理<code>SELECT COUNT(*)</code>语句。从MySQL 5.7.18开始，<code>InnoDB</code>通过<strong>遍历最小的可用二级索引</strong>来处理<code>SELECT COUNT(*)</code>语句，除非索引或优化器明确指示使用不同的索引。<strong>如果不存在二级索引，则扫描聚集索引</strong>。这样的设计单从 IO 的角度就节省了很多开销。</li>
-<li><strong>InnoDB以同样的方式处理<code>SELECT COUNT(*)</code>和<code>SELECT COUNT(1)</code>操作，没有性能差异。</strong> 因此，建议使用符合SQL标准的<code>count(*)</code>。</li>
-<li>对于<code>MyISAM</code>表，由于MyISAM引擎存储了精确的行数，因此，如果<code>SELECT COUNT(*)</code>语句不包含WHERE子句，则会很快返回。这个很好理解，如果带了where条件，就需要扫表了。</li>
-<li>如果索引记录不完全在缓冲池中，则处理<code>SELECT(*)</code>语句需要一些时间。为了更快的计数，您可以创建一个计数器表，并让您的应用程序按插入和删除操作更新它。然而，这种方法在同一计数器表中启动成千上万个并发事务的情况下，可能无法很好地扩展。如果一个近似的行数足够，可以使用<code>SHOW TABLE STATUS</code>查询行数。</li>
-</ol>
-</blockquote>
-<p>到这里我们明白了 <code>count(*)</code> 和 <code>count(1)</code> 本质上面其实是一样的，那么 <code>count(column)</code> 又是怎么回事呢？</p>
-<blockquote>
-<p><code>count(column)</code> 也是会遍历整张表，但是不同的是它会<strong>拿到 column 的值以后判断是否为空，然后再进行累加</strong>，那么如果<strong>针对主键需要解析内容</strong>，如果是<strong>二级索引需要再次根据主键获取内容，则要多一次 IO 操作</strong>，所以 <code>count(column)</code> 的性能肯定不如前两者，如果按照效率比较的话：*<em>count(</em>)=count(1)&gt;count(primary key)&gt;count(非主键column)**。</p>
-</blockquote>
-<h3 id="四、建议"><a href="#四、建议" class="headerlink" title="四、建议"></a>四、建议</h3><p>基于以上描述，如果要查询innodb存储引擎的表的总行数，有如下建议：</p>
-<ol>
-<li>若仅仅是想获取大概的行数，建议使用<code>show table status</code>或查询<code>information_schema.tables</code>：<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> use db6;</span><br><span class="line">Reading <span class="keyword">table</span> information <span class="keyword">for</span> completion <span class="keyword">of</span> <span class="keyword">table</span> <span class="keyword">and</span> <span class="keyword">column</span> names</span><br><span class="line">You can turn off this feature <span class="keyword">to</span> <span class="keyword">get</span> a quicker startup <span class="keyword">with</span> <span class="operator">-</span>A</span><br><span class="line"></span><br><span class="line">Database changed</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> tables;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="operator">|</span> Tables_in_db6 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="operator">|</span> t1            <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span>        <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> <span class="keyword">table</span> status\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">           Name: t1</span><br><span class="line">         Engine: InnoDB</span><br><span class="line">        Version: <span class="number">10</span></span><br><span class="line">     Row_format: <span class="keyword">Dynamic</span></span><br><span class="line">           <span class="keyword">Rows</span>: <span class="number">2</span></span><br><span class="line"> Avg_row_length: <span class="number">8192</span></span><br><span class="line">    Data_length: <span class="number">16384</span></span><br><span class="line">Max_data_length: <span class="number">0</span></span><br><span class="line">   Index_length: <span class="number">0</span></span><br><span class="line">      Data_free: <span class="number">0</span></span><br><span class="line"> Auto_increment: <span class="keyword">NULL</span></span><br><span class="line">    Create_time: <span class="number">2020</span><span class="number">-04</span><span class="number">-21</span> <span class="number">12</span>:<span class="number">00</span>:<span class="number">44</span></span><br><span class="line">    Update_time: <span class="keyword">NULL</span></span><br><span class="line">     Check_time: <span class="keyword">NULL</span></span><br><span class="line">      <span class="keyword">Collation</span>: utf8mb4_general_ci</span><br><span class="line">       Checksum: <span class="keyword">NULL</span></span><br><span class="line"> Create_options:</span><br><span class="line">        Comment:</span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> information_schema.tables <span class="keyword">where</span> table_name <span class="operator">=</span> <span class="string">&#x27;t1&#x27;</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">  TABLE_CATALOG: def</span><br><span class="line">   TABLE_SCHEMA: db6</span><br><span class="line">     TABLE_NAME: t1</span><br><span class="line">     TABLE_TYPE: BASE <span class="keyword">TABLE</span></span><br><span class="line">         ENGINE: InnoDB</span><br><span class="line">        VERSION: <span class="number">10</span></span><br><span class="line">     ROW_FORMAT: <span class="keyword">Dynamic</span></span><br><span class="line">     TABLE_ROWS: <span class="number">2</span></span><br><span class="line"> AVG_ROW_LENGTH: <span class="number">8192</span></span><br><span class="line">    DATA_LENGTH: <span class="number">16384</span></span><br><span class="line">MAX_DATA_LENGTH: <span class="number">0</span></span><br><span class="line">   INDEX_LENGTH: <span class="number">0</span></span><br><span class="line">      DATA_FREE: <span class="number">0</span></span><br><span class="line"> AUTO_INCREMENT: <span class="keyword">NULL</span></span><br><span class="line">    CREATE_TIME: <span class="number">2020</span><span class="number">-04</span><span class="number">-21</span> <span class="number">12</span>:<span class="number">00</span>:<span class="number">44</span></span><br><span class="line">    UPDATE_TIME: <span class="keyword">NULL</span></span><br><span class="line">     CHECK_TIME: <span class="keyword">NULL</span></span><br><span class="line">TABLE_COLLATION: utf8mb4_general_ci</span><br><span class="line">       CHECKSUM: <span class="keyword">NULL</span></span><br><span class="line"> CREATE_OPTIONS:</span><br><span class="line">  TABLE_COMMENT:</span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure></li>
-<li>反之，如果必须要获取准确的总行数，建议：<blockquote>
-<ol>
-<li>创建一个计数器表，并让您的应用程序按插入和删除操作更新它。</li>
-<li>若业务插入和删除相对较少，也可以考虑缓存到 redis。</li>
-</ol>
+<p>有很多段，都用<code>[]标志</code>开始的，需要根据实际情况修改。</p>
 </blockquote>
 </li>
-</ol>
-<p>篇幅有限，深入验证、源码分析将在下一篇文章中介绍。</p>
+</ul>
+<p><strong>语法说明：</strong></p>
+<ul>
+<li>每个部分有消息头和参数构成，消息头用<code>[]</code>表示，如<code>[global]</code>就是一个消息头。</li>
+<li>参数的结构形式是<code>parameter=value</code>。</li>
+<li>注释用 <code>#</code> 表示，这个和shell脚本有点像。</li>
+<li>有一些配置前面有 <code>;</code> ，这个表示这一行的配置可以更改，如需修改，则要去掉<code>;</code>，配置才可能生效。</li>
+</ul>
+<h1 id="5-示例"><a href="#5-示例" class="headerlink" title="5. 示例"></a>5. 示例</h1><h2 id="5-1-设置共享目录"><a href="#5-1-设置共享目录" class="headerlink" title="5.1. 设置共享目录"></a>5.1. 设置共享目录</h2><p>假定共享目录为<code>/home/share/samba</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo mkdir -p /home/share/samba</span><br><span class="line">sudo chmod 777 /home/share/samba</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-2-修改配置文件"><a href="#5-2-修改配置文件" class="headerlink" title="5.2. 修改配置文件"></a>5.2. 修改配置文件</h2><p>修改 global 段：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[global]</span></span><br><span class="line">    <span class="attr">workgroup</span> = WORKGROUP</span><br><span class="line">    display <span class="attr">charset</span> = UTF-<span class="number">8</span></span><br><span class="line">    unix <span class="attr">charset</span> = UTF-<span class="number">8</span></span><br><span class="line">    dos <span class="attr">charset</span> = cp936</span><br></pre></td></tr></table></figure>
+
+<p>添加Share段：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Share]</span></span><br><span class="line">    <span class="attr">comment</span> = Shared Folder with username and password</span><br><span class="line">    <span class="attr">path</span> = /home/share/samba</span><br><span class="line">    <span class="attr">public</span> = <span class="literal">yes</span></span><br><span class="line">    <span class="attr">writable</span> = <span class="literal">no</span></span><br><span class="line">    valid <span class="attr">users</span> = user</span><br><span class="line">    create <span class="attr">mask</span> = <span class="number">0300</span></span><br><span class="line">    directory <span class="attr">mask</span> = <span class="number">0300</span></span><br><span class="line">    force <span class="attr">user</span> = nobody</span><br><span class="line">    force <span class="attr">group</span> = nogroup</span><br><span class="line">    <span class="attr">available</span> = <span class="literal">yes</span></span><br><span class="line">    <span class="attr">browseable</span> = <span class="literal">yes</span></span><br></pre></td></tr></table></figure>
+
+<p>搜索到 security 配置项，修改为：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security</span> = user</span><br><span class="line">username <span class="attr">map</span> = /etc/samba/smbusers</span><br></pre></td></tr></table></figure>
+
+<p>保存并关闭配置文件。</p>
+<h2 id="5-3-添加Samba用户"><a href="#5-3-添加Samba用户" class="headerlink" title="5.3. 添加Samba用户"></a>5.3. 添加Samba用户</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo useradd user <span class="comment">#增加了一个叫做user的用户</span></span><br><span class="line">sudo smbpasswd user <span class="comment">#修改user的对samba服务的密码，系统会提示输入密码</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="5-4-重启服务"><a href="#5-4-重启服务" class="headerlink" title="5.4. 重启服务"></a>5.4. 重启服务</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /etc/init.d/samba restart</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-5-使用"><a href="#5-5-使用" class="headerlink" title="5.5. 使用"></a>5.5. 使用</h2><ul>
+<li><p>在windows系统下使用</p>
+<ul>
+<li>方法一：在IE地址栏中输入：<code>\\你的IP</code>，然后回车，可能要求你输入用户名和密码（第5.3小节设定的）。</li>
+<li>方法二：在<code>网上邻居</code>中新建<code>邻居</code>，在路径中输入: <code>\\你的IP\Share</code>，然后点击下一步完成（可能会要求输入用户名和密码）。</li>
+</ul>
+</li>
+<li><p>在Linux下访问：在终端中挂载文件系统</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo mount -t smbfs -o username=user,password=123456 //218.*.*.*/Share /mnt</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>其中，<code>-t参数</code>指示了文件系统的类型，<code>username</code>是用户名，<code>password</code>是密码，<code>218.*.*.*</code>是你的IP，<code>Share</code>是在配置文件中已经指明的段名，<code>/mnt</code>是要挂载到的文件夹。</p>
+</blockquote>
+</li>
+</ul>
 <hr>
 <p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
@@ -495,7 +515,7 @@
     
     <li class="post-copyright-link hidden-xs">
       <strong>本文链接：</strong>
-      <a href="http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" title="引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别" target="_blank" rel="external">http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/</a>
+      <a href="http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/" title="系统运维 | Ubuntu下安装配置samba服务的详细过程" target="_blank" rel="external">http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/</a>
     </li>
     
     <li class="post-copyright-license">
@@ -542,12 +562,12 @@
   <ul class="pager pull-left">
     
     <li class="prev">
-      <a href="../../../06/05/clickhouse-and-friends-01-development/" title="源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+      <a href="../../../../2016/11/23/description-of-the-crontab-command/" title="实用工具 | Linux定时任务crontab命令详解"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
     </li>
     
     
     <li class="next">
-      <a href="../../../../2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/" title="引擎特性 | MySQL-自增列详解（1）：自增列概念及使用"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+      <a href="../../04/c-traps-and-pitfalls-reading-notes/" title="程序人生 | 我的《C陷阱与缺陷》读书笔记"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
     </li>
     
     
