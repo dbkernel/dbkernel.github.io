@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>特性介绍 | Linux 内存管理机制解析 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="Linux 内存地址映射图  后文中 图：XXX 指的就是上图中对应区域。  地址映射（图：左中）inux 内核使用页式内存管理，应用程序给出的内存地址是虚拟地址，它需要经过若干级页表一级一级的变换，才变成真正的物理地址。 想一下，地址映射还是一件很恐怖的事情。当访问一个由虚拟地址表示的内存空间时，需要先经过若干次的内存访问，得到每一级页表中用于转换的页表项（页表是存放在内存里面的），才能完">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特性介绍 | Linux 内存管理机制解析">
+<meta property="og:url" content="http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="Linux 内存地址映射图  后文中 图：XXX 指的就是上图中对应区域。  地址映射（图：左中）inux 内核使用页式内存管理，应用程序给出的内存地址是虚拟地址，它需要经过若干级页表一级一级的变换，才变成真正的物理地址。 想一下，地址映射还是一件很恐怖的事情。当访问一个由虚拟地址表示的内存空间时，需要先经过若干次的内存访问，得到每一级页表中用于转换的页表项（页表是存放在内存里面的），才能完">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/linux-memory-address-map.jpg">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2014-03-12T13:27:30.000Z">
+<meta property="article:modified_time" content="2021-09-10T15:42:05.553Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="内存管理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/linux-memory-address-map.jpg">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">2</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/">系统运维</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">1</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/%E7%89%B9%E6%80%A7%E4%BB%8B%E7%BB%8D/">特性介绍</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a><span class="category-list-count">1</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/Linux/">Linux</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%BA%94%E7%94%A8%E6%A1%88%E4%BE%8B/">应用案例</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/">程序人生</a><span class="category-list-count">7</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/APUE/">APUE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/Linux/">Linux</a><span class="category-list-count">1</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/Linux/APUE/">APUE</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%A8%8B%E5%BA%8F%E4%BA%BA%E7%94%9F/Makefile/">Makefile</a><span class="category-list-count">1</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.25px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.5px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.5px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 14px;">C语言</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.25px;">MySQL</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 13.25px;">PostgreSQL</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.25px;">UNIX</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.25px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.25px;">字节序</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.5px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.25px;">网络序</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E5%BC%80%E6%BA%90/">开源</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux-%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80%E6%98%A0%E5%B0%84%E5%9B%BE"><span class="toc-number">1.</span> <span class="toc-text">Linux 内存地址映射图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9C%B0%E5%9D%80%E6%98%A0%E5%B0%84%EF%BC%88%E5%9B%BE%EF%BC%9A%E5%B7%A6%E4%B8%AD%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">地址映射（图：左中）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E7%AE%A1%E7%90%86%EF%BC%88%E5%9B%BE%EF%BC%9A%E5%B7%A6%E4%B8%8B%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">虚拟地址管理（图：左下）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%EF%BC%88%E5%9B%BE%EF%BC%9A%E5%8F%B3%E4%B8%8A%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">物理内存管理（图：右上）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E5%9C%B0%E5%9D%80%E6%98%A0%E5%B0%84"><span class="toc-number">5.</span> <span class="toc-text">建立地址映射</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E7%A9%BA%E9%97%B4%E7%AE%A1%E7%90%86%EF%BC%88%E5%9B%BE%EF%BC%9A%E5%8F%B3%E4%B8%8B%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">内核空间管理（图：右下）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A1%B5%E9%9D%A2%E6%8D%A2%E5%85%A5%E6%8D%A2%E5%87%BA%EF%BC%88%E5%9B%BE%EF%BC%9A%E5%B7%A6%E4%B8%8A-amp-%E5%9B%BE%EF%BC%9A%E5%8F%B3%E4%B8%8A%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">页面换入换出（图：左上 &amp; 图：右上）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E7%A9%BA%E9%97%B4%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="toc-number">8.</span> <span class="toc-text">用户空间内存管理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E7%9A%84%E6%A0%88"><span class="toc-number">9.</span> <span class="toc-text">用户的栈</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-linux-memory-management-parsing" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      特性介绍 | Linux 内存管理机制解析
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2014-03-12T13:27:30.000Z" itemprop="datePublished">2014-03-12</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/Linux/">Linux</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/Linux/" rel="tag">Linux</a>, <a class="article-tag-link-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="特性介绍 | Linux 内存管理机制解析">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 4.2k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 14(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+
+<h1 id="Linux-内存地址映射图"><a href="#Linux-内存地址映射图" class="headerlink" title="Linux 内存地址映射图"></a>Linux 内存地址映射图</h1><p><img src="linux-memory-address-map.jpg" alt="Linux内存地址映射图"></p>
+<blockquote>
+<p>后文中 <code>图：XXX</code> 指的就是上图中对应区域。</p>
+</blockquote>
+<h1 id="地址映射（图：左中）"><a href="#地址映射（图：左中）" class="headerlink" title="地址映射（图：左中）"></a>地址映射（图：左中）</h1><p>inux 内核使用页式内存管理，应用程序给出的内存地址是虚拟地址，它需要经过若干级页表一级一级的变换，才变成真正的物理地址。</p>
+<p>想一下，地址映射还是一件很恐怖的事情。当访问一个由虚拟地址表示的内存空间时，需要先经过若干次的内存访问，得到每一级页表中用于转换的页表项（页表是存放在内存里面的），才能完成映射。也就是说，要实现一次内存访问，实际上内存被访问了N+1次（N=页表级数），并且还需要做N次加法运算。</p>
+<p>所以，地址映射必须要有硬件支持，<code>mmu（内存管理单元）</code>就是这个硬件。并且需要有cache来保存页表，这个 cache 就是 <code>TLB</code>（Translation lookaside buffer）。</p>
+<p>尽管如此，地址映射还是有着不小的开销。假设 cache 的访存速度是内存的10倍，命中率是40%，页表有三级，那么平均一次虚拟地址访问大概就消耗了两次物理内存访问的时间。于是，一些嵌入式硬件上可能会放弃使用 mmu，这样的硬件能够运行 VxWorks（一个很高效的嵌入式实时操作系统）、linux（linux 也有禁用 mmu 的编译选项）等系统。</p>
+<p>但是使用 mmu 的优势也是很大的，最主要的是出于安全性考虑。<strong>各个进程都是相互独立的虚拟地址空间，互不干扰</strong>。而放弃地址映射之后，所有程序将运行在同一个地址空间。于是，在没有mmu的机器上，一个进程越界访存，可能引起其他进程莫名其妙的错误，甚至导致内核崩溃。</p>
+<p>在地址映射这个问题上，<strong>内核只提供页表，实际的转换是由硬件去完成的</strong>。那么内核如何生成这些页表呢？这就有两方面的内容：<strong>虚拟地址空间的管理</strong>和<strong>物理内存的管理</strong>。（实际上只有用户态的地址映射才需要管理，内核态的地址映射是写死的。）</p>
+<h1 id="虚拟地址管理（图：左下）"><a href="#虚拟地址管理（图：左下）" class="headerlink" title="虚拟地址管理（图：左下）"></a>虚拟地址管理（图：左下）</h1><p>每个进程对应一个 task 结构，它指向一个 mm 结构，这就是该进程的内存管理器。（对于线程来说，每个线程也都有一个 task 结构，但是它们都指向同一个 mm，所以<strong>同一进程中的多个线程的地址空间是共享的</strong>。）</p>
+<p><code>mm-&gt;pgd</code> 指向容纳页表的内存，<strong>每个进程有自已的 mm，每个 mm 有自己的页表</strong>。于是，进程调度时，页表被切换（一般会有一个CPU寄存器来保存页表的地址，比如X86下的CR3，页表切换就是改变该寄存器的值）。所以，<strong>各个进程的地址空间互不影响</strong>（因为页表都不一样了，当然无法访问到别人的地址空间上。但是<code>共享内存除外</code>，这是故意让不同的页表能够访问到相同的物理地址上）。</p>
+<p>用户程序对内存的操作（分配、回收、映射、等）都是对 mm 的操作，具体来说是对 <strong>mm 上的 vma（虚拟内存空间）</strong> 的操作。这些 vma 代表着进程空间的各个区域，比如堆、栈、代码区、数据区、各种映射区 等。</p>
+<p><strong>用户程序对内存的操作并不会直接影响到页表，更不会直接影响到物理内存的分配</strong>。比如 malloc 成功，仅仅是改变了某个 vma，页表不会变，物理内存的分配也不会变。</p>
+<p>假设用户分配了内存，然后访问这块内存。由于页表里面并没有记录相关的映射，CPU产生一次缺页异常。内核捕捉异常，检查产生异常的地址是不是存在于一个合法的vma中，如果不是，则给进程一个”段错误”，让其崩溃；如果是，则分配一个物理页，并为之建立映射。</p>
+<h1 id="物理内存管理（图：右上）"><a href="#物理内存管理（图：右上）" class="headerlink" title="物理内存管理（图：右上）"></a>物理内存管理（图：右上）</h1><p><code>那么物理内存是如何分配的呢？</code></p>
+<p>首先，linux 支持 NUMA (Non Uniform Memory Access)。物理内存管理的第一个层次就是介质的管理，<code>pg_data_t</code>结构就描述了介质。一般而言，我们的内存管理介质只有内存，并且它是均匀的，所以可以简单地认为系统中只有一个 pg_data_t 对象。</p>
+<p><strong>每一种介质下面有若干个zone，一般是三个：DMA、NORMAL和HIGH。</strong></p>
+<ul>
+<li><strong>DMA</strong>：因为有些硬件系统的DMA总线比系统总线窄，所以只有一部分地址空间能够用作 DMA，这部分地址被管理在 DMA 区域（这属于是高级货了）；</li>
+<li><strong>HIGH</strong>：<strong>高端内存</strong>。在32位系统中，地址空间是4G，其中内核规定 3<del>4G 的范围是<code>内核空间</code>，0</del>3G 是<code>用户空间</code>（每个用户进程都有这么大的虚拟空间）（图：中下）。前面提到过<strong>内核的地址映射是写死的</strong>，就是指这3<del>4G的对应的页表是写死的，**它映射到了物理地址的0</del>1G上**。（<code>实际上没有映射1G，只映射了896M</code>。剩下的空间留下来映射大于1G的物理地址，而这一部分显然不是写死的）。所以，大于896M的物理地址是没有写死的页表来对应的，内核不能直接访问它们（必须要建立映射），称它们为高端内存（当然，如果机器内存不足896M，就不存在高端内存。如果是64位机器，也不存在高端内存，因为地址空间很大很大，属于内核的空间也不止1G了）；</li>
+<li><strong>NORMAL</strong>：不属于 DMA 或 HIGH 的内存就叫 NORMAL 。</li>
+</ul>
+<p>在 <code>zone</code> 之上的 <strong><code>zone_list</code> 代表了分配策略，即内存分配时的 zone 优先级</strong>。一种内存分配往往不是只能在一个zone里进行分配的，比如分配一个页给内核使用时，最优先是从 NORMAL 里面分配，不行的话就分配 DMA 里面的好了（ HIGH 就不行，因为还没建立映射），这就是一种分配策略。</p>
+<p>每个内存介质维护了一个 <code>mem_map</code>，为介质中的每一个物理页面建立了一个 <code>page</code> 结构与之对应，以便管理物理内存。</p>
+<p>每个zone记录着它在 <code>mem_map</code> 上的起始位置。并且通过 <code>free_area</code> 串连着这个 zone 上空闲的 page。物理内存的分配就是从这里来的，从 <code>free_area</code> 上把 page 摘下，就算是分配了。（内核的内存分配与用户进程不同，<strong>用户使用内存会被内核监督</strong>，<code>使用不当就&quot;段错误&quot;</code>；而<strong>内核则无人监督</strong>，只能靠自觉，不是自己从 <code>free_area</code> 摘下的 page 就不要乱用。）</p>
+<h1 id="建立地址映射"><a href="#建立地址映射" class="headerlink" title="建立地址映射"></a>建立地址映射</h1><p><strong>内核需要物理内存时，很多情况是整页分配的</strong>，这在上面的 <code>mem_map</code> 中摘一个 page 下来就好了。比如前面说到的内核捕捉缺页异常，然后需要分配一个 page 以建立映射。</p>
+<p>说到这里，会有一个疑问：<code>内核在分配 page、建立地址映射的过程中，使用的是虚拟地址还是物理地址呢？</code></p>
+<p>首先，<strong>内核代码所访问的地址都是虚拟地址</strong>，因为CPU指令接收的就是虚拟地址（地址映射对于CPU指令是透明的）。但是，<strong>建立地址映射时，内核在页表里面填写的内容却是物理地址</strong>，因为地址映射的目标就是要得到物理地址。</p>
+<p>那么，内核怎么得到这个物理地址呢？其实，上面也提到了，mem_map 中的 page 就是根据物理内存来建立的，每一个 page 就对应了一个物理页。</p>
+<p>于是我们可以说，虚拟地址的映射是靠这里 page 结构来完成的，是它们给出了最终的物理地址。然而，page 结构显然是通过虚拟地址来管理的（前面已经说过，CPU指令接收的就是虚拟地址）。那么，page 结构实现了别人的虚拟地址映射，谁又来实现 page 结构自己的虚拟地址映射呢？没人能够实现。</p>
+<p>这就引出了前面提到的一个问题，内核空间的页表项是写死的。在内核初始化时，内核的地址空间就已经把地址映射写死了。page 结构显然存在于内核空间，所以它的地址映射问题已经通过“写死”解决了。</p>
+<p>由于内核空间的页表项是写死的，又引出另一个问题，<strong>NORMAL（或DMA）区域的内存可能被同时映射到内核空间和用户空间</strong>。被映射到内核空间是显然的，因为这个映射已经写死了。而这些页面也可能被映射到用户空间的，在前面提到的缺页异常的场景里面就有这样的可能。映射到用户空间的页面应该优先从 HIGH 区域获取，因为这些内存被内核访问起来很不方便，拿给用户空间再合适不过了。但是 HIGH 区域可能会耗尽，或者可能因为设备上物理内存不足导致系统里面根本就没有 HIGH 区域，所以，将 NORMAL 区域映射给用户空间是必然存在的。</p>
+<p>但是 NORMAL 区域的内存被同时映射到内核空间和用户空间并没有问题，因为如果某个页面正在被内核使用，对应的 page 应该已经从 free_area 被摘下，于是缺页异常处理代码中不会再将该页映射到用户空间。反过来也一样，被映射到用户空间的 page 自然已经从 free_area 被摘下，内核不会再去使用这个页面。</p>
+<h1 id="内核空间管理（图：右下）"><a href="#内核空间管理（图：右下）" class="headerlink" title="内核空间管理（图：右下）"></a>内核空间管理（图：右下）</h1><p>除了对内存整页的使用，有些时候，内核也需要像用户程序使用 malloc 一样，分配一块任意大小的空间。这个功能是由 <strong>slab 系统</strong>来实现的。</p>
+<p>slab 相当于为内核中常用的一些结构体对象建立了对象池，比如对应 task 结构的池、对应 mm 结构的池、等等。</p>
+<p>而 slab 也维护有通用的对象池，比如”32字节大小”的对象池、”64字节大小”的对象池、等等。内核中常用的 kmalloc 函数（类似于用户态的malloc）就是在这些通用的对象池中实现分配的。</p>
+<p>slab除了对象实际使用的内存空间外，还有其对应的控制结构。有两种组织方式：<strong>如果对象较大，则控制结构使用专门的页面来保存；如果对象较小，控制结构与对象空间使用相同的页面。</strong></p>
+<p>除了slab，linux 2.6 还引入了<code>mempool（内存池）</code>。其意图是：某些对象我们不希望它会因为内存不足而分配失败，于是我们预先分配若干个，放在 mempool 中存起来。正常情况下，分配对象时是不会去动 mempool 里面的资源的，照常通过 slab 去分配。当系统内存紧缺，已经无法通过 slab 分配内存时，才会使用 mempool 中的内容。</p>
+<h1 id="页面换入换出（图：左上-amp-图：右上）"><a href="#页面换入换出（图：左上-amp-图：右上）" class="headerlink" title="页面换入换出（图：左上 &amp; 图：右上）"></a>页面换入换出（图：左上 &amp; 图：右上）</h1><p>页面换入换出又是一个很复杂的系统。内存页面被换出到磁盘，与磁盘文件被映射到内存，是很相似的两个过程（内存页被换出到磁盘的动机，就是今后还要从磁盘将其载回内存）。所以 swap 复用了文件子系统的一些机制。</p>
+<p>页面换入换出是一件很费CPU和IO的事情，但是由于内存昂贵这一历史原因，我们只好拿磁盘来扩展内存。但是现在内存越来越便宜了，我们可以轻松安装数G的内存，然后将 swap 系统关闭。于是 swap 的实现实在让人难有探索的欲望，在这里就不赘述了。</p>
+<h1 id="用户空间内存管理"><a href="#用户空间内存管理" class="headerlink" title="用户空间内存管理"></a>用户空间内存管理</h1><p><code>malloc</code>是<code>libc</code>的库函数，用户程序一般通过它（或类似函数）来分配内存空间。</p>
+<p><code>libc</code>对内存的分配有两种途径：一是<strong>调整堆的大小</strong>，二是<strong>mmap一个新的虚拟内存区域</strong>（堆也是一个vma）。</p>
+<p><strong>在内核中，堆是一个一端固定、一端可伸缩的vma</strong>（图：左中）。可伸缩的一端通过系统调用 brk 来调整。libc 管理着堆的空间，用户调用 malloc 分配内存时，libc 尽量从现有的堆中去分配。如果堆空间不够，则通过 brk 增大堆空间。</p>
+<p>当用户将已分配的空间 free 时，libc 可能会通过 brk 减小堆空间。但是堆空间增大容易减小却难，考虑这样一种情况，用户空间连续分配了10块内存，前9块已经free。这时，未free的第10块哪怕只有1字节大，libc也不能够去减小堆的大小。因为堆只有一端可伸缩，并且中间不能掏空。而第10块内存就死死地占据着堆可伸缩的那一端，堆的大小没法减小，相关资源也没法归还内核。</p>
+<p>当用户 malloc 一块很大的内存时，libc 会通过 mmap 系统调用映射一个新的vma。因为对于堆的大小调整和空间管理还是比较麻烦的，重新建一个 vma 会更方便（上面提到的free的问题也是原因之一）。</p>
+<p><code>那么为什么不总是在 malloc 的时候去 mmap 一个新的 vma 呢？</code></p>
+<blockquote>
+<p><strong>第一，对于小空间的分配与回收，被 libc 管理的堆空间已经能够满足需要，不必每次都去进行系统调用。</strong> 并且 vma 是以 page 为单位的，最小就是分配一个页；</p>
+<p><strong>第二，太多的vma会降低系统性能</strong>。缺页异常、vma 的新建与销毁、堆空间的大小调整、等等情况下，都需要对 vma 进行操作，需要在当前进程的所有 vma 中找到需要被操作的那个（或那些）vma。vma 数目太多，必然导致性能下降。（<strong>在进程的 vma 较少时，内核采用链表来管理 vma；vma 较多时，改用红黑树来管理。</strong>）</p>
+</blockquote>
+<h1 id="用户的栈"><a href="#用户的栈" class="headerlink" title="用户的栈"></a>用户的栈</h1><p><strong>与堆一样，栈也是一个vma</strong>（图：左中），这个vma是<strong>一端固定、一端可伸</strong>（注意，不能缩）的。这个vma比较特殊，没有类似 brk 的系统调用让这个 vma 伸展，它是自动伸展的。</p>
+<p>当用户访问的虚拟地址越过这个 vma 时，内核会在处理缺页异常的时候将自动将这个 vma增大。内核会检查当时的<strong>栈寄存器</strong>（如：ESP），<strong>访问的虚拟地址不能超过 ESP加n（n为CPU压栈指令一次性压栈的最大字节数）</strong>。也就是说，<strong>内核是以ESP为基准来检查访问是否越界。</strong></p>
+<p>但是，<code>ESP的值是可以由用户态程序自由读写的，用户程序如果调整ESP，将栈划得很大很大怎么办呢？</code> <strong>内核中有一套关于进程限制的配置，其中就有栈大小的配置，栈只能这么大，再大就出错。</strong></p>
+<p>对于一个进程来说，栈一般是可以被伸展得比较大（如：8MB）。然而对于线程呢？<br>首先线程的栈是怎么回事？前面说过，<strong>线程的 mm 是共享其父进程的</strong>。虽然栈是mm中的一个vma，但是线程不能与其父进程共用这个vma（两个运行实体显然不用共用一个栈）。于是，在线程创建时，线程库通过mmap新建了一个vma，以此作为线程的栈（大于一般为：2M）。</p>
+<p>可见，线程的栈在某种意义上并不是真正栈，它是一个固定的区域，并且容量很有限。</p>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/" title="特性介绍 | Linux 内存管理机制解析" target="_blank" rel="external">http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../07/10/advanced-programming-in-the-unix-environment-df/" title="程序人生 | UNIX环境高级编程技巧之 df 指令实现"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
