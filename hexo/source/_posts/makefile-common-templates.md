@@ -2,8 +2,7 @@
 title: 程序人生 | Makefile常用模板 - 静态链接库/动态链接库/可执行文件
 date: 2014-07-10 11:51:10
 categories:
-- 程序人生
-- Makefile
+- 编译调试
 tags:
 - Makefile
 toc: true

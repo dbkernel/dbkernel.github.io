@@ -3,7 +3,6 @@ title: 特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & p
 date: 2015-11-04 15:28:08
 categories:
 - PostgreSQL
-- 特性介绍
 tags:
 - PostgreSQL
 - pg_depend

@@ -3,7 +3,6 @@ title: 系统运维 | Ubuntu下安装配置samba服务的详细过程
 date: 2014-08-05 10:14:48
 categories:
 - Linux
-- 系统运维
 tags:
 - Linux
 - 系统运维

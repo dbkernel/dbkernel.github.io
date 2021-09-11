@@ -2,10 +2,10 @@
 title: 程序人生 | UNIX环境高级编程技巧之 du 指令实现
 date: 2014-07-10 10:00:41
 categories:
-- 程序人生
-- APUE
+- C语言
 tags:
 - APUE
+- C语言
 - UNIX
 - du
 toc: true

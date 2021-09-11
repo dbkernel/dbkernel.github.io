@@ -2,9 +2,7 @@
 title: 程序人生 | Linux Daemon程序设计示例
 date: 2014-08-08 17:55:32
 categories:
-- 程序人生
 - Linux
-- APUE
 tags:
 - C语言
 - Linux

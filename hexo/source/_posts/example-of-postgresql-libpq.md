@@ -2,7 +2,7 @@
 title: 应用案例 | PostgreSQL libpq 网络库接口操作数据库示例
 date: 2015-11-12 09:23:46
 categories:
-- 应用案例
+- PostgreSQL
 tags:
 - C语言
 - PostgreSQL
