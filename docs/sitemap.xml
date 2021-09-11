@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</loc>
+    
+    <lastmod>2021-09-11</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2014/07/10/makefile-common-templates/</loc>
     
     <lastmod>2021-09-11</lastmod>

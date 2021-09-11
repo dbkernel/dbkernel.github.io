@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>特性介绍 | Linux操作系统启动流程 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="总启动流程 这部分转自：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;liang-io&#x2F;p&#x2F;9651656.html  一般来说，所有的操作系统的启动流程基本就是：  总的来说，linux系统启动流程可以简单总结为以下几步：   开机BIOS自检，加载硬盘。 读取MBR,进行MBR引导。 grub引导菜单(Boot Loader)。 加载内核kernel。 启动init进程，依据initta">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特性介绍 | Linux操作系统启动流程">
+<meta property="og:url" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="总启动流程 这部分转自：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;liang-io&#x2F;p&#x2F;9651656.html  一般来说，所有的操作系统的启动流程基本就是：  总的来说，linux系统启动流程可以简单总结为以下几步：   开机BIOS自检，加载硬盘。 读取MBR,进行MBR引导。 grub引导菜单(Boot Loader)。 加载内核kernel。 启动init进程，依据initta">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-0-overview.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-1-load-kernel.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-2-start-init.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-3-run-level.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-4-initd.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-5-user-login.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-6-login-shell.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-7-non-login-shell.jpg">
+<meta property="og:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-mind-mapping.jpg">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2018-09-16T13:35:02.000Z">
+<meta property="article:modified_time" content="2021-09-11T10:22:00.562Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/linux-start-process-0-overview.jpg">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.25px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.5px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.5px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 14px;">C语言</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.25px;">MySQL</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 13.25px;">PostgreSQL</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.25px;">UNIX</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.25px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.25px;">字节序</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.5px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.25px;">网络序</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">总启动流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">详细流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%8A%A0%E8%BD%BD%E5%86%85%E6%A0%B8"><span class="toc-number">2.1.</span> <span class="toc-text">1. 加载内核</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%90%AF%E5%8A%A8%E5%88%9D%E5%A7%8B%E5%8C%96%E8%BF%9B%E7%A8%8B"><span class="toc-number">2.2.</span> <span class="toc-text">2. 启动初始化进程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%A1%AE%E5%AE%9A%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB"><span class="toc-number">2.3.</span> <span class="toc-text">3. 确定运行级别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%8A%A0%E8%BD%BD%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E7%A8%8B%E5%BA%8F"><span class="toc-number">2.4.</span> <span class="toc-text">4. 加载开机启动程序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95"><span class="toc-number">2.5.</span> <span class="toc-text">5. 用户登录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%9B%E5%85%A5-login-shell"><span class="toc-number">2.6.</span> <span class="toc-text">6. 进入 login shell</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%89%93%E5%BC%80-non-login-shell"><span class="toc-number">2.7.</span> <span class="toc-text">7. 打开 non-login shell</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E7%9A%84%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE"><span class="toc-number">3.</span> <span class="toc-text">附：启动流程的思维导图</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-process-for-starting-the-linux-os" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      特性介绍 | Linux操作系统启动流程
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2018-09-16T13:35:02.000Z" itemprop="datePublished">2018-09-16</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/Linux/">Linux</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/Linux/" rel="tag">Linux</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="特性介绍 | Linux操作系统启动流程">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 3.1k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 13(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+<h1 id="总启动流程"><a href="#总启动流程" class="headerlink" title="总启动流程"></a>总启动流程</h1><blockquote>
+<p>这部分转自：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/liang-io/p/9651656.html">https://www.cnblogs.com/liang-io/p/9651656.html</a></p>
+</blockquote>
+<p>一般来说，所有的操作系统的启动流程基本就是：</p>
+<p><img src="linux-start-process-0-overview.jpg" alt="总启动流程"></p>
+<p>总的来说，linux系统启动流程可以简单总结为以下几步：</p>
+<blockquote>
+<ol>
+<li>开机BIOS自检，加载硬盘。</li>
+<li>读取MBR,进行MBR引导。</li>
+<li>grub引导菜单(Boot Loader)。</li>
+<li>加载内核kernel。</li>
+<li>启动init进程，依据inittab文件设定运行级别</li>
+<li>init进程，执行rc.sysinit文件。</li>
+<li>启动内核模块，执行不同级别的脚本程序。</li>
+<li>执行/etc/rc.d/rc.local</li>
+<li>启动mingetty，进入系统登陆界面。</li>
+</ol>
+</blockquote>
+<p>linux系统安装时，如果要想设置开启启动项，可以：</p>
+<blockquote>
+<p>开机到BIOS提醒界面，按键F11（Dell服务器的做法）进入BIOS设置BOOT MENU，继而设置启动项：硬盘HD启动，光盘CD/DVD启动，还是U盘USB启动。</p>
+</blockquote>
+<h1 id="详细流程"><a href="#详细流程" class="headerlink" title="详细流程"></a>详细流程</h1><p>下面就linux操作系统的启动过程做一详细解析记录。</p>
+<h2 id="1-加载内核"><a href="#1-加载内核" class="headerlink" title="1. 加载内核"></a>1. 加载内核</h2><p>操作系统接管硬件以后，首先读入 /boot 目录下的内核文件。</p>
+<p><img src="linux-start-process-1-load-kernel.jpg" alt="加载内核"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@bastion-IDC ~]# ll /boot/</span><br><span class="line">total 21668</span><br><span class="line">-rw-r--r--. 1 root root   105195 Nov 22  2013 config-2.6.32-431.el6.x86_64</span><br><span class="line">drwxr-xr-x. 3 root root     1024 Aug 22 16:31 efi</span><br><span class="line">drwxr-xr-x. 2 root root     1024 Aug 22 16:32 grub</span><br><span class="line">-rw-------. 1 root root 15217153 Aug 22 16:32 initramfs-2.6.32-431.el6.x86_64.img</span><br><span class="line">drwx------. 2 root root    12288 Aug 22 16:24 lost+found</span><br><span class="line">-rw-r--r--. 1 root root   193758 Nov 22  2013 symvers-2.6.32-431.el6.x86_64.gz</span><br><span class="line">-rw-r--r--. 1 root root  2518236 Nov 22  2013 System.map-2.6.32-431.el6.x86_64</span><br><span class="line">-rwxr-xr-x. 1 root root  4128368 Nov 22  2013 vmlinuz-2.6.32-431.el6.x86_64</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-启动初始化进程"><a href="#2-启动初始化进程" class="headerlink" title="2. 启动初始化进程"></a>2. 启动初始化进程</h2><p>内核文件加载以后，就开始运行第一个程序 /sbin/init，它的作用是初始化系统环境。</p>
+<p><img src="linux-start-process-2-start-init.jpg" alt="启动初始化进程"></p>
+<p>由于init是第一个运行的程序，它的进程编号（pid）就是1。其他所有进程都从它衍生，都是它的子进程。</p>
+<h2 id="3-确定运行级别"><a href="#3-确定运行级别" class="headerlink" title="3. 确定运行级别"></a>3. 确定运行级别</h2><p>许多程序需要开机启动。它们在Windows叫做”服务”（service），在Linux就叫做”守护进程”（daemon）。</p>
+<p>init进程的一大任务，就是去运行这些开机启动的程序。但是，不同的场合需要启动不同的程序，比如用作服务器时，需要启动Apache，用作桌面就不需要。Linux允许为不同的场合，分配不同的开机启动程序，这就叫做”运行级别”（runlevel）。也就是说，启动时根据”运行级别”，确定要运行哪些程序。</p>
+<p><img src="linux-start-process-3-run-level.jpg" alt="确定运行级别"></p>
+<p>Linux预置七种init运行级别（0-6）：</p>
+<blockquote>
+<p>0：关机模式    （相当于poweroff）</p>
+<p>1：单用户模式</p>
+<p>2：无网络支持的多用户模式</p>
+<p>3：有网络支持的多用户模式（也就是文本模式，工作中最常用的模式）</p>
+<p>4：保留，未使用</p>
+<p>5：有网络支持的X-windows支持多用户模式（也就是桌面图形模式）</p>
+<p>6: 重新引导系统，即重启（相当于reboot）</p>
+</blockquote>
+<p>init进程首先读取文件 <code>/etc/inittab</code>，它是运行级别的设置文件。<br>如果打开它，可以看到第一行是这样的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@bastion-IDC ~]# cat /etc/inittab</span><br><span class="line">....</span><br><span class="line">id:3:initdefault:</span><br></pre></td></tr></table></figure>
+
+<p>initdefault的值是3，表明系统启动时的运行级别为3。如果需要指定其他级别，可以手动修改这个值。</p>
+<p><strong>那么，运行级别3有哪些程序呢，系统怎么知道每个级别应该加载哪些程序呢？</strong></p>
+<p>答案是每个运行级别在/etc目录下面，都有一个对应的子目录，指定要加载的程序。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/etc/rc0.d</span><br><span class="line">/etc/rc1.d</span><br><span class="line">/etc/rc2.d</span><br><span class="line">/etc/rc3.d</span><br><span class="line">/etc/rc4.d</span><br><span class="line">/etc/rc5.d</span><br><span class="line">/etc/rc6.d</span><br></pre></td></tr></table></figure>
+
+<p>上面目录名中的”rc”，表示<code>run command（运行程序）</code>，最后的d表示<code>directory（目录）</code>。下面让我们看看 /etc/rc3.d 目录中到底指定了哪些程序。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">[root@bastion-IDC ~]# ll /etc/rc3.d/</span><br><span class="line">total 0</span><br><span class="line">lrwxrwxrwx. 1 root root 19 Aug 22 16:30 K10saslauthd -&gt; ../init.d/saslauthd</span><br><span class="line">lrwxrwxrwx. 1 root root 18 Aug 22 16:47 K15svnserve -&gt; ../init.d/svnserve</span><br><span class="line">lrwxrwxrwx. 1 root root 15 Aug 23 16:21 K25squid -&gt; ../init.d/squid</span><br><span class="line">lrwxrwxrwx. 1 root root 19 Dec 23 13:14 K45memcached -&gt; ../init.d/memcached</span><br><span class="line">lrwxrwxrwx. 1 root root 20 Aug 22 16:30 K50netconsole -&gt; ../init.d/netconsole</span><br><span class="line">lrwxrwxrwx. 1 root root 13 Dec 21 17:45 K60nfs -&gt; ../init.d/nfs</span><br><span class="line">lrwxrwxrwx. 1 root root 20 Dec 21 17:45 K69rpcsvcgssd -&gt; ../init.d/rpcsvcgssd</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Nov 24 14:45 K75ntpdate -&gt; ../init.d/ntpdate</span><br><span class="line">lrwxrwxrwx. 1 root root 20 Aug 22 16:31 K87multipathd -&gt; ../init.d/multipathd</span><br><span class="line">lrwxrwxrwx. 1 root root 21 Aug 22 16:30 K87restorecond -&gt; ../init.d/restorecond</span><br><span class="line">lrwxrwxrwx. 1 root root 15 Aug 22 16:30 K89rdisc -&gt; ../init.d/rdisc</span><br><span class="line">lrwxrwxrwx. 1 root root 22 Aug 22 16:31 S02lvm2-monitor -&gt; ../init.d/lvm2-monitor</span><br><span class="line">lrwxrwxrwx. 1 root root 16 Aug 22 16:31 S07iscsid -&gt; ../init.d/iscsid</span><br><span class="line">lrwxrwxrwx. 1 root root 19 Aug 22 16:30 S08ip6tables -&gt; ../init.d/ip6tables</span><br><span class="line">lrwxrwxrwx. 1 root root 18 Aug 22 16:30 S08iptables -&gt; ../init.d/iptables</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Aug 22 16:30 S10network -&gt; ../init.d/network</span><br><span class="line">lrwxrwxrwx. 1 root root 16 Aug 22 16:31 S11auditd -&gt; ../init.d/auditd</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Aug 22 16:30 S12rsyslog -&gt; ../init.d/rsyslog</span><br><span class="line">lrwxrwxrwx. 1 root root 15 Dec 21 17:45 S13iscsi -&gt; ../init.d/iscsi</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Dec 21 17:45 S13rpcbind -&gt; ../init.d/rpcbind</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Dec 21 17:45 S14nfslock -&gt; ../init.d/nfslock</span><br><span class="line">lrwxrwxrwx. 1 root root 19 Aug 22 16:31 S15mdmonitor -&gt; ../init.d/mdmonitor</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Dec 21 17:45 S19rpcgssd -&gt; ../init.d/rpcgssd</span><br><span class="line">lrwxrwxrwx. 1 root root 26 Aug 22 16:31 S25blk-availability -&gt; ../init.d/blk-availability</span><br><span class="line">lrwxrwxrwx. 1 root root 15 Aug 22 16:30 S25netfs -&gt; ../init.d/netfs</span><br><span class="line">lrwxrwxrwx. 1 root root 19 Aug 22 16:30 S26udev-post -&gt; ../init.d/udev-post</span><br><span class="line">lrwxrwxrwx. 1 root root 18 Oct 25 11:49 S50onealert -&gt; ../init.d/onealert</span><br><span class="line">lrwxrwxrwx. 1 root root 14 Aug 22 16:31 S55sshd -&gt; ../init.d/sshd</span><br><span class="line">lrwxrwxrwx. 1 root root 16 Oct 26 09:47 S56xinetd -&gt; ../init.d/xinetd</span><br><span class="line">lrwxrwxrwx. 1 root root 17 Aug 22 16:30 S80postfix -&gt; ../init.d/postfix</span><br><span class="line">lrwxrwxrwx. 1 root root 15 Aug 22 16:30 S90crond -&gt; ../init.d/crond</span><br><span class="line">lrwxrwxrwx. 1 root root 11 Aug 22 16:30 S99local -&gt; ../rc.local</span><br></pre></td></tr></table></figure>
+
+<p>可以看到：</p>
+<blockquote>
+<p><code>字母S表示Start</code>，也就是启动的意思（启动脚本的运行参数为start）。</p>
+<p>如果这个位置是<code>字母K</code>，就代表<code>Kill（关闭）</code>，即<strong>如果从其他运行级别切换过来，需要关闭的程序（启动脚本的运行参数为stop）</strong>。</p>
+<p>后面的两位数字表示<code>处理顺序</code>，<strong>数字越小越早处理</strong>，所以第一个启动的程序是motd，然后是rpcbing、nfs……数字相同时，则按照程序名的字母顺序启动，所以rsyslog会先于sudo启动。</p>
+<p>这个目录里的所有文件（除了README），就是启动时要加载的程序。如果想增加或删除某些程序，不建议手动修改 /etc/rcN.d 目录，最好是用一些专门命令进行管理（参考这里和这里）。</p>
+</blockquote>
+<h2 id="4-加载开机启动程序"><a href="#4-加载开机启动程序" class="headerlink" title="4. 加载开机启动程序"></a>4. 加载开机启动程序</h2><p>前面提到，七种预设的”运行级别”各自有一个目录，存放需要开机启动的程序。不难想到，如果多个”运行级别”需要启动同一个程序，那么这个程序的启动脚本，就会在每一个目录里都有一个拷贝。这样会造成管理上的困扰：如果要修改启动脚本，岂不是每个目录都要改一遍？</p>
+<p>Linux的解决办法，就是七个 <code>/etc/rcN.d</code> 目录里列出的程序，都设为链接文件，指向另外一个目录 <code>/etc/init.d</code>，真正的启动脚本都统一放在这个目录中。init进程逐一加载开机启动程序，其实就是运行这个目录里的启动脚本。</p>
+<p><img src="linux-start-process-4-initd.jpg" alt="加载开机启动程序"></p>
+<p>下面就是链接文件真正的指向：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@bastion-IDC ~]# ls -l /etc/rc3.d</span><br><span class="line">lrwxrwxrwx. 1 root root 10 Aug 22 16:30 /etc/rc3.d -&gt; rc.d/rc3.d</span><br></pre></td></tr></table></figure>
+
+<p>这样做的另一个好处，就是如果你要手动关闭或重启某个进程，直接到目录 /etc/init.d 中寻找启动脚本即可。</p>
+<p>比如，我要重启iptables服务器，就运行下面的命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@bastion-IDC ~]# /etc/init.d/iptables restart</span><br></pre></td></tr></table></figure>
+
+<p>/etc/init.d 这个目录名最后一个字母d，是directory的意思，表示这是一个目录，用来与程序 /etc/init 区分。</p>
+<h2 id="5-用户登录"><a href="#5-用户登录" class="headerlink" title="5. 用户登录"></a>5. 用户登录</h2><p>开机启动程序加载完毕以后，就要让用户登录了。</p>
+<p><img src="linux-start-process-5-user-login.jpg" alt="用户登录"></p>
+<p>一般来说，用户的登录方式有三种：命令行登录、ssh登录、图形界面登录。这三种情况，都有自己的方式对用户进行认证。</p>
+<blockquote>
+<p>1）<strong>命令行登录</strong>：init进程调用getty程序（意为get teletype），让用户输入用户名和密码。输入完成后，再调用login程序，核对密码（Debian还会再多运行一个身份核对程序/etc/pam.d/login）。如果密码正确，就从文件 /etc/passwd 读取该用户指定的shell，然后启动这个shell。</p>
+<p>2）<strong>ssh登录</strong>：这时系统调用sshd程序（Debian还会再运行/etc/pam.d/ssh ），取代getty和login，然后启动shell。</p>
+<p>3）<strong>图形界面登录</strong>：init进程调用显示管理器，Gnome图形界面对应的显示管理器为gdm（GNOME Display Manager），然后用户输入用户名和密码。如果密码正确，就读取/etc/gdm3/Xsession，启动用户的会话。</p>
+</blockquote>
+<h2 id="6-进入-login-shell"><a href="#6-进入-login-shell" class="headerlink" title="6. 进入 login shell"></a>6. 进入 login shell</h2><p>所谓shell，简单说就是命令行界面，让用户可以直接与操作系统对话。用户登录时打开的shell，就叫做login shell。</p>
+<p><img src="linux-start-process-6-login-shell.jpg" alt="进入 login shell"></p>
+<p>Linux默认的shell是Bash，它会读入一系列的配置文件。上一步的三种情况，在这一步的处理，也存在差异。</p>
+<ol>
+<li><p><strong>命令行登录</strong>：首先读入 <code>/etc/profile</code>，这是对所有用户都有效的配置；然后依次寻找下面三个文件，这是针对当前用户的配置。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">~/.bash_profile</span><br><span class="line">~/.bash_login</span><br><span class="line">~/.profile</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>需要注意的是，<strong>这三个文件只要有一个存在，就不再读入后面的文件了</strong>。比如，要是 <code>~/.bash_profile</code> 存在，就不会再读入后面两个文件了。</p>
+</blockquote>
+</li>
+<li><p><strong>ssh登录</strong>：与第一种情况完全相同。</p>
+</li>
+<li><p><strong>图形界面登录</strong>：只加载 <code>/etc/profile</code> 和 <code>~/.profile</code>。也就是说，<code>~/.bash_profile</code> 不管有没有，都不会运行。</p>
+</li>
+</ol>
+<h2 id="7-打开-non-login-shell"><a href="#7-打开-non-login-shell" class="headerlink" title="7. 打开 non-login shell"></a>7. 打开 non-login shell</h2><p>老实说，上一步完成以后，Linux的启动过程就算结束了，用户已经可以看到命令行提示符或者图形界面了。但是，为了内容的完整，必须再介绍一下这一步。</p>
+<p>用户进入操作系统以后，常常会再手动开启一个shell。这个shell就叫做 <code>non-login shell</code>，意思是它不同于登录时出现的那个shell，不读取<code>/etc/profile</code>和<code>.profile</code>等配置文件。</p>
+<p><img src="linux-start-process-7-non-login-shell.jpg" alt="打开 non-login shell"></p>
+<p>non-login shell的重要性，不仅在于它是用户最常接触的那个shell，还在于它会读入用户自己的bash配置文件 <code>~/.bashrc</code>。大多数时候，我们对于bash的定制，都是写在这个文件里面的。</p>
+<p>你也许会问，<strong>要是不进入 non-login shell，岂不是.bashrc就不会运行了，因此bash 也就不能完成定制了？</strong></p>
+<p>事实上，Debian已经考虑到这个问题了，请打开文件 <code>~/.profile</code>，可以看到下面的代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$BASH_VERSION</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">　　<span class="keyword">if</span> [ -f <span class="string">&quot;<span class="variable">$HOME</span>/.bashrc&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">　　　　. <span class="string">&quot;<span class="variable">$HOME</span>/.bashrc&quot;</span></span><br><span class="line">　　<span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<p>上面代码先判断变量 <code>$BASH_VERSION</code> 是否有值，然后判断主目录下是否存在 .bashrc 文件，如果存在就运行该文件。</p>
+<p>第三行开头的那个点，是source命令的简写形式，表示运行某个文件，写成”source ~/.bashrc”也是可以的。</p>
+<p>因此，只要运行<code>～/.profile</code>文件，<code>～/.bashrc</code>文件就会连带运行。但是上一节的第一种情况提到过，如果存在<code>～/.bash_profile</code>文件，那么有可能不会运行<code>～/.profile</code>文件。解决这个问题很简单，把下面代码写入<code>.bash_profile</code>就行了。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> [ -f ~/.profile ]; <span class="keyword">then</span></span><br><span class="line">　　. ~/.profile</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>这样一来，不管是哪种情况，<code>.bashrc</code>都会执行，用户的设置可以放心地都写入这个文件了。</p>
+<p>Bash的设置之所以如此繁琐，是由于历史原因造成的。早期的时候，计算机运行速度很慢，载入配置文件需要很长时间，Bash的作者只好把配置文件分成了几个部分，阶段性载入。<strong>系统的通用设置放在 /etc/profile，用户个人的、需要被所有子进程继承的设置放在.profile，不需要被继承的设置放在.bashrc。</strong></p>
+<p>顺便提一下，除了Linux以外， Mac OS X 使用的shell也是Bash。但是，它只加载.bash_profile，然后在.bash_profile里面调用.bashrc。而且，不管是ssh登录，还是在图形界面里启动shell窗口，都是如此。</p>
+<h1 id="附：启动流程的思维导图"><a href="#附：启动流程的思维导图" class="headerlink" title="附：启动流程的思维导图"></a>附：启动流程的思维导图</h1><blockquote>
+<p>图片转自：<a target="_blank" rel="noopener" href="https://mm.edrawsoft.cn/template/12597">https://mm.edrawsoft.cn/template/12597</a></p>
+</blockquote>
+<p><img src="linux-start-process-mind-mapping.jpg" alt="Linux启动流程思维导图"></p>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/" title="特性介绍 | Linux操作系统启动流程" target="_blank" rel="external">http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../../2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/" title="引擎特性 | MySQL-自增列详解（1）：自增列概念及使用"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../../2016/11/23/description-of-the-crontab-command/" title="实用工具 | Linux定时任务crontab命令详解"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
