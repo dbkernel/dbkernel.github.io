@@ -1,5 +1,5 @@
 ---
-title: 实用工具 | Linux定时任务crontab命令详解
+title: 实用工具 | Linux 定时任务 crontab 命令详解
 date: 2016-11-23 10:24:45
 categories:
 - Linux
@@ -11,6 +11,7 @@ toc: true
 
 <!-- more -->
 
+>**本文首发于 2016-11-23 10:24:45**
 
 ## 概述
 

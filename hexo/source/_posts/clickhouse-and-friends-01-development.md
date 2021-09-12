@@ -12,6 +12,8 @@ toc: true
 
 <!-- more -->
 
+**本文首发于 2020-06-05 19:37:10**
+
 >《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
 >https://bohutang.me/2020/06/05/clickhouse-and-friends-development/
 >以下为正文。
@@ -145,7 +147,7 @@ ClickHouse Upstream迭代非常快，一定要多关注master分支进度，尽�
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |

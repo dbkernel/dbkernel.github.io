@@ -1,5 +1,5 @@
 ---
-title: 系统运维 | Ubuntu下安装配置samba服务的详细过程
+title: 系统运维 | Ubuntu 下安装配置samba 服务的详细过程
 date: 2014-08-05 10:14:48
 categories:
 - Linux
@@ -11,7 +11,7 @@ toc: true
 
 <!-- more -->
 
-
+>**本文首发于 2014-08-05 10:14:48**
 
 # 1. Samba作用
 

@@ -2,7 +2,105 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://dbkernel.github.io/2020/08/27/percona-xtrabackup-2.4-vs-8.0/</loc>
+    <loc>http://dbkernel.github.io/2014/01/10/advanced-programming-in-the-unix-environment-getopt/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2015/01/03/unix-getaddrinfo-function-detailed-usage/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2015/05/04/c-compiler-memory-allocation-principles/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/08/08/example-of-linux-daemon-program-design/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/07/10/makefile-common-templates/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-df/</loc>
     
     <lastmod>2021-09-12</lastmod>
     
@@ -51,7 +149,28 @@
   </url>
   
   <url>
-    <loc>http://dbkernel.github.io/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/</loc>
+    <loc>http://dbkernel.github.io/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2015/12/23/example-of-postgresql-pgbench/</loc>
     
     <lastmod>2021-09-12</lastmod>
     
@@ -65,142 +184,30 @@
   </url>
   
   <url>
-    <loc>http://dbkernel.github.io/2015/12/23/example-of-postgresql-pgbench/</loc>
+    <loc>http://dbkernel.github.io/2015/11/04/postgresql-dependency-constraint-details/</loc>
     
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2015/01/03/unix-getaddrinfo-function-detailed-usage/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/07/10/makefile-common-templates/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2021/08/19/how-to-choose-open-source-licence/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
+    <lastmod>2021-09-12</lastmod>
     
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/2015/11/12/example-of-postgresql-libpq/</loc>
     
-    <lastmod>2021-09-11</lastmod>
+    <lastmod>2021-09-12</lastmod>
     
   </url>
   
   <url>
-    <loc>http://dbkernel.github.io/2014/08/08/example-of-linux-daemon-program-design/</loc>
+    <loc>http://dbkernel.github.io/2021/08/19/how-to-choose-open-source-licence/</loc>
     
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2016/11/23/description-of-the-crontab-command/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
+    <lastmod>2021-09-12</lastmod>
     
   </url>
   
   <url>
-    <loc>http://dbkernel.github.io/2014/08/04/c-traps-and-pitfalls-reading-notes/</loc>
+    <loc>http://dbkernel.github.io/2020/08/27/percona-xtrabackup-2.4-vs-8.0/</loc>
     
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-du/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/07/10/advanced-programming-in-the-unix-environment-df/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2015/05/04/c-compiler-memory-allocation-principles/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2015/11/04/postgresql-dependency-constraint-details/</loc>
-    
-    <lastmod>2021-09-11</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2014/03/12/linux-memory-management-parsing/</loc>
-    
-    <lastmod>2021-09-10</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/</loc>
-    
-    <lastmod>2021-08-22</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/</loc>
-    
-    <lastmod>2021-08-22</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/</loc>
-    
-    <lastmod>2021-08-22</lastmod>
+    <lastmod>2021-09-12</lastmod>
     
   </url>
   
@@ -586,6 +593,13 @@
   
   <url>
     <loc>http://dbkernel.github.io/tags/Xenon/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/getopt/</loc>
     <lastmod>2021-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>

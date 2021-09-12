@@ -10,6 +10,8 @@ toc: true
 
 <!-- more -->
 
+>**本文首发于 2018-09-16 21:35:02**
+
 # 总启动流程
 
 >这部分转自：[https://www.cnblogs.com/liang-io/p/9651656.html](https://www.cnblogs.com/liang-io/p/9651656.html)

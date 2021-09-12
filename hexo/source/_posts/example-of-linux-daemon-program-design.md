@@ -1,5 +1,5 @@
 ---
-title: 程序人生 | Linux Daemon程序设计示例
+title: 程序人生 | Linux Daemon 程序设计示例
 date: 2014-08-08 17:55:32
 categories:
 - Linux
@@ -13,6 +13,7 @@ toc: true
 
 <!-- more -->
 
+>**本文首发于 2014-08-08 17:55:32**
 
 # 概念
 
