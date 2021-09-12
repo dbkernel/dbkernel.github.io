@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2020/08/27/percona-xtrabackup-2.4-vs-8.0/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/</loc>
     
     <lastmod>2021-09-12</lastmod>
@@ -551,6 +558,34 @@
   
   <url>
     <loc>http://dbkernel.github.io/tags/WAL/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/Percona/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/Xtrabackup/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/RadonDB/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/Xenon/</loc>
     <lastmod>2021-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
