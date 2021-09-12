@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2016/01/21/greenplum-primary-mirror-sync-mechanism/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2016/11/21/greenplum-parallel-query-optimization-strategy/</loc>
     
     <lastmod>2021-09-12</lastmod>
