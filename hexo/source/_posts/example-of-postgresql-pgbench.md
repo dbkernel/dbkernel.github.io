@@ -85,6 +85,33 @@ Common options:
   --version    output version information, then exit
 ```
 
+部分参数中文含义：
+```
+-c, --client=NUM
+数据库客户端数量, 可以理解为数据库会话数量(postgres进程数), 默认为1
+
+-C, --connect
+每个事务创建一个连接,由于PG使用进程模型, 可以测试频繁Kill/Create进程的性能表现
+
+-j, --jobs=NUM
+pgbench的工作线程数
+
+-T, --time=NUM
+以秒为单位的压测时长
+
+-v, --vacuum-all
+每次测试前执行vacuum命令, 避免"垃圾"空间的影响
+
+-M, --protocol=simple|extended|prepared
+提交查询命令到服务器使用的协议, simple是默认选项, prepared是类似绑定
+
+-r, --report-latencies
+报告每条命令(SQL语句)的平均延时
+
+-S, --select-only
+只执行查询语句
+```
+
 # 初始化测试数据
 
 初始化数据：

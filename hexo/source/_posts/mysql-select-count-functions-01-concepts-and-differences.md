@@ -1,5 +1,5 @@
 ---
-title: 引擎特性 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别
+title: 特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别
 date: 2020-05-06 15:55:15
 categories:
 - MySQL
@@ -146,7 +146,7 @@ TABLE_COLLATION: utf8mb4_general_ci
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |

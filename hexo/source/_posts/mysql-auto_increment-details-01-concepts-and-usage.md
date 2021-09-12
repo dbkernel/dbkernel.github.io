@@ -1,5 +1,5 @@
 ---
-title: 引擎特性 | MySQL-自增列详解（1）：自增列概念及使用
+title: 特性介绍 | MySQL-自增列详解（1）：自增列概念及使用
 date: 2019-12-09 19:37:10
 categories:
 - MySQL
@@ -163,11 +163,11 @@ mysql> show create table t1;
 
 | Type        | Storage (Bytes) | Minimum Value Signed | Minimum Value Unsigned | Maximum Value Signed | Maximum Value Unsigned |
 | ----------- | --------------- | -------------------- | ---------------------- | -------------------- | ---------------------- |
-| `TINYINT`   | 1               | -128               | 0                    | 127                | 255                  |
-| `SMALLINT`  | 2               | -32768             | 0                    | 32767              | 65535                |
-| `MEDIUMINT` | 3               | -8388608           | 0                    | 8388607            | 16777215             |
-| `INT`       | 4               | -2147483648        | 0                    | 2147483647         | 4294967295           |
-| `BIGINT`    | 8               | -2<sup>63</sup>               | 0                    | 2<sup>63</sup>-1              | 2<sup>64</sup>-1                |
+| `TINYINT`   | 1               | -128                 | 0                      | 127                  | 255                    |
+| `SMALLINT`  | 2               | -32768               | 0                      | 32767                | 65535                  |
+| `MEDIUMINT` | 3               | -8388608             | 0                      | 8388607              | 16777215               |
+| `INT`       | 4               | -2147483648          | 0                      | 2147483647           | 4294967295             |
+| `BIGINT`    | 8               | -2<sup>63</sup>      | 0                      | 2<sup>63</sup>-1     | 2<sup>64</sup>-1       |
 
 验证如下：
 
@@ -271,7 +271,7 @@ mysql> select * from t2;
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
