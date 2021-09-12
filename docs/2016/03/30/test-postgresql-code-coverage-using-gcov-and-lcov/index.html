@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="引言通常我们评判一个 test case 好坏的标准之一是代码的覆盖率，一个好的 test case 应该覆盖到所有的代码。 那么问题来了，我们怎么知道这个 test case 有没有覆盖到所有的代码呢？ 以 PostgreSQL 为例，我们看看如何检测 C 语言程序的代码覆盖率。 C 代码覆盖率测试，需要用到 gcc 的配套工具gcov，还有一个可视化工具lcov。 1. 安装依赖首先需要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率">
+<meta property="og:url" content="http://dbkernel.github.io/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="引言通常我们评判一个 test case 好坏的标准之一是代码的覆盖率，一个好的 test case 应该覆盖到所有的代码。 那么问题来了，我们怎么知道这个 test case 有没有覆盖到所有的代码呢？ 以 PostgreSQL 为例，我们看看如何检测 C 语言程序的代码覆盖率。 C 代码覆盖率测试，需要用到 gcc 的配套工具gcov，还有一个可视化工具lcov。 1. 安装依赖首先需要">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2016-03-30T07:34:34.000Z">
+<meta property="article:modified_time" content="2021-09-12T09:23:07.826Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="gcov">
+<meta property="article:tag" content="lcov">
+<meta property="article:tag" content="测试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">9</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.4px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.4px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.4px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 14px;">C语言</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.2px;">GreenPlum</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13.6px;">Linux</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.2px;">MySQL</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 13.8px;">PostgreSQL</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.2px;">UNIX</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.2px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.2px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.2px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.4px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.2px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/05/06/mysql-select-count-functions-01-concepts-and-differences/" class="title">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-05-06T07:55:15.000Z" itemprop="datePublished">2020-05-06</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="toc-number">2.</span> <span class="toc-text">1. 安装依赖</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%BC%96%E8%AF%91%E3%80%81%E5%AE%89%E8%A3%85-PG"><span class="toc-number">3.</span> <span class="toc-text">2. 编译、安装 PG</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9%E4%BB%8B%E7%BB%8D"><span class="toc-number">3.1.</span> <span class="toc-text">2.1. 编译选项介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85"><span class="toc-number">3.2.</span> <span class="toc-text">2.2. 编译安装</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%94%9F%E6%88%90-HTML-%E6%8A%A5%E5%91%8A"><span class="toc-number">4.</span> <span class="toc-text">3. 生成 HTML 报告</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9F%A5%E7%9C%8B%E6%8A%A5%E5%91%8A"><span class="toc-number">5.</span> <span class="toc-text">4. 查看报告</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%90%8E%E8%AE%B0"><span class="toc-number">6.</span> <span class="toc-text">后记</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-test-postgresql-code-coverage-using-gcov-and-lcov" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2016-03-30T07:34:34.000Z" itemprop="datePublished">2016-03-30</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a>, <a class="article-tag-link-link" href="../../../../tags/gcov/" rel="tag">gcov</a>, <a class="article-tag-link-link" href="../../../../tags/lcov/" rel="tag">lcov</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 2.7k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 15(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+
+<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>通常我们评判一个 test case 好坏的标准之一是代码的覆盖率，一个好的 test case 应该覆盖到所有的代码。</p>
+<p>那么问题来了，我们<strong>怎么知道这个 test case 有没有覆盖到所有的代码呢？</strong></p>
+<p>以 PostgreSQL 为例，我们看看如何检测 C 语言程序的代码覆盖率。</p>
+<p>C 代码覆盖率测试，需要用到 gcc 的配套工具<code>gcov</code>，还有一个可视化工具<code>lcov</code>。</p>
+<h1 id="1-安装依赖"><a href="#1-安装依赖" class="headerlink" title="1. 安装依赖"></a>1. 安装依赖</h1><p>首先需要安装依赖 gcov 和 lcov 。</p>
+<p>gcov 在 gcc 包中已经包含了，lcov 是 ltp 的一个 gcov 扩展插件，用来产生HTML报告。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install lcov</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="2-编译、安装-PG"><a href="#2-编译、安装-PG" class="headerlink" title="2. 编译、安装 PG"></a>2. 编译、安装 PG</h1><h2 id="2-1-编译选项介绍"><a href="#2-1-编译选项介绍" class="headerlink" title="2.1. 编译选项介绍"></a>2.1. 编译选项介绍</h2><p>首先介绍一下 PostgreSQL 的编译选项 <code>--enable-coverage</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--enable-coverage       build with coverage testing instrumentation</span><br></pre></td></tr></table></figure>
+
+<p>这个编译项对应gcc的两个参数：<code>-fprofile-arcs</code> 和 <code>-ftest-coverage</code>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># enable code coverage if --enable-coverage</span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">test</span> <span class="string">&quot;<span class="variable">$enable_coverage</span>&quot;</span> = yes; <span class="keyword">then</span></span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">test</span> <span class="string">&quot;<span class="variable">$GCC</span>&quot;</span> = yes; <span class="keyword">then</span></span><br><span class="line">    CFLAGS=<span class="string">&quot;<span class="variable">$CFLAGS</span> -fprofile-arcs -ftest-coverage&quot;</span></span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    as_fn_error $? <span class="string">&quot;--enable-coverage is supported only when using GCC&quot;</span> <span class="string">&quot;<span class="variable">$LINENO</span>&quot;</span> 5</span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<p>通过<code>man gcc</code>查看这两个参数的含义：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">-fprofile-arcs</span><br><span class="line">           Add code so that program flow arcs are instrumented.  During execution the program records how many times each branch and call is executed and how many times it is taken or returns.  When</span><br><span class="line">           the compiled program exits it saves this data to a file called auxname.gcda for each source file.  The data may be used for profile-directed optimizations (-fbranch-probabilities), or for</span><br><span class="line">           test coverage analysis (-ftest-coverage).  Each object file&#x27;s auxname is generated from the name of the output file, if explicitly specified and it is not the final executable, otherwise</span><br><span class="line">           it is the basename of the source file.  In both cases any suffix is removed (e.g. foo.gcda for input file dir/foo.c, or dir/foo.gcda for output file specified as -o dir/foo.o).</span><br><span class="line"></span><br><span class="line">--coverage</span><br><span class="line">           This option is used to compile and link code instrumented for coverage analysis.  The option is a synonym for -fprofile-arcs -ftest-coverage (when compiling) and -lgcov (when linking).</span><br><span class="line">           See the documentation for those options for more details.</span><br><span class="line"></span><br><span class="line">           *   Compile the source files with -fprofile-arcs plus optimization and code generation options.  For test coverage analysis, use the additional -ftest-coverage option.  You do not need to</span><br><span class="line">               profile every source file in a program.</span><br><span class="line"></span><br><span class="line">           *   Link your object files with -lgcov or -fprofile-arcs (the latter implies the former).</span><br><span class="line"></span><br><span class="line">           *   Run the program on a representative workload to generate the arc profile information.  This may be repeated any number of times.  You can run concurrent instances of your program, and</span><br><span class="line">               provided that the file system supports locking, the data files will be correctly updated.  Also &quot;fork&quot; calls are detected and correctly handled (double counting will not happen).</span><br><span class="line"></span><br><span class="line">           *   For profile-directed optimizations, compile the source files again with the same optimization and code generation options plus -fbranch-probabilities.</span><br><span class="line"></span><br><span class="line">           *   For test coverage analysis, use gcov to produce human readable information from the .gcno and .gcda files.  Refer to the gcov documentation for further information.</span><br><span class="line"></span><br><span class="line">           With -fprofile-arcs, for each function of your program GCC creates a program flow graph, then finds a spanning tree for the graph.  Only arcs that are not on the spanning tree have to be</span><br><span class="line">           instrumented: the compiler adds code to count the number of times that these arcs are executed.  When an arc is the only exit or only entrance to a block, the instrumentation code can be</span><br><span class="line">           added to the block; otherwise, a new basic block must be created to hold the instrumentation code.</span><br><span class="line"></span><br><span class="line">-ftest-coverage</span><br><span class="line">           Produce a notes file that the gcov code-coverage utility can use to show program coverage.  Each source file&#x27;s note file is called auxname.gcno.  Refer to the -fprofile-arcs option above</span><br><span class="line">           for a description of auxname and instructions on how to generate test coverage data.  Coverage data matches the source files more closely if you do not optimize.</span><br></pre></td></tr></table></figure>
+
+<p><strong>-fprofile-arcs</strong>：</p>
+<blockquote>
+<p><code>-fprofile-arcs</code> 用于产生 .c 文件对应的 .gcda 文件，.gcda 文件可以被用于 profile 驱动的优化，或者结合 gcov 来做代码覆盖分析。</p>
+<p>编译时尽量不要使用 -O 优化，这样代码覆盖数据 .gcda 才能尽可能和代码接近。</p>
+<p>当代码被调用时，.gcda 文件中对应的计数器会被修改，记录代码被调用的次数。</p>
+</blockquote>
+<p><strong>-ftest-coverage</strong>：</p>
+<blockquote>
+<p><code>-ftest-coverage</code> 这个选项用于产生 .c 文件的 .gcno 文件。这个文件生成后不会被修改。结合 .gcda，可以分析测试代码覆盖率。</p>
+</blockquote>
+<h2 id="2-2-编译安装"><a href="#2-2-编译安装" class="headerlink" title="2.2. 编译安装"></a>2.2. 编译安装</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./configure --prefix=/opt/pgsql9.4.4 --with-pgport=1921 --with-perl --with-python --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --enable-thread-safety --enable-debug --enable-dtrace --enable-coverage</span><br><span class="line"></span><br><span class="line">gmake world &amp;&amp; gmake install-world</span><br></pre></td></tr></table></figure>
+
+<p>安装好后，我们会发现在源码目录中多了一些.gcda和.gcno的文件，每个.c文件都会对应这两个文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">postgres@wslu-&gt; ll</span><br><span class="line">total 1.3M</span><br><span class="line">-rw-r--r-- 1 postgres postgres  22K Jun 10 03:29 gistbuildbuffers.c</span><br><span class="line">-rw------- 1 postgres postgres 1.6K Sep  7 14:42 gistbuildbuffers.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  15K Sep  7 14:38 gistbuildbuffers.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  70K Sep  7 14:38 gistbuildbuffers.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  37K Jun 10 03:29 gistbuild.c</span><br><span class="line">-rw------- 1 postgres postgres 2.2K Sep  7 14:42 gistbuild.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  20K Sep  7 14:38 gistbuild.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  92K Sep  7 14:38 gistbuild.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  43K Jun 10 03:29 gist.c</span><br><span class="line">-rw------- 1 postgres postgres 3.1K Sep  7 14:42 gist.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  29K Sep  7 14:38 gist.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  16K Jun 10 03:29 gistget.c</span><br><span class="line">-rw------- 1 postgres postgres 1.3K Sep  7 14:42 gistget.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  13K Sep  7 14:38 gistget.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  74K Sep  7 14:38 gistget.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres 101K Sep  7 14:38 gist.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  39K Jun 10 03:29 gistproc.c</span><br><span class="line">-rw------- 1 postgres postgres 3.1K Sep  7 14:42 gistproc.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  31K Sep  7 14:38 gistproc.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  79K Sep  7 14:38 gistproc.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres 9.1K Jun 10 03:29 gistscan.c</span><br><span class="line">-rw------- 1 postgres postgres  848 Sep  7 14:42 gistscan.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres 6.7K Sep  7 14:38 gistscan.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  60K Sep  7 14:38 gistscan.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  24K Jun 10 03:29 gistsplit.c</span><br><span class="line">-rw------- 1 postgres postgres 1.5K Sep  7 14:42 gistsplit.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  15K Sep  7 14:38 gistsplit.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  68K Sep  7 14:38 gistsplit.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  21K Jun 10 03:29 gistutil.c</span><br><span class="line">-rw------- 1 postgres postgres 2.2K Sep  7 14:42 gistutil.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  20K Sep  7 14:38 gistutil.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  84K Sep  7 14:38 gistutil.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres 7.1K Jun 10 03:29 gistvacuum.c</span><br><span class="line">-rw------- 1 postgres postgres  784 Sep  7 14:42 gistvacuum.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres 7.3K Sep  7 14:38 gistvacuum.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  56K Sep  7 14:38 gistvacuum.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  14K Jun 10 03:29 gistxlog.c</span><br><span class="line">-rw------- 1 postgres postgres 1.2K Sep  7 14:42 gistxlog.gcda</span><br><span class="line">-rw-r--r-- 1 postgres postgres  12K Sep  7 14:38 gistxlog.gcno</span><br><span class="line">-rw-r--r-- 1 postgres postgres  50K Sep  7 14:38 gistxlog.o</span><br><span class="line">-rw-r--r-- 1 postgres postgres  538 Jun 10 03:29 Makefile</span><br><span class="line">-rw-r--r-- 1 postgres postgres  357 Sep  7 14:38 objfiles.txt</span><br><span class="line">-rw-r--r-- 1 postgres postgres  20K Jun 10 03:29 README</span><br><span class="line"></span><br><span class="line">postgres@wslu-&gt; <span class="built_in">pwd</span></span><br><span class="line">/opt/soft_bak/postgresql-9.4.4/src/backend/access/gist</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意事项：</strong></p>
+<p>源码文件目录的权限需要改为数据库启动用户的权限，否则无法修改 .gcda 的值，也就无法获取代码被调用的次数了。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@wslu-&gt; chown -R postgres:postgres /opt/soft_bak/postgresql-9.4.4</span><br></pre></td></tr></table></figure>
+
+<p>接下来我们看看文件的变化，以 dbsize.c 中的两个获取 pg_database_size 的 C 函数为例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres@wslu-&gt; ls -la|grep dbsize</span><br><span class="line">-rw-r--r--  1 postgres postgres  19342 Jun 10 03:29 dbsize.c</span><br><span class="line">-rw-------  1 postgres postgres   2664 Sep  7 15:01 dbsize.gcda</span><br><span class="line">-rw-r--r--  1 postgres postgres  23272 Sep  7 14:38 dbsize.gcno</span><br><span class="line">-rw-r--r--  1 postgres postgres  89624 Sep  7 14:38 dbsize.o</span><br></pre></td></tr></table></figure>
+
+<p>调用一次：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">postgres@wslu-&gt; psql</span><br><span class="line">psql (9.4.4)</span><br><span class="line">Type <span class="string">&quot;help&quot;</span> <span class="keyword">for</span> <span class="built_in">help</span>.</span><br><span class="line">postgres=<span class="comment"># select pg_database_size(oid) from pg_database;</span></span><br><span class="line"> pg_database_size</span><br><span class="line">------------------</span><br><span class="line">          6898180</span><br><span class="line">          6889988</span><br><span class="line">         24742560</span><br><span class="line">          6898180</span><br><span class="line">          6898180</span><br><span class="line">          6898180</span><br><span class="line">(6 rows)</span><br><span class="line">postgres=<span class="comment"># \q</span></span><br></pre></td></tr></table></figure>
+
+<p>再次查看：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres@wslu-&gt; ls -la|grep dbsize</span><br><span class="line">-rw-r--r--  1 postgres postgres  19342 Jun 10 03:29 dbsize.c</span><br><span class="line">-rw-------  1 postgres postgres   2664 Sep  7 15:12 dbsize.gcda</span><br><span class="line">-rw-r--r--  1 postgres postgres  23272 Sep  7 14:38 dbsize.gcno</span><br><span class="line">-rw-r--r--  1 postgres postgres  89624 Sep  7 14:38 dbsize.o</span><br></pre></td></tr></table></figure>
+
+<p>dbsize.gcda 文件的修改时间发送了变化，说明刚才我们调用pg_database_size(oid) 时，调用了 dbsize.c 中的代码。对应的行计数器会发生变化。</p>
+<h1 id="3-生成-HTML-报告"><a href="#3-生成-HTML-报告" class="headerlink" title="3. 生成 HTML 报告"></a>3. 生成 HTML 报告</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir html</span><br><span class="line">$ <span class="built_in">cd</span> html</span><br><span class="line"></span><br><span class="line">$ lcov --directory /opt/soft_bak/postgresql-9.4.4 --capture --output-file ./app.info</span><br><span class="line"><span class="comment"># 如果你不需要所有的代码，修改以上目录即可，譬如只看 contrib 下面的代码覆盖率。</span></span><br><span class="line"></span><br><span class="line">$ genhtml ./app.info</span><br><span class="line">postgres@wslu-&gt; ll</span><br><span class="line">total 3.7M</span><br><span class="line">drwxrwxr-x 12 postgres postgres 4.0K Sep  7 15:02 access</span><br><span class="line">-rw-rw-r--  1 postgres postgres  141 Sep  7 15:02 amber.png</span><br><span class="line">-rw-rw-r--  1 postgres postgres 3.4M Sep  7 15:02 app.info</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 bootstrap</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 catalog</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 commands</span><br><span class="line">-rw-rw-r--  1 postgres postgres  141 Sep  7 15:02 emerald.png</span><br><span class="line">drwxrwxr-x  2 postgres postgres  12K Sep  7 15:02 executor</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 foreign</span><br><span class="line">-rw-rw-r--  1 postgres postgres 9.7K Sep  7 15:02 gcov.css</span><br><span class="line">-rw-rw-r--  1 postgres postgres  167 Sep  7 15:02 glass.png</span><br><span class="line">-rw-rw-r--  1 postgres postgres  57K Sep  7 15:02 index.html</span><br><span class="line">-rw-rw-r--  1 postgres postgres  57K Sep  7 15:02 index-sort-f.html</span><br><span class="line">-rw-rw-r--  1 postgres postgres  57K Sep  7 15:02 index-sort-l.html</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 lib</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 libpq</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 main</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 nodes</span><br><span class="line">drwxrwxr-x  3 postgres postgres 4.0K Sep  7 15:02 opt</span><br><span class="line">drwxrwxr-x  7 postgres postgres 4.0K Sep  7 15:02 optimizer</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 parser</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 port</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 postmaster</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 regex</span><br><span class="line">drwxrwxr-x  3 postgres postgres 4.0K Sep  7 15:02 replication</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 rewrite</span><br><span class="line">-rw-rw-r--  1 postgres postgres  141 Sep  7 15:02 ruby.png</span><br><span class="line">drwxrwxr-x  3 postgres postgres 4.0K Sep  7 15:02 snowball</span><br><span class="line">-rw-rw-r--  1 postgres postgres  141 Sep  7 15:02 snow.png</span><br><span class="line">drwxrwxr-x 10 postgres postgres 4.0K Sep  7 15:02 storage</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 tcop</span><br><span class="line">drwxrwxr-x  2 postgres postgres 4.0K Sep  7 15:02 tsearch</span><br><span class="line">-rw-rw-r--  1 postgres postgres  117 Sep  7 15:02 updown.png</span><br><span class="line">drwxrwxr-x  3 postgres postgres 4.0K Sep  7 15:02 usr</span><br><span class="line">drwxrwxr-x 14 postgres postgres 4.0K Sep  7 15:02 utils</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-查看报告"><a href="#4-查看报告" class="headerlink" title="4. 查看报告"></a>4. 查看报告</h1><p>浏览器中打开 <code>index.html</code> 即可查看。</p>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>PostgreSQL 其实已经在 Makefile 提供了生成代码覆盖 HTML 的 target 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@wslu postgresql-9.4.4]<span class="comment"># make coverage-html</span></span><br></pre></td></tr></table></figure>
+
+<p>产生的html目录如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@wslu postgresql-9.4.4]<span class="comment"># cd coverage</span></span><br><span class="line">[root@wslu coverage]<span class="comment"># ll</span></span><br><span class="line">total 224</span><br><span class="line">-rw-r--r--  1 root root   141 Sep  7 19:17 amber.png</span><br><span class="line">-rw-r--r--  1 root root   141 Sep  7 19:17 emerald.png</span><br><span class="line">-rw-r--r--  1 root root  9893 Sep  7 19:17 gcov.css</span><br><span class="line">-rw-r--r--  1 root root   167 Sep  7 19:17 glass.png</span><br><span class="line">-rw-r--r--  1 root root 58737 Sep  7 19:18 index.html</span><br><span class="line">-rw-r--r--  1 root root 58730 Sep  7 19:18 index-sort-f.html</span><br><span class="line">-rw-r--r--  1 root root 58730 Sep  7 19:18 index-sort-l.html</span><br><span class="line">-rw-r--r--  1 root root   141 Sep  7 19:17 ruby.png</span><br><span class="line">-rw-r--r--  1 root root   141 Sep  7 19:17 snow.png</span><br><span class="line">drwxr-xr-x 11 root root  4096 Sep  7 19:18 src</span><br><span class="line">-rw-r--r--  1 root root   117 Sep  7 19:17 updown.png</span><br><span class="line">drwxr-xr-x  3 root root  4096 Sep  7 19:18 usr</span><br></pre></td></tr></table></figure>
+
+<p>每次对代码改动后，执行完 <code>make check</code> 或其他回归测试手段后，就可以执行 <code>make coverage-html</code> 了。</p>
+<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><ol>
+<li><a target="_blank" rel="noopener" href="http://magustest.com/blog/whiteboxtesting/using-gcov-lcov/">Magus Test Archive</a></li>
+<li><a target="_blank" rel="noopener" href="http://ltp.sourceforge.net/coverage/lcov.php">lcov</a></li>
+<li><a target="_blank" rel="noopener" href="http://ltp.sourceforge.net/coverage/lcov/readme.php">lcov readme</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/linux-test-project/ltp">GitHub - linux-test-project/ltp: Linux Test Project http://linux-test-project.github.io/</a></li>
+<li><a target="_blank" rel="noopener" href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html">Gcov (Using the GNU Compiler Collection (GCC))</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.postgresql.org/wiki/CodeCoverage">CodeCoverage - PostgreSQL wiki</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.postgresql.org/docs/devel/static/regress-coverage.html">PostgreSQL: Documentation: devel: 33.5. Test Coverage Examination</a></li>
+</ol>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/" title="源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率" target="_blank" rel="external">http://dbkernel.github.io/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../11/21/greenplum-parallel-query-optimization-strategy/" title="特性分析 | GreenPlum 的并行查询优化策略详解"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../01/21/greenplum-primary-mirror-sync-mechanism/" title="特性分析 | GreenPlum Primary/Mirror 同步机制"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
