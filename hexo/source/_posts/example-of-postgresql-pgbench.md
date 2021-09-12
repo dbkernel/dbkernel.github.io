@@ -1,5 +1,5 @@
 ---
-title: 实用工具 | PostgreSQL数据库压力测试工具pgbench使用示例
+title: 实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例
 date: 2015-12-23 21:04:17
 categories:
 - PostgreSQL

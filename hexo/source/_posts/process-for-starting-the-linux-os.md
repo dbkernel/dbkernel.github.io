@@ -1,5 +1,5 @@
 ---
-title: 特性介绍 | Linux操作系统启动流程
+title: 特性介绍 | Linux 操作系统启动流程
 date: 2018-09-16 21:35:02
 categories:
 - Linux

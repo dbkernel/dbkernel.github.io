@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2015/12/23/example-of-postgresql-pgbench/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2016/03/15/how-to-install-postgres-xc-on-linux/</loc>
+    
+    <lastmod>2021-09-12</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2016/01/14/how-to-install-greenplum-on-linux/</loc>
     
     <lastmod>2021-09-12</lastmod>
@@ -24,13 +45,6 @@
   
   <url>
     <loc>http://dbkernel.github.io/2015/01/03/unix-getaddrinfo-function-detailed-usage/</loc>
-    
-    <lastmod>2021-09-12</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2018/09/16/process-for-starting-the-linux-os/</loc>
     
     <lastmod>2021-09-12</lastmod>
     
@@ -171,13 +185,6 @@
   
   <url>
     <loc>http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/</loc>
-    
-    <lastmod>2021-09-12</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2015/12/23/example-of-postgresql-pgbench/</loc>
     
     <lastmod>2021-09-12</lastmod>
     
@@ -612,6 +619,20 @@
     <priority>0.6</priority>
   </url>
   
+  <url>
+    <loc>http://dbkernel.github.io/tags/Postgres-X2/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/Postgres-XC/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
 
   
   <url>
@@ -665,6 +686,13 @@
   
   <url>
     <loc>http://dbkernel.github.io/categories/GreenPlum/</loc>
+    <lastmod>2021-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/categories/Postgres-X2/</loc>
     <lastmod>2021-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
