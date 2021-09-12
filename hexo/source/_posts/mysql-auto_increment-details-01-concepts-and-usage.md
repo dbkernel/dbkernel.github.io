@@ -1,5 +1,5 @@
 ---
-title: 特性介绍 | MySQL-自增列详解（1）：自增列概念及使用
+title: 特性介绍 | MySQL 自增列详解（1）：自增列概念及使用
 date: 2019-12-09 19:37:10
 categories:
 - MySQL

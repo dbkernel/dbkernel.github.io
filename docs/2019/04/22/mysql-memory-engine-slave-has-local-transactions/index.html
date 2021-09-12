@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="本文首发于 2019-04-22 20:56:52  1. MEMORY 引擎简介可能有的朋友对MEMORY存储引擎不太了解，首先介绍一下（以下描述来自官方）：  MEMROY存储引擎（以前称为HEAP）的表把表结构存放到磁盘上，而把数据放在内存中。 每个Memory表只实际对应一个磁盘文件，在磁盘中表现为.frm文件。因为它的数据是放在内存中的，并且默认使用hash索引（也支持B-Tre">
+<meta property="og:type" content="article">
+<meta property="og:title" content="引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务">
+<meta property="og:url" content="http://dbkernel.github.io/2019/04/22/mysql-memory-engine-slave-has-local-transactions/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="本文首发于 2019-04-22 20:56:52  1. MEMORY 引擎简介可能有的朋友对MEMORY存储引擎不太了解，首先介绍一下（以下描述来自官方）：  MEMROY存储引擎（以前称为HEAP）的表把表结构存放到磁盘上，而把数据放在内存中。 每个Memory表只实际对应一个磁盘文件，在磁盘中表现为.frm文件。因为它的数据是放在内存中的，并且默认使用hash索引（也支持B-Tre">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2019-04-22T12:56:52.000Z">
+<meta property="article:modified_time" content="2021-09-12T14:35:07.062Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MEMORY引擎">
+<meta property="article:tag" content="HEAP引擎">
+<meta property="article:tag" content="本地事务">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2019/04/22/mysql-memory-engine-slave-has-local-transactions/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Postgres-X2/">Postgres-X2</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-X2/" rel="tag">Postgres-X2</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-XC/" rel="tag">Postgres-XC</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WAL/" rel="tag">WAL</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.5px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.33px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.33px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 13.83px;">C语言</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.33px;">GreenPlum</a> <a href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" style="font-size: 13px;">HEAP引擎</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13.67px;">Linux</a> <a href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" style="font-size: 13px;">MEMORY引擎</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.5px;">MySQL</a> <a href="../../../../tags/Percona/" style="font-size: 13px;">Percona</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 14px;">PostgreSQL</a> <a href="../../../../tags/Postgres-X2/" style="font-size: 13px;">Postgres-X2</a> <a href="../../../../tags/Postgres-XC/" style="font-size: 13px;">Postgres-XC</a> <a href="../../../../tags/RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.33px;">UNIX</a> <a href="../../../../tags/WAL/" style="font-size: 13px;">WAL</a> <a href="../../../../tags/Xenon/" style="font-size: 13px;">Xenon</a> <a href="../../../../tags/Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/getopt/" style="font-size: 13px;">getopt</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.17px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.17px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.17px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" style="font-size: 13px;">本地事务</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.5px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.17px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.17px;">问题定位</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/08/27/percona-xtrabackup-2.4-vs-8.0/" class="title">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-MEMORY-%E5%BC%95%E6%93%8E%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1. MEMORY 引擎简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%95%85%E9%9A%9C%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">2. 故障分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%96%91%E9%97%AE"><span class="toc-number">3.</span> <span class="toc-text">3. 疑问</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%BD%95%E6%97%B6%E7%94%9F%E6%88%90-DELETE-FROM%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">3.1. 何时生成 DELETE FROM？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%AF%B9%E4%BA%8E%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E7%9A%84-MySQL-%E9%9B%86%E7%BE%A4%EF%BC%8C%E4%B8%BB%E6%88%96%E4%BB%8E%E6%95%85%E9%9A%9C%E9%87%8D%E5%90%AF%E6%9C%89%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="toc-number">3.2.</span> <span class="toc-text">3.2. 对于主从复制的 MySQL 集群，主或从故障重启有什么问题？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%80%BB%E7%BB%93"><span class="toc-number">3.3.</span> <span class="toc-text">3.3. 总结</span></a></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-mysql-memory-engine-slave-has-local-transactions" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2019-04-22T12:56:52.000Z" itemprop="datePublished">2019-04-22</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/MySQL/">MySQL</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a>, <a class="article-tag-link-link" href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a>, <a class="article-tag-link-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1.8k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 7(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+
+<blockquote>
+<p><strong>本文首发于 2019-04-22 20:56:52</strong></p>
+</blockquote>
+<h2 id="1-MEMORY-引擎简介"><a href="#1-MEMORY-引擎简介" class="headerlink" title="1. MEMORY 引擎简介"></a>1. MEMORY 引擎简介</h2><p>可能有的朋友对MEMORY存储引擎不太了解，首先介绍一下（以下描述来自<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.7/en/memory-storage-engine.html">官方</a>）：</p>
+<ol>
+<li>MEMROY存储引擎（以前称为HEAP）的表<strong>把表结构存放到磁盘上，而把数据放在内存中</strong>。</li>
+<li>每个Memory表只实际对应一个磁盘文件，在磁盘中表现为.frm文件。因为它的数据是放在内存中的，并且默认使用<code>hash索引</code>（也支持B-Tree索引），因此Memory类型的表访问速度非常快（比使用B-Tree索引的MyISAM表快），但是<code>一旦服务关闭，表中的数据就会丢失</code>。</li>
+<li>由于MEMRORY表在mysqld重启后数据会丢失，为了获得稳定的数据源，可以在启动mysqld时添加<code>--init-file</code>选项，把类似<code>insert into ... select</code>或<code>load data</code>的语句放进去。</li>
+<li>MEMROY存储引擎的典型适用场景包含如下特征：<ol>
+<li>涉及瞬态非关键数据的操作，如会话管理或缓存。</li>
+<li>数据可以完全放入内存而不会导致操作系统交换虚拟内存页，并且要求快速访问。</li>
+<li>只读或以读为主的数据访问模式（有限的更新）。</li>
+</ol>
+</li>
+<li>关于性能：<ol>
+<li>在处理更新时，单线程执行和表锁开销导致的争用会限制MEMORY性能。</li>
+<li>尽管MEMORY表在内存中进行处理，但是对于繁忙的服务器、通用查询或读/写工作负载，它们并不一定比InnoDB表快。特别是，执行更新所涉及的表锁定会降低多个会话中内存表的并发使用速度。</li>
+</ol>
+</li>
+<li>MEMORY表具有以下特征：<ol>
+<li>MEMORY表的空间以小块形式分配。表对插入使用100%动态哈希，不需要占用额外的内存。</li>
+<li>被删除的行并未释放，而是放在链表中，并在插入新数据时重用。</li>
+<li>MEMORY表使用固定长度的行存储数据。（即使是VARCHAR也不例外）</li>
+<li>MEMORY表不支持 BLOB、TEXT 列。</li>
+<li>MEMORY表支持 AUTO_INCREMENT 列。</li>
+</ol>
+</li>
+<li>MEMORY表是有大小限制的，主要受限于两个参数：<code> max_heap_table_size</code> 和 <code>MAX_ROWS</code>（默认情况下<code>MAX_ROWS</code>依赖于<code>max_heap_table_size</code>，可执行<code>ALTER TABLE tbl_name MAX_ROWS= MAX_ROWS</code>修改<code>MAX_ROWS</code>）。</li>
+</ol>
+<p><strong>问：MEMORY表和临时表有什么区别？</strong></p>
+<blockquote>
+<ol>
+<li>临时表默认使用的存储引擎是服务器指定的存储引擎（对于5.7是InnoDB），由于临时表定义和数据都放在内存中，未放到磁盘，因此用<code>show tables</code>招不到临时表。</li>
+<li>如果临时表占用空间太大，MySQL会将其转为磁盘存储。而对于用户创建的MEMORY表，则不会转为磁盘存储。</li>
+</ol>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">create</span> temporary <span class="keyword">table</span> temp_t1(a <span class="type">int</span> <span class="keyword">primary</span> key, b <span class="type">int</span>);</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> tables;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="operator">|</span> Tables_in_db4 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="operator">|</span> t1            <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="2-故障分析"><a href="#2-故障分析" class="headerlink" title="2. 故障分析"></a>2. 故障分析</h2><p><strong>现象：</strong></p>
+<p>最近碰到有用户使用 MEMORY 存储引擎，引发主从 GTID 不一致、从节点 GTID 比主节点多一条的情况。</p>
+<p><strong>分析：</strong></p>
+<ol>
+<li>检查日志，确认没有发生过主从切换，也就排除了<code>主节点有 prepare 的事务然后故障（从节点变为主）、重启导致 local commit</code>的情况。</li>
+<li>在从节点 binlog 中找到那条本地事务，发现是 MEMORY 表的 <code>DELETE FROM</code> 。</li>
+<li>该从节点发生过重启，根据 MEMORY 引擎的特性，确认是 MEMORY 表生成的。</li>
+</ol>
+<p>向用户反馈问题原因后，用户将 MEMORY 表改为了 InnoDB 表。</p>
+<h2 id="3-疑问"><a href="#3-疑问" class="headerlink" title="3. 疑问"></a>3. 疑问</h2><h3 id="3-1-何时生成-DELETE-FROM？"><a href="#3-1-何时生成-DELETE-FROM？" class="headerlink" title="3.1. 何时生成 DELETE FROM？"></a>3.1. 何时生成 <code>DELETE FROM</code>？</h3><blockquote>
+<p>A server’s <code>MEMORY</code> tables become empty when it is shut down and restarted. If the server is a replication master, its slaves are not aware that these tables have become empty, so you see out-of-date content if you select data from the tables on the slaves. To synchronize master and slave <code>MEMORY</code> tables, when a <code>MEMORY</code> table is used on a master for the first time since it was started, a <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.7/en/delete.html"><code>DELETE</code></a> statement is written to the master’s binary log, to empty the table on the slaves also. The slave still has outdated data in the table during the interval between the master’s restart and its first use of the table. To avoid this interval when a direct query to the slave could return stale data, use the <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_init-file"><code>--init-file</code></a> option to populate the <code>MEMORY</code> table on the master at startup.</p>
+</blockquote>
+<p>这段描述的含义是：</p>
+<blockquote>
+<ol>
+<li>服务器的 MEMORY 表在关闭和重新启动时会变为空。</li>
+<li>为了防止主服务器重启、从服务器未重启导致从服务器上有过期的 MEMORY 表数据，会在重启服务器时向 binlog 写入一条 <code>DELETE FROM</code> 语句，这条语句会复制到从节点，以达到主从数据一致的目的。</li>
+</ol>
+</blockquote>
+<h3 id="3-2-对于主从复制的-MySQL-集群，主或从故障重启有什么问题？"><a href="#3-2-对于主从复制的-MySQL-集群，主或从故障重启有什么问题？" class="headerlink" title="3.2. 对于主从复制的 MySQL 集群，主或从故障重启有什么问题？"></a>3.2. 对于主从复制的 MySQL 集群，主或从故障重启有什么问题？</h3><blockquote>
+<p><strong>PS：不想看过程的朋友，请跳到最后看总结。</strong></p>
+</blockquote>
+<p>举例来说，集群有三个节点A、B、C，节点A为主节点。</p>
+<p><strong>情形一：MEMORY 表有数据的情况下，重启主节点、触发主从切换：</strong></p>
+<ol>
+<li>创建 <code>MEMORY</code> 表 <code>mdb.t1</code> ，执行 <code>insert into mdb.t1 values(1,1),(2,2),(3,3),(4,4)</code> 插入一些数据。</li>
+<li>关闭节点A的 MySQL，节点B变为主，之后节点A以从节点启动，此时：</li>
+</ol>
+<ul>
+<li><p><strong>节点A无数据：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> mdb.t1;</span><br><span class="line"><span class="keyword">Empty</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>节点B、C有数据：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> mdb.t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">------+------+</span></span><br><span class="line"><span class="operator">|</span> a    <span class="operator">|</span> b    <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------+------+</span></span><br><span class="line"><span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>    <span class="number">2</span> <span class="operator">|</span>    <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>    <span class="number">3</span> <span class="operator">|</span>    <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------+------+</span></span><br><span class="line"><span class="number">4</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>并且，节点A的 GTID 为 <code>uuid_a:1-11</code>，节点B、C的 GTID 为 <code>uuid_a:1-10</code>，节点A的 binlog 比另外两个节点多一条 <code>DELTE FROM mdb.t1</code>。</p>
+</li>
+</ul>
+<p><strong>情形二：MEMORY 表无数据的情况下，重启主节点、触发主从切换：</strong></p>
+<ol>
+<li>将节点A切换为主节点，节点B、C同步了 <code>uuid_a:1-11</code> 这条事务，三个节点的 <code>mdb.t1</code> 数据为空。</li>
+<li>关闭节点A的 MySQL，节点B变为主，之后节点A以从节点启动，此时，节点A生成了一条本地 <code>DELETE FROM</code> 事务 <code>uuid_b:1-12</code>。</li>
+</ol>
+<p><strong>情形三：MEMORY 表无数据的情况下，重启从节点：</strong></p>
+<ol>
+<li> 将节点A切换为主节点，节点B、C同步了 <code>uuid_a:1-12</code> 这条事务</li>
+<li>重启节点A的MySQL，节点A生成一条本地 <code>DELETE FROM</code> 事务 <code>uuid_a:1-13</code>。</li>
+</ol>
+<p><strong>情形四：MEMORY 表有数据的情况下，重启从节点：</strong></p>
+<ol>
+<li>将节点A切换为主节点，另外两个节点同步节点A的本地事务，三个节点 GTID 为 <code>uuid_a:1-13</code> 。</li>
+<li>执行 <code>INSERT</code> 语句向 <code>mdb.t1</code> 插入一些数据，三个节点 GTID 为 <code>uuid_a:1-14</code>。</li>
+<li>重启节点B，其生成了一条本地 <code>DELETE FROM</code> 事务 <code>uuid_b:1</code>。</li>
+</ol>
+<h3 id="3-3-总结"><a href="#3-3-总结" class="headerlink" title="3.3. 总结"></a>3.3. 总结</h3><ol>
+<li>测试发现，无论什么情况下，MEMORY存储引擎都会生成一条本地 <code>DELETE FROM</code> 事务。</li>
+<li>在某些情况下，必须主动访问（比如 <code>SELECT</code>）MEMORY 表，才会触发生成 <code>DELETE FROM</code>。</li>
+<li>最重要的一点，<code>在生产环境中千万不要使用MEMORY存储引擎</code>。</li>
+</ol>
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2019/04/22/mysql-memory-engine-slave-has-local-transactions/" title="引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务" target="_blank" rel="external">http://dbkernel.github.io/2019/04/22/mysql-memory-engine-slave-has-local-transactions/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../12/09/mysql-auto_increment-details-01-concepts-and-usage/" title="特性介绍 | MySQL 自增列详解（1）：自增列概念及使用"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../../2018/09/16/process-for-starting-the-linux-os/" title="特性介绍 | Linux 操作系统启动流程"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
