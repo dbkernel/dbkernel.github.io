@@ -6,6 +6,7 @@ categories:
 tags:
 - PostgreSQL
 - GreenPlum
+- 主从同步
 toc: true
 ---
 
