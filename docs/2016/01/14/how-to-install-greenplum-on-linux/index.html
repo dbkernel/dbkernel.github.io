@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 &amp; 安装包 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="本文首发于 2016-01-14 19:55:08  本文介绍如何在 CentOS&#x2F;RedHat、Ubuntu&#x2F;Debian 下通过安装包方式和源码方式安装配置 GreenPlum 集群。 1. 安装步骤1.1. 规划 192.168.4.93（h93）   1个主master  2个主segment、2个镜像segment 192.168.4.94（h94）   1个备master">
+<meta property="og:type" content="article">
+<meta property="og:title" content="最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 &amp; 安装包">
+<meta property="og:url" content="http://dbkernel.github.io/2016/01/14/how-to-install-greenplum-on-linux/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="本文首发于 2016-01-14 19:55:08  本文介绍如何在 CentOS&#x2F;RedHat、Ubuntu&#x2F;Debian 下通过安装包方式和源码方式安装配置 GreenPlum 集群。 1. 安装步骤1.1. 规划 192.168.4.93（h93）   1个主master  2个主segment、2个镜像segment 192.168.4.94（h94）   1个备master">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2016-01-14T11:55:08.000Z">
+<meta property="article:modified_time" content="2021-09-12T13:15:19.123Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="GreenPlum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2016/01/14/how-to-install-greenplum-on-linux/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号MySQL数据库技术：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WAL/" rel="tag">WAL</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.6px;">APUE</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.4px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.4px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 14px;">C语言</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.4px;">GreenPlum</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/Linux/" style="font-size: 13.8px;">Linux</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MySQL/" style="font-size: 13.4px;">MySQL</a> <a href="../../../../tags/Percona/" style="font-size: 13px;">Percona</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 14px;">PostgreSQL</a> <a href="../../../../tags/RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.4px;">UNIX</a> <a href="../../../../tags/WAL/" style="font-size: 13px;">WAL</a> <a href="../../../../tags/Xenon/" style="font-size: 13px;">Xenon</a> <a href="../../../../tags/Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/getopt/" style="font-size: 13px;">getopt</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.2px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.2px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.2px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.6px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.2px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.2px;">问题定位</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/08/27/percona-xtrabackup-2.4-vs-8.0/" class="title">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/" class="title">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-08T11:57:10.000Z" itemprop="datePublished">2020-06-08</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/" class="title">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-07T09:17:10.000Z" itemprop="datePublished">2020-06-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2020/06/05/clickhouse-and-friends-01-development/" class="title">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-05T11:37:10.000Z" itemprop="datePublished">2020-06-05</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.</span> <span class="toc-text">1. 安装步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E8%A7%84%E5%88%92"><span class="toc-number">1.1.</span> <span class="toc-text">1.1. 规划</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="toc-number">1.2.</span> <span class="toc-text">1.2. 安装依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E5%AE%89%E8%A3%85%E5%8C%85%E6%96%B9%E5%BC%8F%E5%AE%89%E8%A3%85"><span class="toc-number">1.3.</span> <span class="toc-text">1.3. 安装包方式安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-4-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85"><span class="toc-number">1.4.</span> <span class="toc-text">1.4. 源码安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-1-%E5%85%8B%E9%9A%86%E6%BA%90%E7%A0%81"><span class="toc-number">1.4.1.</span> <span class="toc-text">1.4.1. 克隆源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-2-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85"><span class="toc-number">1.4.2.</span> <span class="toc-text">1.4.2. 编译安装</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-5-%E8%AE%BE%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.5.</span> <span class="toc-text">1.5. 设置参数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5-1-%E8%AE%BE%E7%BD%AE%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%8F%82%E6%95%B0"><span class="toc-number">1.5.1.</span> <span class="toc-text">1.5.1. 设置操作系统参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5-2-%E8%AE%BE%E7%BD%AE%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9B%B8%E5%85%B3%E5%8F%82%E6%95%B0"><span class="toc-number">1.5.2.</span> <span class="toc-text">1.5.2. 设置数据库相关参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-6-demo-%E9%9B%86%E7%BE%A4"><span class="toc-number">1.6.</span> <span class="toc-text">1.6. demo 集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-7-%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">1.7.</span> <span class="toc-text">1.7. 设置环境变量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-8-%E4%BA%A4%E6%8D%A2-SSH-%E5%AF%86%E9%92%A5"><span class="toc-number">1.8.</span> <span class="toc-text">1.8. 交换 SSH 密钥</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-9-%E5%88%9D%E5%A7%8B%E5%8C%96%E9%9B%86%E7%BE%A4"><span class="toc-number">1.9.</span> <span class="toc-text">1.9. 初始化集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-10-%E6%B5%8B%E8%AF%95"><span class="toc-number">1.10.</span> <span class="toc-text">1.10. 测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-11-%E8%A1%A5%E5%85%85%EF%BC%9A%E5%A6%82%E4%BD%95%E5%B0%86%E6%89%80%E6%9C%89%E8%8A%82%E7%82%B9%E9%83%A8%E7%BD%B2%E5%9C%A8%E4%B8%80%E5%8F%B0%E4%B8%BB%E6%9C%BA%EF%BC%9F"><span class="toc-number">1.11.</span> <span class="toc-text">1.11. 补充：如何将所有节点部署在一台主机？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GreenPlum-%E5%B8%B8%E7%94%A8%E6%8C%87%E4%BB%A4"><span class="toc-number">2.</span> <span class="toc-text">2. GreenPlum 常用指令</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4"><span class="toc-number">2.1.</span> <span class="toc-text">2.1. 启动集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%81%9C%E6%AD%A2%E9%9B%86%E7%BE%A4"><span class="toc-number">2.2.</span> <span class="toc-text">2.2. 停止集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E9%87%8D%E5%90%AF%E9%9B%86%E7%BE%A4"><span class="toc-number">2.3.</span> <span class="toc-text">2.3. 重启集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E6%9F%A5%E7%9C%8B%E9%9B%86%E7%BE%A4%E7%8A%B6%E6%80%81"><span class="toc-number">2.4.</span> <span class="toc-text">2.4. 查看集群状态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-5-reload-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.5.</span> <span class="toc-text">2.5. reload 配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-6-%E7%BB%B4%E6%8A%A4%E6%A8%A1%E5%BC%8F%E4%B8%8B%E5%90%AF%E5%8A%A8-master"><span class="toc-number">2.6.</span> <span class="toc-text">2.6. 维护模式下启动 master</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-7-%E8%AE%BF%E9%97%AE%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-number">2.7.</span> <span class="toc-text">2.7. 访问数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-8-GUC-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE"><span class="toc-number">2.8.</span> <span class="toc-text">2.8. GUC 参数配置</span></a></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-how-to-install-greenplum-on-linux" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 &amp; 安装包
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2016-01-14T11:55:08.000Z" itemprop="datePublished">2016-01-14</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/GreenPlum/">GreenPlum</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a>, <a class="article-tag-link-link" href="../../../../tags/Linux/" rel="tag">Linux</a>, <a class="article-tag-link-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 &amp; 安装包">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 4.6k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 25(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+
+
+<blockquote>
+<p><strong>本文首发于 2016-01-14 19:55:08</strong></p>
+</blockquote>
+<p>本文介绍如何在 CentOS/RedHat、Ubuntu/Debian 下通过安装包方式和源码方式安装配置 GreenPlum 集群。</p>
+<h1 id="1-安装步骤"><a href="#1-安装步骤" class="headerlink" title="1. 安装步骤"></a>1. 安装步骤</h1><h2 id="1-1-规划"><a href="#1-1-规划" class="headerlink" title="1.1. 规划"></a>1.1. 规划</h2><blockquote>
+<p>192.168.4.93（h93）   1个主master  2个主segment、2个镜像segment</p>
+<p>192.168.4.94（h94）   1个备master  2个主segment、2个镜像segment</p>
+</blockquote>
+<p>安装在<code>/home/wslu/gp/gpsql</code>目录下。</p>
+<blockquote>
+<p><strong>注意：</strong> 如无特殊说明，本文后续步骤需要在 h93 和 h94 都执行。</p>
+</blockquote>
+<h2 id="1-2-安装依赖"><a href="#1-2-安装依赖" class="headerlink" title="1.2. 安装依赖"></a>1.2. 安装依赖</h2><p>按如下方式在在 h93 和 h94 安装依赖。</p>
+<p><strong>对于 Ubuntu/Debian：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">apt-get install -y git-core</span><br><span class="line">apt-get install -y gcc g++</span><br><span class="line">apt-get install -y ccache</span><br><span class="line">apt-get install -y libreadline-dev</span><br><span class="line">apt-get install -y bison flex</span><br><span class="line">apt-get install -y zlib1g-dev</span><br><span class="line">apt-get install -y openssl libssl-dev</span><br><span class="line">apt-get install -y libpam-dev</span><br><span class="line">apt-get install -y libcurl4-dev</span><br><span class="line">apt-get install -y libbz2-dev</span><br><span class="line">apt-get install -y python-dev</span><br><span class="line">apt-get install -y ssh</span><br><span class="line"></span><br><span class="line">apt-get install -y libcurl4-dev</span><br><span class="line">Package libcurl4-dev is a virtual package provided by:</span><br><span class="line">libcurl4-openssl-dev 7.38.0-4+deb8u2</span><br><span class="line">libcurl4-nss-dev 7.38.0-4+deb8u2</span><br><span class="line">libcurl4-gnutls-dev 7.38.0-4+deb8u2</span><br><span class="line"></span><br><span class="line">apt-get install -y python-pip</span><br><span class="line"></span><br><span class="line">pip install lockfile</span><br><span class="line">pip install paramiko</span><br><span class="line">pip install setuptools</span><br><span class="line">pip install epydoc</span><br><span class="line">pip install psi</span><br><span class="line"></span><br><span class="line">Note: debian8 required pip install --pre psi</span><br></pre></td></tr></table></figure>
+
+<p><strong>对于 CentOS：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">yum install –y git.x86_64</span><br><span class="line">yum install –y gcc.x86_64 gcc-c++.x86_64</span><br><span class="line">yum install –y ccache.x86_64</span><br><span class="line">yum install readline.x86_64 readline-devel.x86_64</span><br><span class="line">yum install bison.x86_64 bison-devel.x86_64</span><br><span class="line">yum install flex.x86_64 flex-devel.x86_64</span><br><span class="line">yum install zlib.x86_64 zlib-devel.x86_64</span><br><span class="line">yum install -y openssl.x86_64 openssl-devel.x86_64</span><br><span class="line">yum install -y pam.x86_64 pam-devel.x86_64</span><br><span class="line">yum install –y libcurl.x86_64 libcurl-devel.x86_64</span><br><span class="line">yum install bzip2-libs.x86_64 bzip2.x86_64 bzip2-devel.x86_64</span><br><span class="line">yum install libssh2.x86_64 libssh2-devel.x86_64</span><br><span class="line">yum install python-devel.x86_64</span><br><span class="line">yum install -y python-pip.noarch</span><br><span class="line"></span><br><span class="line"><span class="comment"># 接着执行：</span></span><br><span class="line">pip install lockfile</span><br><span class="line">pip install paramiko</span><br><span class="line">pip install setuptools</span><br><span class="line">pip install epydoc</span><br><span class="line">pip install psi</span><br><span class="line"><span class="comment"># 或者执行：</span></span><br><span class="line">yum install python-lockfile.noarch</span><br><span class="line">yum install python-PSI.x86_64</span><br><span class="line">yum install python-paramiko.noarch</span><br><span class="line">yum install python-setuptools.noarch</span><br><span class="line">yum install epydoc.noarch</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-3-安装包方式安装"><a href="#1-3-安装包方式安装" class="headerlink" title="1.3. 安装包方式安装"></a>1.3. 安装包方式安装</h2><ol>
+<li>从官网下载<code>greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.zip</code>。</li>
+<li>解压：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">unzip greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.zip</span><br></pre></td></tr></table></figure></li>
+<li>以普通用户安装：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.bin</span><br><span class="line">安装路径选择 /home/wslu/gp/gpsql</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="1-4-源码安装"><a href="#1-4-源码安装" class="headerlink" title="1.4. 源码安装"></a>1.4. 源码安装</h2><h3 id="1-4-1-克隆源码"><a href="#1-4-1-克隆源码" class="headerlink" title="1.4.1. 克隆源码"></a>1.4.1. 克隆源码</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir /home/wslu/gp/greenplum</span><br><span class="line">$ <span class="built_in">cd</span> /home/wslu/gp/greenplum</span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/greenplum-db/gpdb.</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-4-2-编译安装"><a href="#1-4-2-编译安装" class="headerlink" title="1.4.2. 编译安装"></a>1.4.2. 编译安装</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /home/wslu/gp/greenplum</span><br><span class="line">$ CFLAGS+=<span class="string">&quot;-O2&quot;</span> ./configure--prefix=/home/wslu/gp/gpsql --enable-debug --enable-depend --enable-cassert</span><br><span class="line">$ make</span><br><span class="line">$ make install</span><br></pre></td></tr></table></figure>
+
+<p>安装时如果遇到某些 python 包（lockfile、 paramiko、PSI等）找不到，可以参考 <a target="_blank" rel="noopener" href="https://github.com/apache/incubator-hawq">HAWQ</a> 项目，将 <code>&lt;hawq_src&gt;/tools/bin/pythonSrc/</code> 下所有的压缩包拷贝到<code>/home/wslu/gp/greenplum/gpMgmt/bin/pythonSrc/ext/</code> 中，然后再 <code>make install</code> 即可。</p>
+<p>至此集群源码编译完成。</p>
+<h2 id="1-5-设置参数"><a href="#1-5-设置参数" class="headerlink" title="1.5. 设置参数"></a>1.5. 设置参数</h2><h3 id="1-5-1-设置操作系统参数"><a href="#1-5-1-设置操作系统参数" class="headerlink" title="1.5.1. 设置操作系统参数"></a>1.5.1. 设置操作系统参数</h3><ol>
+<li><p>关闭防火墙。</p>
+</li>
+<li><p>加速SSH连接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo sed -i <span class="string">&#x27;s/^GSS/#&amp;/g&#x27;</span> /etc/ssh/sshd_config <span class="comment"># 用来加速SSH连接的</span></span><br><span class="line">service sshd restart</span><br></pre></td></tr></table></figure></li>
+<li><p>设置内核和内存方面的参数：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 设置内核参数, 并在启动时生效</span></span><br><span class="line">sysctl -p - &gt;&gt;/etc/sysctl.conf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string"># configurations</span></span><br><span class="line"><span class="string">kernel.sysrq=1</span></span><br><span class="line"><span class="string">kernel.core_pattern=core</span></span><br><span class="line"><span class="string">kernel.core_uses_pid=1</span></span><br><span class="line"><span class="string">kernel.msgmnb=65536</span></span><br><span class="line"><span class="string">kernel.msgmax=65536</span></span><br><span class="line"><span class="string">kernel.msgmni=2048</span></span><br><span class="line"><span class="string">kernel.sem=25600 3200000 10000 14200</span></span><br><span class="line"><span class="string">net.ipv4.tcp_syncookies=1</span></span><br><span class="line"><span class="string">net.ipv4.ip_forward=0</span></span><br><span class="line"><span class="string">net.ipv4.conf.default.accept_source_route=0</span></span><br><span class="line"><span class="string">net.ipv4.tcp_tw_recycle=1</span></span><br><span class="line"><span class="string">net.ipv4.tcp_max_syn_backlog=4096</span></span><br><span class="line"><span class="string">net.ipv4.conf.all.arp_filter=1</span></span><br><span class="line"><span class="string">net.ipv4.ip_local_port_range=1025 65535</span></span><br><span class="line"><span class="string">net.core.netdev_max_backlog=10000</span></span><br><span class="line"><span class="string">net.core.rmem_max=2097152</span></span><br><span class="line"><span class="string">net.core.wmem_max=2097152</span></span><br><span class="line"><span class="string">vm.overcommit_memory=1</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure></li>
+<li><p>可以参考官方推荐设置共享内存相关参数：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># vi /etc/sysctl.conf</span></span><br><span class="line"><span class="attr">kernel.shmmax</span> = <span class="number">500000000</span></span><br><span class="line"><span class="attr">kernel.shmmni</span> = <span class="number">4096</span></span><br><span class="line"><span class="attr">kernel.shmall</span> = <span class="number">4000000000</span></span><br><span class="line"><span class="attr">kernel.sem</span> = <span class="number">250</span> <span class="number">512000</span> <span class="number">100</span> <span class="number">2048</span></span><br><span class="line"><span class="attr">kernel.sysrq</span> = <span class="number">1</span></span><br><span class="line"><span class="attr">kernel.core_uses_pid</span> = <span class="number">1</span></span><br><span class="line"><span class="attr">kernel.msgmnb</span> = <span class="number">65536</span></span><br><span class="line"><span class="attr">kernel.msgmax</span> = <span class="number">65536</span></span><br><span class="line"><span class="attr">kernel.msgmni</span> = <span class="number">2048</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_syncookies</span> = <span class="number">1</span></span><br><span class="line"><span class="attr">net.ipv4.ip_forward</span> = <span class="number">0</span></span><br><span class="line"><span class="attr">net.ipv4.conf.default.accept_source_route</span> = <span class="number">0</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_tw_recycle</span> = <span class="number">1</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_max_syn_backlog</span> = <span class="number">4096</span></span><br><span class="line"><span class="attr">net.ipv4.conf.all.arp_filter</span> = <span class="number">1</span></span><br><span class="line"><span class="attr">net.ipv4.ip_local_port_range</span> = <span class="number">1025</span> <span class="number">65535</span></span><br><span class="line"><span class="attr">net.core.netdev_max_backlog</span> = <span class="number">10000</span></span><br><span class="line"><span class="attr">net.core.rmem_max</span> = <span class="number">2097152</span></span><br><span class="line"><span class="attr">net.core.wmem_max</span> = <span class="number">2097152</span></span><br><span class="line"><span class="attr">vm.overcommit_memory</span> = <span class="number">2</span></span><br></pre></td></tr></table></figure></li>
+<li><p>设置文件读写相关参数：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 设置limits</span></span><br><span class="line">cat &gt;&gt;/etc/security/limits.d/greenplum.conf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string"># GreenPlum configurations</span></span><br><span class="line"><span class="string">* soft nofile 65536</span></span><br><span class="line"><span class="string">* hard nofile 65536</span></span><br><span class="line"><span class="string">* soft nproc 131072</span></span><br><span class="line"><span class="string">* hard nproc 131072</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="1-5-2-设置数据库相关参数"><a href="#1-5-2-设置数据库相关参数" class="headerlink" title="1.5.2. 设置数据库相关参数"></a>1.5.2. 设置数据库相关参数</h3><p>GUC参数设置示例（需要根据机器配置调整）：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">work_mem</span>=<span class="number">1</span>GB</span><br><span class="line"><span class="attr">shared_buffers</span>=<span class="number">2</span>GB</span><br><span class="line"><span class="attr">max_connections</span>=<span class="number">500</span></span><br><span class="line"><span class="attr">max_pool_size</span>=<span class="number">2000</span></span><br><span class="line"><span class="attr">enable_mergejoin</span>=<span class="literal">off</span></span><br><span class="line"><span class="attr">enable_nestloop</span>=<span class="literal">off</span></span><br><span class="line"><span class="attr">max_prepared_transactions</span>=<span class="number">50</span></span><br><span class="line"><span class="attr">autovacuum</span>=<span class="literal">off</span></span><br><span class="line"><span class="attr">interconnect_setup_timeout</span>=<span class="number">1200</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="1-6-demo-集群"><a href="#1-6-demo-集群" class="headerlink" title="1.6. demo 集群"></a>1.6. demo 集群</h2><blockquote>
+<p><strong>提示：</strong> 如果不想用demo集群，可以直接跳过本小节。</p>
+</blockquote>
+<p>安装完成后，可以使用如下指令创建 demo 集群（在本机创建包含3个segment，3个segment-mirror，1个master的集群）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /home/wslu/gp/gpsql</span><br><span class="line">$ <span class="built_in">source</span> greenplum_path.sh</span><br><span class="line">$ gpssh-exkeys –h localhost</span><br><span class="line">$ <span class="built_in">cd</span> gpAux/gpdemo</span><br><span class="line">$ make cluster</span><br><span class="line">$ <span class="built_in">source</span> gpdemo-env.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-7-设置环境变量"><a href="#1-7-设置环境变量" class="headerlink" title="1.7. 设置环境变量"></a>1.7. 设置环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">source</span> gpsql/greenplum_path.sh</span><br><span class="line">$ <span class="built_in">export</span> MASTER_DATA_DIRECTORY=/home/wslu/gp/gpsql/data/master/gpseg-1</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-8-交换-SSH-密钥"><a href="#1-8-交换-SSH-密钥" class="headerlink" title="1.8. 交换 SSH 密钥"></a>1.8. 交换 SSH 密钥</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gpssh-exkeys –h h93</span><br><span class="line">gpssh-exkeys –h h94</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-9-初始化集群"><a href="#1-9-初始化集群" class="headerlink" title="1.9. 初始化集群"></a>1.9. 初始化集群</h2><ol>
+<li><p>在 h93 和 h94 执行下述指令，以创建数据目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir gpsql/data/primary gpsql/data/mirror gpsql/data/master –p</span><br></pre></td></tr></table></figure></li>
+<li><p>在 h93 创建配置文件 <code>configs/gpinitsystem_config</code>，内容如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">ARRAY_NAME=<span class="string">&quot;EMC Greenplum DW&quot;</span></span><br><span class="line">SEG_PREFIX=gpseg</span><br><span class="line">PORT_BASE=40000</span><br><span class="line"><span class="built_in">declare</span> -a DATA_DIRECTORY=(/home/wslu/gp/gpsql/data/primary /home/wslu/gp/gpsql/data/primary)</span><br><span class="line">MASTER_HOSTNAME=h93</span><br><span class="line">MASTER_DIRECTORY=/home/wslu/gp/gpsql/data/master</span><br><span class="line">MASTER_PORT=5432</span><br><span class="line">TRUSTED_SHELL=ssh</span><br><span class="line">CHECK_POINT_SEGMENTS=8</span><br><span class="line">ENCODING=UNICODE</span><br><span class="line">MIRROR_PORT_BASE=50000</span><br><span class="line">REPLICATION_PORT_BASE=41000</span><br><span class="line">MIRROR_REPLICATION_PORT_BASE=51000</span><br><span class="line"><span class="built_in">declare</span> -a MIRROR_DATA_DIRECTORY=(/home/wslu/gp/gpsql/data/mirror /home/wslu/gp/gpsql/data/mirror)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong>：configs目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。</p>
+</blockquote>
+</li>
+<li><p>在 h93 创建配置文件 <code>configs/hostfile_gpinitsystem</code>，内容如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">h93</span><br><span class="line">h94</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong>：configs 目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。</p>
+</blockquote>
+</li>
+<li><p>在 h93 执行下述指令初始化集群：</p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br></pre></td><td class="code"><pre><span class="line">[wslu@h93 gpsql]$ gpinitsystem -c configs/gpinitsystem_config -h configs/hostfile_gpinitsystem –a</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checking configuration parameters, please <span class="keyword">wait</span>...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Reading Greenplum configuration file configs/gpinitsystem_config</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Locale has <span class="keyword">not</span> been set in configs/gpinitsystem_config, will set to <span class="keyword">default</span> value</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Locale set to en_US<span class="variable">.utf8</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-No DATABASE_NAME set, will exit following template1 updates</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-MASTER_MAX_CONNECT <span class="keyword">not</span> set, will set to <span class="keyword">default</span> value <span class="number">250</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">03</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checking configuration parameters, Completed</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">04</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Commencing multi-home checks, please <span class="keyword">wait</span>...</span><br><span class="line">..</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">05</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Configuring build <span class="keyword">for</span> standard array</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">05</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Commencing multi-home checks, Completed</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">05</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Building primary segment <span class="keyword">instance</span> array, please <span class="keyword">wait</span>...</span><br><span class="line">....</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">08</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Building group mirror array <span class="keyword">type</span> , please <span class="keyword">wait</span>...</span><br><span class="line">....</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">12</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checking Master host</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">12</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checking <span class="keyword">new</span> segment hosts, please <span class="keyword">wait</span>...</span><br><span class="line">........</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checking <span class="keyword">new</span> segment hosts, Completed</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Greenplum Database Creation Parameters</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:---------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master Configuration</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:---------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master <span class="keyword">instance</span> name       = EMC Greenplum DW</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master hostname            = h93</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master port                = <span class="number">5432</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master <span class="keyword">instance</span> dir        = /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">28</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master LOCALE              = en_US<span class="variable">.utf8</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Greenplum segment prefix   = gpseg</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master Database            =</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master connections         = <span class="number">250</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master buffers             = <span class="number">128000</span>kB</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Segment connections        = <span class="number">750</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Segment buffers            = <span class="number">128000</span>kB</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Checkpoint segments        = <span class="number">8</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Encoding                   = UNICODE</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Postgres param file        = Off</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Initdb to be used          = /home/wslu/gp/gpsql/bin/initdb</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-GP_LIBRARY_PATH is         = /home/wslu/gp/gpsql/lib</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Ulimit check               = Passed</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Array host connect <span class="keyword">type</span>    = Single hostname per node</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master IP address [<span class="number">1</span>]      = ::<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master IP address [<span class="number">2</span>]      = <span class="number">192</span><span class="variable">.168</span><span class="variable">.4</span><span class="variable">.93</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Master IP address [<span class="number">3</span>]      = fe80::<span class="number">225</span>:<span class="number">90</span>ff:fe3b:<span class="number">86</span>c2</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Standby Master             = Not Configured</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Primary segment #          = <span class="number">2</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total Database segments    = <span class="number">4</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Trusted shell              = ssh</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Number segment hosts       = <span class="number">2</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Mirror port base           = <span class="number">50000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Replicaton port base       = <span class="number">41000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Mirror replicaton port base= <span class="number">51000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Mirror segment #           = <span class="number">2</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Mirroring <span class="keyword">config</span>           = ON</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Mirroring <span class="keyword">type</span>             = Group</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:----------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Greenplum Primary Segment Configuration</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:----------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h93      /home/wslu/gp/gpsql/data/primary/gpseg0        <span class="number">40000</span>          <span class="number">2</span>          <span class="number">0</span>       <span class="number">41000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h93      /home/wslu/gp/gpsql/data/primary/gpseg1        <span class="number">40001</span>          <span class="number">3</span>          <span class="number">1</span>       <span class="number">41001</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h94      /home/wslu/gp/gpsql/data/primary/gpseg2        <span class="number">40000</span>          <span class="number">4</span>          <span class="number">2</span>       <span class="number">41000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h94      /home/wslu/gp/gpsql/data/primary/gpseg3        <span class="number">40001</span>          <span class="number">5</span>          <span class="number">3</span>       <span class="number">41001</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:---------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Greenplum Mirror Segment Configuration</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:---------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h94      /home/wslu/gp/gpsql/data/mirror/gpseg0          <span class="number">50000</span>          <span class="number">6</span>          <span class="number">0</span>       <span class="number">51000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h94      /home/wslu/gp/gpsql/data/mirror/gpseg1          <span class="number">50001</span>          <span class="number">7</span>          <span class="number">1</span>       <span class="number">51001</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h93      /home/wslu/gp/gpsql/data/mirror/gpseg2          <span class="number">50000</span>          <span class="number">8</span>          <span class="number">2</span>       <span class="number">51000</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">29</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-h93      /home/wslu/gp/gpsql/data/mirror/gpseg3          <span class="number">50001</span>          <span class="number">9</span>          <span class="number">3</span>       <span class="number">51001</span></span><br><span class="line">Continue <span class="keyword">with</span> Greenplum creation Yy/Nn&gt;</span><br><span class="line">y</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">30</span>:<span class="number">32</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Building the Master <span class="keyword">instance</span> database, please <span class="keyword">wait</span>...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">31</span>:<span class="number">08</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Starting the Master in admin mode</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">32</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Commencing parallel build of primary segment instances</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">32</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Spawning parallel processes    batch [<span class="number">1</span>], please <span class="keyword">wait</span>...</span><br><span class="line">....</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">32</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Waiting <span class="keyword">for</span> parallel processes batch [<span class="number">1</span>], please <span class="keyword">wait</span>...</span><br><span class="line">...........................................................</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Parallel process exit status</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as completed           = <span class="number">4</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as killed              = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as failed              = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Commencing parallel build of mirror segment instances</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Spawning parallel processes    batch [<span class="number">1</span>], please <span class="keyword">wait</span>...</span><br><span class="line">....</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">01</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Waiting <span class="keyword">for</span> parallel processes batch [<span class="number">1</span>], please <span class="keyword">wait</span>...</span><br><span class="line">.........................................</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Parallel process exit status</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as completed           = <span class="number">4</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as killed              = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Total processes marked as failed              = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Deleting distributed backout files</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Removing back out file</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-No errors generated from parallel processes</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Restarting the Greenplum <span class="keyword">instance</span> in production mode</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Starting gpstop <span class="keyword">with</span> args: -a -i -m -d /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Gathering information <span class="keyword">and</span> validating the environment...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Obtaining Greenplum Master catalog information</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Obtaining Segment details from master...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Greenplum Version: &#x27;postgres (Greenplum Database) <span class="number">4</span><span class="variable">.3</span><span class="variable">.99</span><span class="variable">.00</span> build dev&#x27;</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-There are <span class="number">0</span> connections to the database</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Commencing Master <span class="keyword">instance</span> shutdown <span class="keyword">with</span> mode=&#x27;immediate&#x27;</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Master host=h93</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Commencing Master <span class="keyword">instance</span> shutdown <span class="keyword">with</span> mode=immediate</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">43</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Master segment <span class="keyword">instance</span> directory=/home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">44</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Attempting forceful termination of any leftover master process</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">44</span>:<span class="number">001932</span> gpstop:h93:wslu-[INFO]:-Terminating processes <span class="keyword">for</span> segment /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">45</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Starting gpstart <span class="keyword">with</span> args: -a -d /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">45</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Gathering information <span class="keyword">and</span> validating the environment...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">45</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Greenplum Binary Version: &#x27;postgres (Greenplum Database) <span class="number">4</span><span class="variable">.3</span><span class="variable">.99</span><span class="variable">.00</span> build dev&#x27;</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">45</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Greenplum Catalog Version: &#x27;<span class="number">300701081</span>&#x27;</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">45</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Starting Master <span class="keyword">instance</span> in admin mode</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">46</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Obtaining Greenplum Master catalog information</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">46</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Obtaining Segment details from master...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">46</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Setting <span class="keyword">new</span> master era</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">46</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Master Started...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">46</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Shutting down master</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">47</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Commencing parallel primary <span class="keyword">and</span> mirror segment <span class="keyword">instance</span> startup, please <span class="keyword">wait</span>...</span><br><span class="line">........</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Process results...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-----------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-   Successful segment starts                                            = <span class="number">8</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-   Failed segment starts                                                = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-   Skipped segment starts (segments are marked down in configuration)   = <span class="number">0</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-----------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Successfully started <span class="number">8</span> of <span class="number">8</span> segment instances</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-----------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">55</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Starting Master <span class="keyword">instance</span> h93 directory /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">56</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Command pg_ctl reports Master h93 <span class="keyword">instance</span> active</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">56</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-No standby master configured.  skipping...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">56</span>:<span class="number">002019</span> gpstart:h93:wslu-[INFO]:-Database successfully started</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">59</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Completed restart of Greenplum <span class="keyword">instance</span> in production mode</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">33</span>:<span class="number">59</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Loading gp_toolkit...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Scanning utility log file <span class="keyword">for</span> any warning messages</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Log file scan check passed</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Greenplum Database <span class="keyword">instance</span> successfully created</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-To complete the environment configuration, please</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-update wslu <span class="variable">.bashrc</span> file <span class="keyword">with</span> the following</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-<span class="number">1</span>. Ensure that the greenplum_path<span class="variable">.sh</span> file is sourced</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-<span class="number">2</span>. Add <span class="string">&quot;export MASTER_DATA_DIRECTORY=/home/wslu/gp/gpsql/data/master/gpseg-1&quot;</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-   to access the Greenplum scripts <span class="keyword">for</span> <span class="keyword">this</span> <span class="keyword">instance</span>:</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-   <span class="keyword">or</span>, <span class="keyword">use</span> -d /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span> option <span class="keyword">for</span> the Greenplum scripts</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-   Example gpstate -d /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Script log file = /home/wslu/gpAdminLogs/gpinitsystem_20160114<span class="variable">.log</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-To remove <span class="keyword">instance</span>, run gpdeletesystem utility</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-To initialize a Standby Master Segment <span class="keyword">for</span> <span class="keyword">this</span> Greenplum <span class="keyword">instance</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Review options <span class="keyword">for</span> gpinitstandby</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-The Master /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span>/pg_hba<span class="variable">.conf</span> post gpinitsystem</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-has been configured to allow all hosts <span class="keyword">within</span> <span class="keyword">this</span> <span class="keyword">new</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-array to intercommunicate. Any hosts external to <span class="keyword">this</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-<span class="keyword">new</span> array must be explicitly added to <span class="keyword">this</span> file</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-Refer to the Greenplum Admin support guide which is</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-located in the /home/wslu/gp/gpsql/docs directory</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">34</span>:<span class="number">02</span>:<span class="number">005980</span> gpinitsystem:h93:wslu-[INFO]:-------------------------------------------------------</span><br></pre></td></tr></table></figure></li>
+<li><p>查看目录结构：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[wslu@h93 gpsql]$ ls data</span><br><span class="line">master  mirror  primary</span><br><span class="line">[wslu@h93 gpsql]$ ls data/master/</span><br><span class="line">gpseg-1</span><br><span class="line">[wslu@h93 gpsql]$ ls data/mirror/</span><br><span class="line">gpseg2  gpseg3</span><br><span class="line">[wslu@h93 gpsql]$ ls data/primary/</span><br><span class="line">gpseg0  gpseg1</span><br><span class="line">[wslu@h93 gpsql]$</span><br><span class="line"></span><br><span class="line">[wslu@h94 gpsql]$ ls data/</span><br><span class="line">master  mirror  primary</span><br><span class="line">[wslu@h94 gpsql]$ ls data/master/</span><br><span class="line">[wslu@h94 gpsql]$ ls data/primary/</span><br><span class="line">gpseg2  gpseg3</span><br><span class="line">[wslu@h94 gpsql]$ ls data/mirror/</span><br><span class="line">gpseg0  gpseg1</span><br><span class="line">[wslu@h94 gpsql]$</span><br></pre></td></tr></table></figure></li>
+<li><p>在 h94 初始化备 master（主备 master 必须在不同主机，如果要配置单机多节点，则不能配置备 master。这是因为目前主备 master 必须在相同目录，所以必然不同主机。如果端口不是5432，那么需要指定PGPORT）：</p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">[wslu@h93 gpsql]$ PGPORT=<span class="number">5432</span> PGDATABASE=postgres gpinitstandby -s h94</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Validating environment <span class="keyword">and</span> parameters <span class="keyword">for</span> standby initialization...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Checking <span class="keyword">for</span> filespace directory /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span> on h94</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum standby master initialization parameters</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum master hostname               = h93</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum master data directory         = /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum master port                   = <span class="number">5432</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum standby master hostname       = h94</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum standby master port           = <span class="number">5432</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum standby master data directory = /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Greenplum update system catalog         = On</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:- Filespace locations</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:------------------------------------------------------</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">47</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-pg_system -&gt; /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line">Do you want to <span class="keyword">continue</span> <span class="keyword">with</span> standby master initialization? Yy|Nn (<span class="keyword">default</span>=N):</span><br><span class="line">&gt; y</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">53</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Syncing Greenplum Database extensions to standby</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">53</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-The packages on h94 are consistent.</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">53</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Adding standby master to catalog...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">53</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Database catalog updated successfully.</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">40</span>:<span class="number">54</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Updating pg_hba<span class="variable">.conf</span> file...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">00</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-pg_hba<span class="variable">.conf</span> files updated successfully.</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">09</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Updating filespace flat files...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">09</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Filespace flat file updated successfully.</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">10</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Starting standby master</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">10</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Checking <span class="keyword">if</span> standby master is running on host: h94  in directory: /home/wslu/gp/gpsql/data/master/gpseg-<span class="number">1</span></span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">11</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Cleaning up pg_hba<span class="variable">.conf</span> backup files...</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">17</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Backup files of pg_hba<span class="variable">.conf</span> cleaned up successfully.</span><br><span class="line"><span class="number">20160114</span>:<span class="number">14</span>:<span class="number">41</span>:<span class="number">17</span>:<span class="number">003933</span> gpinitstandby:h93:wslu-[INFO]:-Successfully created standby master on h94</span><br></pre></td></tr></table></figure></li>
+<li><p>此时，h94的data/master目录就不为空了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ [wslu@h94 gpsql]$ ls data/master/</span><br><span class="line">gpseg-1</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="1-10-测试"><a href="#1-10-测试" class="headerlink" title="1.10. 测试"></a>1.10. 测试</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[wslu<span class="variable">@h93</span> gpsql]$ psql <span class="operator">-</span>p <span class="number">5432</span> postgres</span><br><span class="line">psql (<span class="number">8.3</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"></span><br><span class="line">postgres<span class="operator">=</span>#</span><br><span class="line">postgres<span class="operator">=</span>#</span><br><span class="line">postgres<span class="operator">=</span># \db</span><br><span class="line">        List <span class="keyword">of</span> tablespaces</span><br><span class="line">    Name    <span class="operator">|</span> Owner <span class="operator">|</span> Filespae Name</span><br><span class="line"><span class="comment">------------+-------+---------------</span></span><br><span class="line"> pg_default <span class="operator">|</span> wslu  <span class="operator">|</span> pg_system</span><br><span class="line"> pg_global  <span class="operator">|</span> wslu  <span class="operator">|</span> pg_system</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>至此，集群完成了初始化。</p>
+<h2 id="1-11-补充：如何将所有节点部署在一台主机？"><a href="#1-11-补充：如何将所有节点部署在一台主机？" class="headerlink" title="1.11. 补充：如何将所有节点部署在一台主机？"></a>1.11. 补充：如何将所有节点部署在一台主机？</h2><p>如果要将所有节点配置在一台主机，比如：在 h93 配置2个主 segment、2个镜像 segment、1个 master，只需要把<code>hostfile_config</code>中的 h94 删掉，然后在 h93 删除 <code>data/primary，data/mirror，data/master</code> 目录下的内容，重新初始化即可。</p>
+<h1 id="2-GreenPlum-常用指令"><a href="#2-GreenPlum-常用指令" class="headerlink" title="2. GreenPlum 常用指令"></a>2. GreenPlum 常用指令</h1><p><strong>说明：</strong> 每次使用集群的任何指令前，必须执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">source</span> greenplum-path.sh</span><br><span class="line">$ exportMASTER_DATA_DIRECTORY=/home/wslu/gp/gpsql/data/master/gpseg-1</span><br></pre></td></tr></table></figure>
+
+<p>下文不再赘述。</p>
+<h2 id="2-1-启动集群"><a href="#2-1-启动集群" class="headerlink" title="2.1. 启动集群"></a>2.1. 启动集群</h2><p>手动启动集群：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstart –a</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-停止集群"><a href="#2-2-停止集群" class="headerlink" title="2.2. 停止集群"></a>2.2. 停止集群</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstop –a</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-重启集群"><a href="#2-3-重启集群" class="headerlink" title="2.3. 重启集群"></a>2.3. 重启集群</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstop –a –r</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-4-查看集群状态"><a href="#2-4-查看集群状态" class="headerlink" title="2.4. 查看集群状态"></a>2.4. 查看集群状态</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstate –m | -e</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-5-reload-配置文件"><a href="#2-5-reload-配置文件" class="headerlink" title="2.5. reload 配置文件"></a>2.5. reload 配置文件</h2><p>在不停止集群情况下，若配置文件发生变更，reload配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstop –u</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-6-维护模式下启动-master"><a href="#2-6-维护模式下启动-master" class="headerlink" title="2.6. 维护模式下启动 master"></a>2.6. 维护模式下启动 master</h2><p>仅仅启动 master 来执行维护管理任务，不会影响 segment 中的数据。例如，在维护模式下你可以仅连接 master 实例的数据库并且编辑系统表设置。</p>
+<ol>
+<li><p>以维护模式启动 master：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstart –m</span><br></pre></td></tr></table></figure></li>
+<li><p>维护模式下连接 master 来维护系统表。例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ PGOPTIONS=<span class="string">&#x27;-c gp_session_role=utility&#x27;</span> psql template1</span><br></pre></td></tr></table></figure></li>
+<li><p>完成管理任务后，使 master 关闭工具模式。然后，重启进入正常模式：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpstop -m</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="2-7-访问数据库"><a href="#2-7-访问数据库" class="headerlink" title="2.7. 访问数据库"></a>2.7. 访问数据库</h2><p>可以使用 psql 连接集群：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> [wslu<span class="variable">@h93</span> gpsql]$ psql <span class="operator">-</span>p <span class="number">5432</span> postgres</span><br><span class="line">psql (<span class="number">8.3</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"></span><br><span class="line">postgres<span class="operator">=</span>#</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-8-GUC-参数配置"><a href="#2-8-GUC-参数配置" class="headerlink" title="2.8. GUC 参数配置"></a>2.8. GUC 参数配置</h2><p><strong>使用 gpconfig 设置 guc 参数：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpconfig -c gp_vmem_protect_limit -v4096MB</span><br></pre></td></tr></table></figure>
+
+<p>gpconfig 可以设置 master 和所有 segment 的 guc 参数，也可以使用 <code>--masteronly</code> 参数只设置 master 的参数。设置完 guc 参数后需要根据 guc 参数类型决定重启集群或 reload 配置文件。</p>
+<p><strong>显示guc参数：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ psql –c ‘showstatement_mem;’ 或 gpconfig –show statement_mem</span><br><span class="line">$ psql –c ‘show all;’ 或 gpconfig –l</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>欢迎关注我的微信公众号【MySQL数据库技术】。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2016/01/14/how-to-install-greenplum-on-linux/" title="最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 &amp; 安装包" target="_blank" rel="external">http://dbkernel.github.io/2016/01/14/how-to-install-greenplum-on-linux/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../21/greenplum-primary-mirror-sync-mechanism/" title="特性分析 | GreenPlum Primary/Mirror 同步机制"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../../2015/12/23/example-of-postgresql-pgbench/" title="实用工具 | PostgreSQL数据库压力测试工具pgbench使用示例"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
