@@ -2,7 +2,28 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/</loc>
+    
+    <lastmod>2021-09-21</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2020/06/12/clickhouse-and-friends-04-processor/</loc>
+    
+    <lastmod>2021-09-21</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/</loc>
+    
+    <lastmod>2021-09-21</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/</loc>
     
     <lastmod>2021-09-21</lastmod>
     
@@ -185,20 +206,6 @@
   
   <url>
     <loc>http://dbkernel.github.io/2016/11/21/greenplum-parallel-query-optimization-strategy/</loc>
-    
-    <lastmod>2021-09-12</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/</loc>
-    
-    <lastmod>2021-09-12</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/</loc>
     
     <lastmod>2021-09-12</lastmod>
     
@@ -663,6 +670,41 @@
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/</loc>
+    <lastmod>2021-09-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/DAG-Scheduler/</loc>
+    <lastmod>2021-09-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/pipeline/</loc>
+    <lastmod>2021-09-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/processor/</loc>
+    <lastmod>2021-09-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/B-Tree/</loc>
+    <lastmod>2021-09-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/LSM-Tree/</loc>
     <lastmod>2021-09-21</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
