@@ -121,7 +121,7 @@ http://stackoverflow.com/questions/28201475/how-do-i-fix-a-postgresql-9-3-slave-
 
 欢迎关注我的微信公众号【MySQL数据库技术】。
 
-<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="center"/>
 
 
 | 标题                 | 网址                                                  |

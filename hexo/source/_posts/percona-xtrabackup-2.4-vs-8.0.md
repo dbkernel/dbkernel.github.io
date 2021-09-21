@@ -282,7 +282,7 @@ xenon原有的重建逻辑是适配于MySQL 5.6、5.7的（重建过程中xenon�
 
 欢迎关注我的微信公众号【MySQL数据库技术】。
 
-<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="left"/>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="center"/>
 
 
 | 标题                 | 网址                                                  |
