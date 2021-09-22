@@ -138,9 +138,9 @@ slab除了对象实际使用的内存空间外，还有其对应的控制结构�
 
 ----
 
-欢迎关注我的微信公众号【MySQL数据库技术】。
+欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
-<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="MySQL数据库技术" align="center"/>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
