@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://dbkernel.github.io/about/index.html</loc>
+    
+    <lastmod>2021-09-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://dbkernel.github.io/2020/06/05/clickhouse-and-friends-01-development/</loc>
     
     <lastmod>2021-09-22</lastmod>
@@ -261,13 +268,6 @@
   </url>
   
   <url>
-    <loc>http://dbkernel.github.io/about/index.html</loc>
-    
-    <lastmod>2021-07-10</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://dbkernel.github.io/tags/index.html</loc>
     
     <lastmod>2021-07-10</lastmod>
@@ -284,7 +284,7 @@
 
   <url>
     <loc>http://dbkernel.github.io/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -292,420 +292,420 @@
   
   <url>
     <loc>http://dbkernel.github.io/tags/MySQL/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Select/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Count/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/auto-increment/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/ClickHouse/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/LICENCE/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/github/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/APUE/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/UNIX/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/df/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/du/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Linux/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/crontab/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Makefile/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/C%E8%AF%AD%E8%A8%80/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/shell/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/daemon/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/PostgreSQL/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/libpq/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/pg-depend/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/pg-constraint/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/gcc/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E7%BC%96%E8%AF%91%E5%99%A8/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/pgbench/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/GreenPlum/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E4%BC%98%E5%8C%96%E5%99%A8/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/gcov/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/lcov/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E6%B5%8B%E8%AF%95/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/WAL/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Percona/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Xtrabackup/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/RadonDB/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Xenon/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/getopt/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Postgres-X2/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/Postgres-XC/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/MEMORY%E5%BC%95%E6%93%8E/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/HEAP%E5%BC%95%E6%93%8E/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/DAG-Scheduler/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/pipeline/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/processor/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/B-Tree/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/tags/LSM-Tree/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
@@ -714,63 +714,63 @@
   
   <url>
     <loc>http://dbkernel.github.io/categories/MySQL/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/ClickHouse/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/Linux/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/PostgreSQL/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/C%E8%AF%AD%E8%A8%80/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/%E9%80%9A%E7%94%A8/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/GreenPlum/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://dbkernel.github.io/categories/Postgres-X2/</loc>
-    <lastmod>2021-09-22</lastmod>
+    <lastmod>2021-09-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>

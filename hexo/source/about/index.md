@@ -10,8 +10,4 @@ sidebar: custom
 
 ### 简介
 
-**卢文双**
-
-- xxx
-- yyy
-
+TODO...
