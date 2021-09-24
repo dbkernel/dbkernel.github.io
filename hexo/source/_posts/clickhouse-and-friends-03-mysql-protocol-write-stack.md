@@ -152,8 +152,11 @@ INSERT INTO test VALUES(1,1,1), (2,2,2);
 ```
 
 首先内核解析 SQL 语句生成 AST，根据 AST 获取 Interpreter：InterpreterInsertQuery。
+
 其次 Interpreter 依次添加相应的 OutputStream。
+
 然后从 InputStream 读取数据，写入到 OutputStream，stream 会层层渗透，一直写到底层的存储引擎。
+
 最后写入到 Socket Output，返回结果。
 
 ClickHouse 的 OutputStream 编排还是比较复杂，缺少类似 Pipeline 的调度和编排，但是由于模式比较固化，目前看还算清晰。

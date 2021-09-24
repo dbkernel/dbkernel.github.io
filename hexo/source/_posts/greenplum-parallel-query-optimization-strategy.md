@@ -32,6 +32,7 @@ GreenPlum 采用的是基于成本的优化策略：如果有多条执行路径�
 查询计划包括了一些传统的操作，比如：扫描、Join、排序、聚合等等。
 
 **GreenPlum 中有三种数据的移动操作：**
+
 - `Broadcast Motion (N:N)`：广播数据。每个节点向其他节点广播需要发送的数据。
 - `Redistribute Motion (N:N)`：重新分布数据。利用 join 列数据的 hash 值不同，将筛选后的数据在其他 segment 重新分布。
 - `Gather Motion (N:1)`：聚合汇总数据。每个节点将 join 后的数据发到一个单节点上，通常是发到主节点 master 。
@@ -66,6 +67,7 @@ explain select d.*,j.customer_id from data d join  jd1 j on d.partner_id=j.partn
 **问：如果 `rs` 很大或者压根就没有过滤条件，会有什么问题？如何处理？**
 
 比如本例中的表 `jd1` 和表`data`的数据行数如下：
+
 ```sql
 => select count(*) from jd1;
  count
@@ -126,6 +128,7 @@ order by
 # 总结
 
 **Greenplum如何处理和优化一张大表和小表的join?**
+
 >Greenplum是选择将小表广播数据，而不是将大表广播。
 
 **举例说明：**

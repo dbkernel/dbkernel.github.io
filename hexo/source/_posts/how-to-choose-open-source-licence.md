@@ -24,11 +24,13 @@ toc: true
 如果我们拷贝了别人的代码或文章却没注意版权问题，在国外法律意识特别强的环境下（国内版权意识也在逐步加强），那么我们的作品会因触犯别人的权益而违法。即使是最开放的开源协议，最低要求也是保留原作者对代码的声明，所以`开源不等于免费，也不等于没有约束`。
 
 **何为 LICENCE？**
+
 >LICENCE 是软件的授权许可，详细说明了获得代码后拥有的权利，哪些操作是允许的，哪些操作是禁止的。软件的版权许可证可有很多方式，本文仅限于讨论开源软件协议 Open Source License。
 
 对于大多数人来说，没必要花大把时间去写许可协议，选择一种比较流行的开源协议就足够了，省时省力，更便于自己作品的传播，于人于己都有利。
 
 **PS：**
+
 >说句题外话，很多国外开发者在尊重他人劳动成果方面做得很好，如果A的作品是因为B的作品的启发而来，A甚至都没有使用B任何一句代码，但A会在他的作品里面指明是受到了B的启发：`Inspired by XXX link: http://www.xxxx.com`。
 
 
@@ -65,6 +67,7 @@ toc: true
 ## 主流开源许可协议（Open Source License）
 
 世界上的开源许可协议（Open Source License）大概有[上百种](https://www.gnu.org/licenses/license-list.html)，常用的开源软件协议大致有：
+
 - [GPL](https://www.gnu.org/licenses/gpl-3.0.html)
 - [LGPL](https://www.gnu.org/licenses/lgpl-3.0.html)
 - [BSD](https://opensource.org/licenses/BSD-3-Clause)
@@ -73,6 +76,7 @@ toc: true
 - [Apache](http://www.apache.org/licenses/LICENSE-2.0)
 
 由宽松到严紧排序，常用的开源协议有：
+
 1. MIT
 2. BSD
 3. Apache
@@ -80,6 +84,7 @@ toc: true
 5. GPL
 
 主要区别：
+
 - MIT、BSD 开源协议都源自大学，体现了简单、开放和包容的特点。
 - MIT、BSD、Apache 三者都支持闭源的后续开发。
 - GPL、LGPL 传染性开源，编译的代码里用了这里的代码，都必须开源。
@@ -90,11 +95,13 @@ toc: true
 来源于大学，MIT 开源协议是史上最为简洁、慷慨的开源协议之一。作者只想保留版权，而无任何其他了限制。也就是说，你必须在你的发行版里包含原许可协议的声明，无论你是以二进制发布的还是以源代码发布的。
 
 **特点：**
+
 - 用户可以拿你的代码做任何想做的事情。
 - 用户在项目副本中要包含版权声明和许可声明。
 - 你无需承担任何责任。
 
 **代表作品：**
+
 - [jQuery](https://github.com/jquery/jquery)
 - [Rails](https://github.com/rails/rails) 等。
 
@@ -122,6 +129,7 @@ BSD 开源协议鼓励代码共享，但需要尊重代码作者的著作权。B
 来自 Apache，类似 MIT 开源协议，但它重视专利权。
 
 Apache Licence 是著名的非盈利开源组织 Apache 采用的协议。该协议和BSD类似，同样鼓励代码共享和尊重原作者的著作权，同样允许修改代码、再发布（作为开源或商业软件）。需要满足的条件也和BSD类似：
+
 1. 需要为使用代码的用户提供一份 Apache Licence 。
 2. 如果你修改了代码，需要在被修改的文件中说明。
 3. 在延伸的代码中（修改和由源代码衍生的代码中）需要带有原来代码中的协议、商标、专利声明和其他原作者规定需要包含的说明。
@@ -130,6 +138,7 @@ Apache Licence 是著名的非盈利开源组织 Apache 采用的协议。该协
 Apache Licence 也是对商业应用友好的许可，使用者也可以在需要的时候修改代码来满足需要并作为开源或商业产品发布/销售。
 
 **代表作品：**
+
 - [echarts](https://github.com/apache/echarts)
 - [superset](https://github.com/apache/superset)
 - [dubbo](https://github.com/apache/dubbo)
@@ -159,6 +168,7 @@ GPL协议的主要内容是只要在一个软件中使用（”使用”指类�
 其它细节和BSD/Apache等协议类似。
 
 **代表作品：**
+
 - [Linux](https://github.com/torvalds/linux)
 
 

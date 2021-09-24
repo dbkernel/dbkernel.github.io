@@ -40,6 +40,7 @@ toc: true
 ![processor-transformer.png](processor-transformer.png)
 
 所有 transformer 被编排成一个流水线(pipeline)，然后交给 executor 串行式执行，每执行一个 transformer 数据集就会被加工并输出，一直到下游的 sinker。
+
 可以看到，这种模型的优点是**简单**，缺点是**性能低**，无法发挥 CPU 的**并行**能力，通常叫火山模型(**volcano**-style)，对于 OLTP 低延迟来说足够，对于计算密集的 OLAP 来说是远远不够的，CPU 不到 100% 就是犯罪！
 
 对于上面的例子，如果 transformer1 和 transformer2 没有交集，那么它们就可以并行处理：
@@ -305,6 +306,7 @@ int main(int, char **)
 ClickHouse 的 transformer 数据单元是 Chunk，transformer 对上游 OutPort 流过来的 Chunk 进行加工，然后输出给下游的 InPort，图连通式的流水线并行工作，让 CPU 尽量满负荷工作。
 
 当一个 SQL 被解析成 AST 后，ClickHouse 根据 AST 构建 Query Plan，然后根据 QueryPlan 构建出 pipeline，最后由 processor 负责调度和执行。
+
 目前，ClickHouse 新版本已经默认开启 QueryPipeline，同时这块代码也在不停的迭代。
 
 

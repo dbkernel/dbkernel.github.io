@@ -66,6 +66,7 @@ minute hour day month week command
 ```
 
 各字段含义如下：
+
 - minute：表示分钟，可以是从0到59之间的任何整数。
 - hour：表示小时，可以是从0到23之间的任何整数。
 - day：表示日期，可以是从1到31之间的任何整数。
@@ -74,6 +75,7 @@ minute hour day month week command
 - command：要执行的命令，可以是系统命令，也可以是自己编写的脚本文件。
 
 在以上各个字段中，还可以使用以下特殊字符：
+
 - `星号(*)`：代表所有可能的值，例如 month 字段如果是星号，则表示在满足其它字段的制约条件后每月都执行该命令操作。
 - `逗号(,)`：可以用逗号隔开的值指定一个列表范围，例如：`1,2,5,7,8,9` 。
 - `中杠(-)`：可以用整数之间的中杠表示一个整数范围，例如：`2-6` 表示`2,3,4,5,6` 。
@@ -83,6 +85,7 @@ minute hour day month week command
 ## crontab命令详解
 
 **命令格式：**
+
 ```bash
 usage:	crontab [-u user] file
 	crontab [ -u user ] [ -i ] { -e | -l | -r }

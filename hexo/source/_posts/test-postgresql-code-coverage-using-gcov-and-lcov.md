@@ -60,6 +60,7 @@ fi
 ```
 
 通过`man gcc`查看这两个参数的含义：
+
 ```
 -fprofile-arcs
            Add code so that program flow arcs are instrumented.  During execution the program records how many times each branch and call is executed and how many times it is taken or returns.  When
@@ -93,6 +94,7 @@ fi
 ```
 
 **-fprofile-arcs**：
+
 >`-fprofile-arcs` 用于产生 .c 文件对应的 .gcda 文件，.gcda 文件可以被用于 profile 驱动的优化，或者结合 gcov 来做代码覆盖分析。
 >
 >编译时尽量不要使用 -O 优化，这样代码覆盖数据 .gcda 才能尽可能和代码接近。
@@ -100,6 +102,7 @@ fi
 >当代码被调用时，.gcda 文件中对应的计数器会被修改，记录代码被调用的次数。
 
 **-ftest-coverage**：
+
 >`-ftest-coverage` 这个选项用于产生 .c 文件的 .gcno 文件。这个文件生成后不会被修改。结合 .gcda，可以分析测试代码覆盖率。
 
 
@@ -274,6 +277,7 @@ PostgreSQL 其实已经在 Makefile 提供了生成代码覆盖 HTML 的 target 
 ```
 
 产生的html目录如下：
+
 ```bash
 [root@wslu postgresql-9.4.4]# cd coverage
 [root@wslu coverage]# ll

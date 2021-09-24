@@ -29,6 +29,7 @@ toc: true
 看paper这玩意就像鉴宝，多数是“赝品”，需要你有“鉴真”的本领，否则今天是张三的算法超越xx，明儿又是王二的硬件提升了yy，让你永远跟不上节奏zz，湮灭在这些没有营养的技术垃圾中，浪费大好青春。
 
 言归正传，接下来的3篇，跟 ClickHouse 的 MergeTree 引擎有关：
+
 **上篇介绍存储引擎的技术演进史**，从”远古”的 B-tree 出发推演到目前主流的技术架构。
 
 **[中篇会从存储结构介绍 MergeTree 原理](https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/)** ，对 ClickHouse MergeTree 有一个深入的认识，如何合理设计来进行科学加速。
@@ -62,9 +63,11 @@ Fork 出来的 MariaDB 这么多年一直找不到自己的灵魂，在 Server �
 首先要尊称一声大爷，这个大爷年方 50，目前支撑着数据库产业的半壁江山。
 
 50 年来不变而且人们还没有改变它的意向，这个大爷厉害的很！
+
 鉴定一个算法的优劣，有一个学派叫 **IO复杂度分析**，简单推演真假便知。
 
 下面就用此法分析下 B-tree(traditional b-tree) 的 IO 复杂度，对读、写 IO 一目了然，真正明白读为什么快，写为什么慢，如何优化。
+
 为了可以愉快的阅读，本文不会做任何公式推导，复杂度分析怎么可能没有公式呢！
 
 ### 读IO分析
@@ -74,6 +77,7 @@ Fork 出来的 MariaDB 这么多年一直找不到自己的灵魂，在 Server �
 ![btree-read.png](btree-read.png)
 
 上图 B-tree 结构是**内存**的一个表现形式，如果我们要读取的记录在 leaf-8上，read-path 如蓝色箭头所示:
+
 root-9 –> branch-6 –> leaf-8
 
 下图是 B-tree 在**磁盘**上的存储形式，meta page 是起点:
@@ -117,6 +121,7 @@ root-9 –> branch-6 –> leaf-8
 3. 无需 page WAL，数据不 overwrite，有写放大(Write Amplification)问题，需要做空洞重利用机制
 
 Append-only B-tree 节省了回写时的 2 次随机 IO，转换为常数级(constant)的1次顺序 IO，写性能大幅提升，总结起来就是：
+
 >**随机变顺序，空间换时间**
 
 LSM-tree, Fractal-tree 等写优化算法的核心思想也是这个，只不过其实现机制不同。
@@ -150,6 +155,7 @@ LSM-tree 更像一种思想，模糊了 B-tree 里 tree 的严肃性，通过文
 ## Fractal-tree
 
 终于发展到了“终极”优化(目前最先进的索引算法)，Fractal-tree。
+
 它是在 Append-only B-tree 的基础上，对每个 branch 节点增加了一个 message buffer 作为缓冲，可以看做是 LSM-tree 和 Append-only B-tree 完美合体。
 
 相对于 LSM-tree 它的优势非常明显:
@@ -166,6 +172,7 @@ Merge 更加有序，数据流向非常分明，消除了 Merge 的抖动问题�
 在 LevelDB 里使用 skiplist，但大部分引擎使用的是一个有序数组来表示，比如 [1, 2, 3, … 100]，然后使用二分查找。
 
 大概 10 年前一位内核开发者发表了一篇 <[You’re Doing It Wrong](https://queue.acm.org/detail.cfm?id=1814327)>，这个小文讲了一个很有意思的事情：
+
 数据的组织形式对性能有很大的影响，因为 CPU有 cache line。
 
 抛开这篇文章不谈，咱们来看一张“神仙”图：
@@ -175,6 +182,7 @@ Merge 更加有序，数据流向非常分明，消除了 Merge 的抖动问题�
 这是一个 binary-tree 的 4 种 layout 表示形式，那么哪种 layout 对 CPU cache line 最友好？
 
 也许你已经猜对了，那就是 van Emde Boas，简称 vEB。
+
 因为它的相邻数据“扎堆”存储，point-query 和 range-query 的 cache line 可以最大化共享，skiplist 对 cache line 是非常不友好的，还可以更快！
 
 对于 cache oblivious 数据结构，这里有一个简单的原型实现: [omt](https://github.com/BohuTANG/omt)
@@ -192,9 +200,11 @@ Merge 更加有序，数据流向非常分明，消除了 Merge 的抖动问题�
 横坐标是写性能，纵坐标是读性能，B-tree 和 Logging 数据结构分布在曲线的两个极端。
 
 B-tree 的读性能非常好，但是写性能差。
+
 Logging 的写性能非常好，但是读性能差(想想我们每次写都把数据追加到文件末尾，是不是很快？但是读…)。
 
 在它们中间有一个优化曲度(Optimal Curve)。
+
 在这个曲度上，你可以通过增加/减少一个常数(1-epsilon)来做读和写优化组合，LSM-tree/Fractal-tree 都在这个曲度之上。
 
 ![btree-epsilon.png](btree-epsilon.png)
@@ -215,16 +225,16 @@ Logging 的写性能非常好，但是读性能差(想想我们每次写都把�
 
 ## References
 
-[1] [Cache-Oblivious Data Structures](https://www.cs.au.dk/~gerth/papers/cacheoblivious05.pdf)
-[2] [Data Structures and Algorithms for Big Databases](https://www3.cs.stonybrook.edu/~bender/talks/2013-BenderKuszmaul-xldb-tutorial.pdf)
-[3] [The buffer tree: A new technique for optimal I/O-algorithms](https://link.springer.com/chapter/10.1007%2F3-540-60220-8_74)
-[4] [how the append-only btree works](http://www.bzero.se/ldapd/btree.html)
-[5] [写优化的数据结构(1):AOF和b-tree之间](https://www.douban.com/note/269741273/)
-[6] [写优化的数据结构(2):buffered tree](https://www.douban.com/note/269744617/)
-[7] [存储引擎数据结构优化(1):cpu bound](https://www.douban.com/note/304123656/)
-[8] [存储引擎数据结构优化(2):io bound](https://www.douban.com/note/304349195/)
-[9] [nessDB](https://github.com/BohuTANG/nessDB)
-[10] [omt](https://github.com/BohuTANG/omt)
+- [1] [Cache-Oblivious Data Structures](https://www.cs.au.dk/~gerth/papers/cacheoblivious05.pdf)
+- [2] [Data Structures and Algorithms for Big Databases](https://www3.cs.stonybrook.edu/~bender/talks/2013-BenderKuszmaul-xldb-tutorial.pdf)
+- [3] [The buffer tree: A new technique for optimal I/O-algorithms](https://link.springer.com/chapter/10.1007%2F3-540-60220-8_74)
+- [4] [how the append-only btree works](http://www.bzero.se/ldapd/btree.html)
+- [5] [写优化的数据结构(1):AOF和b-tree之间](https://www.douban.com/note/269741273/)
+- [6] [写优化的数据结构(2):buffered tree](https://www.douban.com/note/269744617/)
+- [7] [存储引擎数据结构优化(1):cpu bound](https://www.douban.com/note/304123656/)
+- [8] [存储引擎数据结构优化(2):io bound](https://www.douban.com/note/304349195/)
+- [9] [nessDB](https://github.com/BohuTANG/nessDB)
+- [10] [omt](https://github.com/BohuTANG/omt)
 
 
 ----

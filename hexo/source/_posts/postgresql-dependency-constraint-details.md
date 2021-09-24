@@ -45,11 +45,11 @@ Has OIDs: no
 
 `pg_depend.deptype` 字段自 9.1 版本之后多了一个 extension 的类型，目前类型有：
 
->`DEPENDENCY_NORMAL (n)` ：普通的依赖对象，如表与schema的关系。
->`DEPENDENCY_AUTO (a)` ：自动的依赖对象，如主键约束。
->`DEPENDENCY_INTERNAL (i)` ：内部的依赖对象，通常是对象本身。
->`DEPENDENCY_EXTENSION (e)` ：9.1新增的的扩展依赖。
->`DEPENDENCY_PIN (p)` ：系统内置的依赖。
+>- `DEPENDENCY_NORMAL (n)` ：普通的依赖对象，如表与schema的关系。
+>- `DEPENDENCY_AUTO (a)` ：自动的依赖对象，如主键约束。
+>- `DEPENDENCY_INTERNAL (i)` ：内部的依赖对象，通常是对象本身。
+>- `DEPENDENCY_EXTENSION (e)` ：9.1新增的的扩展依赖。
+>- `DEPENDENCY_PIN (p)` ：系统内置的依赖。
 
 
 ## pg_constraint

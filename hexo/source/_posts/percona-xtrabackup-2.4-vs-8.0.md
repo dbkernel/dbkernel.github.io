@@ -51,11 +51,13 @@ Last_Error: Could not execute Write_rows event on table db1.t1; Duplicate entry 
 ### xtrabackup 2.4和8.0区别
 
 **google查到xtrabackup 8.0与2.4版本行为有所不同：**
+
 >1. Xtrabackup 2.4 备份后生成的 `xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，但是备份恢复后 `show master status` 显示的 GTID 是不准确的。
 >2. Xtrabackup 8.0 在备份只有 InnoDB 表的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息不一定是准确的，但是备份恢复后 `show master status` 显示的 GTID 是准确的。
 >3. Xtrabackup 8.0 在备份有非 InnoDB 表格的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，备份恢复后 `show master status` 显示的 GTID 也是准确的。
 
 **之前研究过 xtrabackup 2.4 ，其过程大致如下：**
+
 >1. start backup
 >2. copy ibdata1 / copy .ibd file
 >3. excuted FTWRL
@@ -69,6 +71,7 @@ Last_Error: Could not execute Write_rows event on table db1.t1; Duplicate entry 
 **问题1：xtrabackup 8.0 的执行过程是什么样？**
 
 首先，查看重建期间的`general log`：
+
 ```verilog
 2020-08-26T16:20:18.136376+08:00	  170 Query	SET SESSION wait_timeout=2147483
 2020-08-26T16:20:18.136439+08:00	  170 Query	SET SESSION autocommit=1
@@ -94,6 +97,7 @@ Last_Error: Could not execute Write_rows event on table db1.t1; Duplicate entry 
 ```
 
 可见，**xtrabackup 8.0默认情况下大致过程如下：**
+
 >1. start backup
 >2. copy .ibd file
 >3. backup non-InnoDB tables and files
@@ -145,6 +149,7 @@ STORAGE_ENGINES: {"InnoDB": {"LSN": 20257208, "LSN_checkpoint": 20257208}}
 **问题2：`performance_schema.log_status`提供的信息是否准确呢？**
 
 当写入压力大时，该表中的binlog position与GTID信息不一致。
+
 ```sql
 mysql> select * from performance_schema.log_status\G  show master status;
 *************************** 1. row ***************************
@@ -209,6 +214,7 @@ xenon原有的重建逻辑是适配于MySQL 5.6、5.7的（重建过程中xenon�
 **问题1：为什么在 MySQL 8.0 + Semi-Sync 组合下会出现 Duplicate entry ？**
 
 跟踪重建过程中的general log，发现在第6和第7步中间，也就是设置`gtid_purged`之前凭空多出了 `change master to` 和 `start slave` 操作：
+
 ```verilog
 2020-08-24T21:55:22.817859+08:00            8 Query     SET GLOBAL rpl_semi_sync_master_enabled=OFF
 2020-08-24T21:55:22.818025+08:00            8 Query     SET GLOBAL read_only = 1

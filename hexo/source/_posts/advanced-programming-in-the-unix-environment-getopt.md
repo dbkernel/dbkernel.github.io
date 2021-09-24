@@ -27,6 +27,7 @@ int getopt(int argc, char * const argv[], const char *optstring);
 
 
 前两个参数设为main函数的两个参数。
+
 >optstring设为由该命令要处理的各个选项组成的字符串。选项后面带有冒号'：'时，该选项是一个带参数的选项。
 >
 >举例：`make -f filename -n`
@@ -41,6 +42,7 @@ c = getopt(argc, argv, "f:n");
 
 通常一个命令有多个选项，为了取得所有选项，需要循环调用此函数，直到返回值为-1。
 要使用此函数，还有几个全局变量必须要了解：
+
 ```cpp
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -117,8 +119,11 @@ int getopt_long(int argc, char * const argv[],
                   const struct option *longopts, int *longindex);
 #include <getopt.h>
 ```
+
 前三个参数与函数getopt的参数是一样的。
+
 只支持长选项时，参数optstring设置为NULL或者空字符串""。
+
 第四个参数是一个构造体struct option的数组。此构造体定义在头文件getopt.h中。此数组的最后一个须将成员都置为0。
 
 ```cpp
@@ -131,18 +136,20 @@ int val;
 ```
 
 **构造体各个成员的解释如下：**
->name : 长选项的名字。
->has_arg : no_argument或0表示此选项不带参数，required_argument或1表示此选项带参数，optional_argument或2表示是一个可选选项。
->flag : 设置为NULL时，getopt_long()返回val,设置为NULL以外时，>getopt_long()返回0，且将*flag设为val。
->val : 返回值或者*flag的设定值。有些命令既支持长选项也支持短选项，可以通过设定此值为短选项实现。
+
+>- name : 长选项的名字。
+>- has_arg : no_argument或0表示此选项不带参数，required_argument或1表示此选项带参数，optional_argument或2表示是一个可选选项。
+>- flag : 设置为NULL时，getopt_long()返回val,设置为NULL以外时，>getopt_long()返回0，且将*flag设为val。
+>- val : 返回值或者*flag的设定值。有些命令既支持长选项也支持短选项，可以通过设定此值为短选项实现。
 
 第五个参数是一个输出参数，函数getopt_long()返回时，longindex的值是struct option数组的索引。
 
 **关于返回值有以下几种情况：**
->识别为短选项时，返回值为该短选项。
->识别为长选项时，如果flag是NULL的情况下，返回val,如果flag非NULL的情况下，返回0。
->所有选项解析结束时返回-1。
->存在不能识别的选项或者带参数选项的参数不存在时返回'?' 。
+
+>- 识别为短选项时，返回值为该短选项。
+>- 识别为长选项时，如果flag是NULL的情况下，返回val,如果flag非NULL的情况下，返回0。
+>- 所有选项解析结束时返回-1。
+>- 存在不能识别的选项或者带参数选项的参数不存在时返回'?' 。
 
 ## 2.2. 实例
 

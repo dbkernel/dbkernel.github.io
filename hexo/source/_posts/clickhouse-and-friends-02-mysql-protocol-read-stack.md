@@ -67,6 +67,7 @@ MySQL Protocol 实现在: [Core/MySQLProtocol.h](https://github.com/ClickHouse/C
 3. MySQLClient 接收到结果
 
 在步骤2里，executeQuery(executeQuery.cpp)非常重要。
+
 它是所有前端 Server 和 ClickHouse 内核的接入口，第一个参数是 SQL 文本(‘select 1’)，第二个参数是结果集要发送到哪里去(socket net)。
 
 ## **调用栈分析**
@@ -166,11 +167,15 @@ SELECT * FROM system.numbers LIMIT 5
 ```
 
 首先内核解析 SQL 语句生成 AST，然后根据 AST 获取数据源 Source，pipeline.Add(Source)。
+
 其次根据 AST 信息生成 QueryPlan，根据 QueryPlan 再生成相应的 Transform，pipeline.Add(LimitTransform)。
+
 然后添加 Output Sink 作为数据发送对象，pipeline.Add(OutputSink)。
+
 执行 pipeline, 各个 Transformer 开始工作。
 
 ClickHouse 的 Transformer 调度系统叫做 Processor，也是决定性能的重要模块，详情见 [Pipeline 处理器和调度器](https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/)。
+
 ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！
 
 ----

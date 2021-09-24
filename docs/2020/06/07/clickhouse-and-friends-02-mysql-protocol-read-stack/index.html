@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2020-06-07T09:17:10.000Z">
-<meta property="article:modified_time" content="2021-09-22T15:24:33.122Z">
+<meta property="article:modified_time" content="2021-09-24T03:58:59.682Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="ClickHouse和他的朋友们">
@@ -447,7 +447,8 @@
 <li><p>MySQLClient 接收到结果</p>
 </li>
 </ol>
-<p>在步骤2里，executeQuery(executeQuery.cpp)非常重要。<br>它是所有前端 Server 和 ClickHouse 内核的接入口，第一个参数是 SQL 文本(‘select 1’)，第二个参数是结果集要发送到哪里去(socket net)。</p>
+<p>在步骤2里，executeQuery(executeQuery.cpp)非常重要。</p>
+<p>它是所有前端 Server 和 ClickHouse 内核的接入口，第一个参数是 SQL 文本(‘select 1’)，第二个参数是结果集要发送到哪里去(socket net)。</p>
 <h2 id="调用栈分析"><a href="#调用栈分析" class="headerlink" title="调用栈分析"></a><strong>调用栈分析</strong></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM system.numbers LIMIT 5</span><br></pre></td></tr></table></figure>
 
 <h3 id="1-获取数据源"><a href="#1-获取数据源" class="headerlink" title="1. 获取数据源"></a>1. 获取数据源</h3><p>StorageSystemNumbers 数据源：</p>
@@ -465,8 +466,12 @@
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>ClickHouse 的模块化比较清晰，像乐高积木一样可以组合拼装，当我们执行:</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> system.numbers LIMIT <span class="number">5</span></span><br></pre></td></tr></table></figure>
 
-<p>首先内核解析 SQL 语句生成 AST，然后根据 AST 获取数据源 Source，pipeline.Add(Source)。<br>其次根据 AST 信息生成 QueryPlan，根据 QueryPlan 再生成相应的 Transform，pipeline.Add(LimitTransform)。<br>然后添加 Output Sink 作为数据发送对象，pipeline.Add(OutputSink)。<br>执行 pipeline, 各个 Transformer 开始工作。</p>
-<p>ClickHouse 的 Transformer 调度系统叫做 Processor，也是决定性能的重要模块，详情见 <a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/">Pipeline 处理器和调度器</a>。<br>ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！</p>
+<p>首先内核解析 SQL 语句生成 AST，然后根据 AST 获取数据源 Source，pipeline.Add(Source)。</p>
+<p>其次根据 AST 信息生成 QueryPlan，根据 QueryPlan 再生成相应的 Transform，pipeline.Add(LimitTransform)。</p>
+<p>然后添加 Output Sink 作为数据发送对象，pipeline.Add(OutputSink)。</p>
+<p>执行 pipeline, 各个 Transformer 开始工作。</p>
+<p>ClickHouse 的 Transformer 调度系统叫做 Processor，也是决定性能的重要模块，详情见 <a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/">Pipeline 处理器和调度器</a>。</p>
+<p>ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！</p>
 <hr>
 <p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>

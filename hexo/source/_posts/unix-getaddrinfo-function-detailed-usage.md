@@ -60,6 +60,7 @@ int getaddrinfo( const char *hostname, const char *service, const struct addrinf
 **getaddrinfo在实际使用中的几种常用参数设置：**
 
 一般情况下，client/server编程中，server端调用`bind`（如果面向连接的还需要`listen`）；client则无需调用`bind`函数，解析地址后直接`connect`（面向连接）或直接发送数据（无连接）。因此，比较常见的情况有：
+
 1. 通常服务器端在调用`getaddrinfo`之前，`ai_flags`设置`AI_PASSIVE`，用于`bind`；主机名`nodename`通常会设置为NULL，返回通配地址`[::]`。
 2. 客户端调用`getaddrinfo`时，`ai_flags`一般不设置`AI_PASSIVE`，但是主机名`nodename`和服务名`servname`（更愿意称之为端口）则应该不为空。
 3. 当然，即使不设置`AI_PASSIVE`，取出的地址也并非不可以被bind，很多程序中`ai_flags`直接设置为0，即3个标志位都不设置，这种情况下只要hostname和servname设置的没有问题就可以正确bind。
@@ -105,6 +106,7 @@ struct sockaddr_in
 ```
 
 2）可以导致返回多个addrinfo结构的情形有以下2个：
+
 >1. 如果与hostname参数关联的地址有多个，那么适用于所请求地址簇的每个地址都返回一个对应的结构。
 >2. 如果service参数指定的服务支持多个套接口类型，那么每个套接口类型都可能返回一个对应的结构，具体取决于hints结构的ai_socktype成员。
 
@@ -115,12 +117,14 @@ struct sockaddr_in
 4）**getaddrinfo解决了把主机名和服务名转换成套接口地址结构的问题**。
 
 5）如果getaddrinfo出错，那么返回一个非0的错误值。输出出错信息，不要用perror，而应该用`gai_strerror`，该函数原型为：
+
 ```cpp
 const char *gai_strerror( int error );
 ```
 >该函数以`getaddrinfo`返回的非0错误值的名字和含义为他的唯一参数，返回一个指向对应的出错信息串的指针。
 
 6）**由getaddrinfo返回的所有存储空间都是动态获取的，这些存储空间必须通过调用`freeaddrinfo`返回给系统**，该函数原型为：
+
 ```cpp
 void freeaddrinfo( struct addrinfo *ai );
 ```

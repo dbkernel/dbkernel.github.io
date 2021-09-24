@@ -22,6 +22,7 @@ Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享
 # 2. 安装
 
 我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两句命令，就可以安装Samba的软件包
+
 ```bash
 sudo apt-get install smaba
 sudo apt-get install smbfs
@@ -42,6 +43,7 @@ sudo cp /etc/samba/smb.conf /etc/samba/smb_conf_backup
 ```
 
 **一个完整的Samba配置文件包含两部分：**
+
 - Samba Global Settings 全局参数设置
 >该部分由`[global]段`来完成配置，主要是设置整体的规则。其中参数`workgroup`比较特殊，用于提供`NT域名或者工作组名`，需要根据实际情况修改：
 ```bash
@@ -52,6 +54,7 @@ workgroup=mygroup
 >有很多段，都用`[]标志`开始的，需要根据实际情况修改。
 
 **语法说明：**
+
 - 每个部分有消息头和参数构成，消息头用`[]`表示，如`[global]`就是一个消息头。
 - 参数的结构形式是`parameter=value`。
 - 注释用 `#` 表示，这个和shell脚本有点像。

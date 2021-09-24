@@ -21,6 +21,7 @@ toc: true
 ![总启动流程](linux-start-process-0-overview.jpg)
 
 总的来说，linux系统启动流程可以简单总结为以下几步：
+
 >1. 开机BIOS自检，加载硬盘。
 >2. 读取MBR,进行MBR引导。
 >3. grub引导菜单(Boot Loader)。
@@ -32,6 +33,7 @@ toc: true
 >9. 启动mingetty，进入系统登陆界面。
 
 linux系统安装时，如果要想设置开启启动项，可以：
+
 >开机到BIOS提醒界面，按键F11（Dell服务器的做法）进入BIOS设置BOOT MENU，继而设置启动项：硬盘HD启动，光盘CD/DVD启动，还是U盘USB启动。
 
 # 详细流程
@@ -39,6 +41,7 @@ linux系统安装时，如果要想设置开启启动项，可以：
 下面就linux操作系统的启动过程做一详细解析记录。
 
 ## 1. 加载内核
+
 操作系统接管硬件以后，首先读入 /boot 目录下的内核文件。
 
 ![加载内核](linux-start-process-1-load-kernel.jpg)
@@ -57,6 +60,7 @@ drwx------. 2 root root    12288 Aug 22 16:24 lost+found
 ```
 
 ## 2. 启动初始化进程
+
 内核文件加载以后，就开始运行第一个程序 /sbin/init，它的作用是初始化系统环境。
 
 ![启动初始化进程](linux-start-process-2-start-init.jpg)
@@ -64,6 +68,7 @@ drwx------. 2 root root    12288 Aug 22 16:24 lost+found
 由于init是第一个运行的程序，它的进程编号（pid）就是1。其他所有进程都从它衍生，都是它的子进程。
 
 ## 3. 确定运行级别
+
 许多程序需要开机启动。它们在Windows叫做"服务"（service），在Linux就叫做"守护进程"（daemon）。
 
 init进程的一大任务，就是去运行这些开机启动的程序。但是，不同的场合需要启动不同的程序，比如用作服务器时，需要启动Apache，用作桌面就不需要。Linux允许为不同的场合，分配不同的开机启动程序，这就叫做"运行级别"（runlevel）。也就是说，启动时根据"运行级别"，确定要运行哪些程序。
@@ -71,6 +76,7 @@ init进程的一大任务，就是去运行这些开机启动的程序。但是�
 ![确定运行级别](linux-start-process-3-run-level.jpg)
 
 Linux预置七种init运行级别（0-6）：
+
 >0：关机模式    （相当于poweroff）
 >
 >1：单用户模式
@@ -98,6 +104,7 @@ initdefault的值是3，表明系统启动时的运行级别为3。如果需要�
 **那么，运行级别3有哪些程序呢，系统怎么知道每个级别应该加载哪些程序呢？**
 
 答案是每个运行级别在/etc目录下面，都有一个对应的子目录，指定要加载的程序。
+
 ```bash
 /etc/rc0.d
 /etc/rc1.d
@@ -109,6 +116,7 @@ initdefault的值是3，表明系统启动时的运行级别为3。如果需要�
 ```
 
 上面目录名中的"rc"，表示`run command（运行程序）`，最后的d表示`directory（目录）`。下面让我们看看 /etc/rc3.d 目录中到底指定了哪些程序。
+
 ```
 [root@bastion-IDC ~]# ll /etc/rc3.d/
 total 0
@@ -157,6 +165,7 @@ lrwxrwxrwx. 1 root root 11 Aug 22 16:30 S99local -> ../rc.local
 >这个目录里的所有文件（除了README），就是启动时要加载的程序。如果想增加或删除某些程序，不建议手动修改 /etc/rcN.d 目录，最好是用一些专门命令进行管理（参考这里和这里）。
 
 ## 4. 加载开机启动程序
+
 前面提到，七种预设的"运行级别"各自有一个目录，存放需要开机启动的程序。不难想到，如果多个"运行级别"需要启动同一个程序，那么这个程序的启动脚本，就会在每一个目录里都有一个拷贝。这样会造成管理上的困扰：如果要修改启动脚本，岂不是每个目录都要改一遍？
 
 Linux的解决办法，就是七个 `/etc/rcN.d` 目录里列出的程序，都设为链接文件，指向另外一个目录 `/etc/init.d`，真正的启动脚本都统一放在这个目录中。init进程逐一加载开机启动程序，其实就是运行这个目录里的启动脚本。
@@ -180,6 +189,7 @@ lrwxrwxrwx. 1 root root 10 Aug 22 16:30 /etc/rc3.d -> rc.d/rc3.d
 /etc/init.d 这个目录名最后一个字母d，是directory的意思，表示这是一个目录，用来与程序 /etc/init 区分。
 
 ## 5. 用户登录
+
 开机启动程序加载完毕以后，就要让用户登录了。
 
 ![用户登录](linux-start-process-5-user-login.jpg)
@@ -192,11 +202,13 @@ lrwxrwxrwx. 1 root root 10 Aug 22 16:30 /etc/rc3.d -> rc.d/rc3.d
 >3）**图形界面登录**：init进程调用显示管理器，Gnome图形界面对应的显示管理器为gdm（GNOME Display Manager），然后用户输入用户名和密码。如果密码正确，就读取/etc/gdm3/Xsession，启动用户的会话。
 
 ## 6. 进入 login shell
+
 所谓shell，简单说就是命令行界面，让用户可以直接与操作系统对话。用户登录时打开的shell，就叫做login shell。
 
 ![进入 login shell](linux-start-process-6-login-shell.jpg)
 
 Linux默认的shell是Bash，它会读入一系列的配置文件。上一步的三种情况，在这一步的处理，也存在差异。
+
 1. **命令行登录**：首先读入 `/etc/profile`，这是对所有用户都有效的配置；然后依次寻找下面三个文件，这是针对当前用户的配置。
 ```bash
 ~/.bash_profile
@@ -209,6 +221,7 @@ Linux默认的shell是Bash，它会读入一系列的配置文件。上一步的
 3. **图形界面登录**：只加载 `/etc/profile` 和 `~/.profile`。也就是说，`~/.bash_profile` 不管有没有，都不会运行。
 
 ## 7. 打开 non-login shell
+
 老实说，上一步完成以后，Linux的启动过程就算结束了，用户已经可以看到命令行提示符或者图形界面了。但是，为了内容的完整，必须再介绍一下这一步。
 
 用户进入操作系统以后，常常会再手动开启一个shell。这个shell就叫做 `non-login shell`，意思是它不同于登录时出现的那个shell，不读取`/etc/profile`和`.profile`等配置文件。
