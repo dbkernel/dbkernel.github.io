@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="本文首发于 2020-10-02 10:37:10  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;26&#x2F;clickhouse-and-friends-merge-tree-disk-layout&#x2F;以下为正文。  上篇的 存储引擎技术进化与MergeTree 介绍了存储算法的演进。 存储引">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构">
+<meta property="og:url" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="本文首发于 2020-10-02 10:37:10  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;06&#x2F;26&#x2F;clickhouse-and-friends-merge-tree-disk-layout&#x2F;以下为正文。  上篇的 存储引擎技术进化与MergeTree 介绍了存储算法的演进。 存储引">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-bin-without-granule.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-bin-granule.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-bin-marker.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-bin-orderby-sort.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-primary-key.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-skipping-index-g1.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-skipping-index-g2.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-minmax-idx.png">
+<meta property="og:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-layout.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2020-10-02T02:37:10.000Z">
+<meta property="article:modified_time" content="2021-10-10T10:53:16.963Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="ClickHouse和他的朋友们">
+<meta property="article:tag" content="ClickHouse">
+<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="MergeTree">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/merge-tree-bin-without-granule.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号数据库内核：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Postgres-X2/">Postgres-X2</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/B-Tree/" rel="tag">B-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LSM-Tree/" rel="tag">LSM-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MergeTree/" rel="tag">MergeTree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-X2/" rel="tag">Postgres-X2</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-XC/" rel="tag">Postgres-XC</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WAL/" rel="tag">WAL</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pipeline/" rel="tag">pipeline</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/processor/" rel="tag">processor</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.43px;">APUE</a> <a href="../../../../tags/B-Tree/" style="font-size: 13px;">B-Tree</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.57px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.57px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 13.86px;">C语言</a> <a href="../../../../tags/DAG-Scheduler/" style="font-size: 13px;">DAG Scheduler</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.29px;">GreenPlum</a> <a href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" style="font-size: 13px;">HEAP引擎</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/LSM-Tree/" style="font-size: 13px;">LSM-Tree</a> <a href="../../../../tags/Linux/" style="font-size: 13.71px;">Linux</a> <a href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" style="font-size: 13px;">MEMORY引擎</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MergeTree/" style="font-size: 13px;">MergeTree</a> <a href="../../../../tags/MySQL/" style="font-size: 13.57px;">MySQL</a> <a href="../../../../tags/Percona/" style="font-size: 13px;">Percona</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 14px;">PostgreSQL</a> <a href="../../../../tags/Postgres-X2/" style="font-size: 13px;">Postgres-X2</a> <a href="../../../../tags/Postgres-XC/" style="font-size: 13px;">Postgres-XC</a> <a href="../../../../tags/RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.29px;">UNIX</a> <a href="../../../../tags/WAL/" style="font-size: 13px;">WAL</a> <a href="../../../../tags/Xenon/" style="font-size: 13px;">Xenon</a> <a href="../../../../tags/Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/getopt/" style="font-size: 13px;">getopt</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/pipeline/" style="font-size: 13px;">pipeline</a> <a href="../../../../tags/processor/" style="font-size: 13px;">processor</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.14px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.14px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.14px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" style="font-size: 13px;">本地事务</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.71px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.14px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.14px;">问题定位</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/10/">十月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="" class="title">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-10-02T02:37:10.000Z" itemprop="datePublished">2020-10-02</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../08/27/percona-xtrabackup-2.4-vs-8.0/" class="title">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../06/22/clickhouse-and-friends-05-merge-tree-algo/" class="title">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-22T13:55:10.000Z" itemprop="datePublished">2020-06-22</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../06/12/clickhouse-and-friends-04-processor/" class="title">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-12T12:57:10.000Z" itemprop="datePublished">2020-06-12</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A3%81%E7%9B%98%E6%96%87%E4%BB%B6"><span class="toc-number">1.</span> <span class="toc-text">磁盘文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">存储结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.1.</span> <span class="toc-text">数据文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#granule"><span class="toc-number">2.2.</span> <span class="toc-text">granule</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%98%E5%82%A8%E6%8E%92%E5%BA%8F"><span class="toc-number">2.3.</span> <span class="toc-text">存储排序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%80%E7%96%8F%E7%B4%A2%E5%BC%95"><span class="toc-number">2.4.</span> <span class="toc-text">稀疏索引</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-primary-index"><span class="toc-number">2.4.1.</span> <span class="toc-text">1. primary index</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-skipping-index"><span class="toc-number">2.4.2.</span> <span class="toc-text">2. skipping index</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-partition-minmax-index"><span class="toc-number">2.4.3.</span> <span class="toc-text">3. partition minmax index</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="toc-number">2.4.4.</span> <span class="toc-text">4. 全景图</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">查询优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%88%86%E5%8C%BA%E9%94%AE%E6%9F%A5%E8%AF%A2"><span class="toc-number">3.1.</span> <span class="toc-text">1. 分区键查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95%E6%9F%A5%E8%AF%A2"><span class="toc-number">3.2.</span> <span class="toc-text">2. 主键索引查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E7%B4%A2%E5%BC%95%E6%9F%A5%E8%AF%A2"><span class="toc-number">3.3.</span> <span class="toc-text">3. 索引查询</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-clickhouse-and-friends-06-merge-tree-disk-layout" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2020-10-02T02:37:10.000Z" itemprop="datePublished">2020-10-02</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a>, <a class="article-tag-link-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a>, <a class="article-tag-link-link" href="../../../../tags/MergeTree/" rel="tag">MergeTree</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 2.1k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 8(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+<p><strong>本文首发于 2020-10-02 10:37:10</strong></p>
+<blockquote>
+<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/">https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/</a><br>以下为正文。</p>
+</blockquote>
+<p>上篇的 <a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/20/clickhouse-and-friends-merge-tree-algo/">存储引擎技术进化与MergeTree</a> 介绍了存储算法的演进。</p>
+<p>存储引擎是一个数据库的底盘，一定要稳和动力澎湃。</p>
+<p>接下来我们将一起来探索下 ClickHouse MergeTree 列式存储引擎，解构下这台“跑车”最重要的部件。</p>
+<p>所有的存储引擎，无论精良与粗制滥造，最终都是要把数据回写到磁盘，来满足存储和索引目的。</p>
+<p>磁盘文件的构造可以说是算法的物理体现，我们甚至可以通过这些存储结构反推出其算法实现。</p>
+<p>所以，要想深入了解一个存储引擎，最好的入手点是它的磁盘存储结构，然后再反观它的读、写机制就会有一种水到渠成的感觉。</p>
+<p>如果这个分析顺序搞反了，会有一种生硬的感觉，网上大部分教程都是这种“生硬”式教学，本文将直击灵魂从最底层谈起，彻底搞明白４个问题：</p>
+<ol>
+<li>MergeTree 有哪些文件？</li>
+<li>MergeTree 数据如何分布？</li>
+<li>MergeTree 索引如何组织？</li>
+<li>MergeTree 如何利用索引加速？</li>
+</ol>
+<p>话不多说，上表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> default.mt</span><br><span class="line">(</span><br><span class="line">    `a` Int32,</span><br><span class="line">    `b` Int32,</span><br><span class="line">    `c` Int32,</span><br><span class="line">    INDEX `idx_c` (c) TYPE minmax GRANULARITY <span class="number">1</span></span><br><span class="line">)</span><br><span class="line">ENGINE <span class="operator">=</span> MergeTree</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> a</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> b</span><br><span class="line">SETTINGS index_granularity<span class="operator">=</span><span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<p>造点数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> default.mt(a,b,c) <span class="keyword">values</span>(<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> default.mt(a,b,c) <span class="keyword">values</span>(<span class="number">5</span>,<span class="number">2</span>,<span class="number">2</span>),(<span class="number">5</span>,<span class="number">3</span>,<span class="number">3</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> default.mt(a,b,c) <span class="keyword">values</span>(<span class="number">3</span>,<span class="number">10</span>,<span class="number">4</span>),(<span class="number">3</span>,<span class="number">9</span>,<span class="number">5</span>),(<span class="number">3</span>,<span class="number">8</span>,<span class="number">6</span>),(<span class="number">3</span>,<span class="number">7</span>,<span class="number">7</span>),(<span class="number">3</span>,<span class="number">6</span>,<span class="number">8</span>),(<span class="number">3</span>,<span class="number">5</span>,<span class="number">9</span>),(<span class="number">3</span>,<span class="number">4</span>,<span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="磁盘文件"><a href="#磁盘文件" class="headerlink" title="磁盘文件"></a>磁盘文件</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ls ckdatas/data/default/mt/</span><br><span class="line">1_4_4_0  3_6_6_0  5_5_5_0  detached  format_version.txt</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，生成了 3 个数据目录，每个目录在 ClickHouse 里称作一个分区(part)，目录名的前缀正是我们写入时字段 a 的值: 1,3,5，因为表分区是这样定位的：<code>PARTITION BY a</code>。</p>
+<p>现在我们看看 a=3 分区：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ls ckdatas/data/default/mt/3_6_6_0/</span><br><span class="line">a.bin  a.mrk2  b.bin  b.mrk2  c.bin  checksums.txt  c.mrk2  columns.txt  count.txt  minmax_a.idx  partition.dat  primary.idx  skp_idx_idx_c.idx  skp_idx_idx_c.mrk2</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>*.bin</code> 是列数据文件，按主键排序(ORDER BY)，这里是按照字段 b 进行排序</li>
+<li><code>*.mrk2</code> mark 文件，目的是快速定位 bin 文件数据位置</li>
+<li><code>minmax_a.idx</code> 分区键 min-max 索引文件，目的是加速分区键 a 查找</li>
+<li><code>primay.idx</code> 主键索引文件，目的是加速主键 b 查找</li>
+<li><code>skp_idx_idx_c.*</code> 字段 c 索引文件，目的是加速 c 的查找</li>
+</ul>
+<p>在磁盘上，MergeTree 只有一种物理排序，就是 ORDER BY 的主键序，其他文件(比如 .mrk/.idx)是一种逻辑加速，围绕仅有的一份物理排序，要解决的问题是：</p>
+<p><strong>在以字段 b 物理排序上，如何实现字段 a、字段 c 的快速查找？</strong></p>
+<p>MergeTree 引擎概括起来很简单：<br>整个数据集通过分区字段被划分为多个物理分区，每个分区內又通过逻辑文件围绕仅有的一种物理排序进行加速查找。</p>
+<h2 id="存储结构"><a href="#存储结构" class="headerlink" title="存储结构"></a>存储结构</h2><h3 id="数据文件"><a href="#数据文件" class="headerlink" title="数据文件"></a>数据文件</h3><p>对于单个物理分区內的存储结构，首先要明确一点，MergeTree 的数据只有一份：<code>*.bin</code>。</p>
+<p>a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c 的数据，也就是大家熟悉的列存储。</p>
+<p>各个 bin 文件以 b.bin排序对齐（b 是排序键），如图：<br><img src="merge-tree-bin-without-granule.png" alt="merge-tree-bin-without-granule.png"></p>
+<p>这样会有一个比较严重的问题：<br>如果 <code>*.bin</code> 文件较大，即使读取一行数据，也要加载整个 bin 文件，浪费了大量的 IO，没法忍。</p>
+<h3 id="granule"><a href="#granule" class="headerlink" title="granule"></a>granule</h3><p>高、黑科技来了，ClickHouse MergeTree 把 bin 文件根据颗粒度(GRANULARITY)划分为多个颗粒(granule)，每个 granule 单独压缩存储。</p>
+<p><code>SETTINGS index_granularity=3</code> 表示每 ３ 行数据为一个 granule，分区目前只有 ７ 条数据，所以被划分成 3 个 granule(三个色块)：<br><img src="merge-tree-bin-granule.png" alt="merge-tree-bin-granule.png"></p>
+<p>为方便读取某个 granule，使用 <code>*.mrk</code> 文件记录每个 granule 的 offset，每个 granule 的 header 里会记录一些元信息，用于读取解析:<br><img src="merge-tree-bin-marker.png" alt="merge-tree-bin-marker.png"></p>
+<p>这样，我们就可以根据 ｍark 文件，直接定位到想要的 granule，然后对这个单独的 granule 进行读取、校验。</p>
+<p>目前，我们还有缺少一种映射：每个 mark 与字段值之间的对应，哪些值区间落在 mark0，哪些落在 mark1 …？</p>
+<p>有了这个映射，就可以实现最小化读取 granule 来加速查询：</p>
+<ol>
+<li>根据查询条件确定需要哪些 mark</li>
+<li>根据 mark 读取相应的 granule</li>
+</ol>
+<h3 id="存储排序"><a href="#存储排序" class="headerlink" title="存储排序"></a>存储排序</h3><p>在了解 MergeTree 索引机制之前，需要明白以下两点：</p>
+<ol>
+<li>只有一份全量数据，存储在 <code>*.bin</code> 文件</li>
+<li><code>*.bin</code> 按照 ORDER BY 字段降序存储<br><img src="merge-tree-bin-orderby-sort.png" alt="merge-tree-bin-orderby-sort.png"></li>
+</ol>
+<h3 id="稀疏索引"><a href="#稀疏索引" class="headerlink" title="稀疏索引"></a>稀疏索引</h3><p>因为数据只有一份且只有一种物理排序，MergeTree在索引设计上选择了简单、高效的稀疏索引模式。</p>
+<p>什么是稀疏索引呢？就是从已经排序的全量数据里，间隔性的选取一些点，并记录这些点属于哪个 mark。</p>
+<h4 id="1-primary-index"><a href="#1-primary-index" class="headerlink" title="1. primary index"></a>1. primary index</h4><p>主键索引，可通过<code>[PRIMARY KEY expr]</code>指定，默认是 ORDER BY 字段值。</p>
+<p>注意 ClickHouse primary index 跟 MySQL primary key 不是一个概念。</p>
+<p>在稀疏点的选择上，取每个 granule 最小值：</p>
+<p><img src="merge-tree-primary-key.png" alt="merge-tree-primary-key.png"></p>
+<h4 id="2-skipping-index"><a href="#2-skipping-index" class="headerlink" title="2. skipping index"></a>2. skipping index</h4><p>普通索引。</p>
+<p><code>INDEX idx_c(c) TYPE minmax GRANULARITY 1</code> 针对字段 c 创建一个 minmax 模式索引。</p>
+<p><code>GRANULARITY</code> 是稀疏点选择上的 granule 颗粒度，<code>GRANULARITY 1</code> 表示每 1 个 granule 选取一个：<br><img src="merge-tree-skipping-index-g1.png" alt="merge-tree-skipping-index-g1.png"></p>
+<p>如果定义为<code>GRANULARITY 2</code> ，则 2 个 granule 选取一个：<br><img src="merge-tree-skipping-index-g2.png" alt="merge-tree-skipping-index-g2.png"></p>
+<h4 id="3-partition-minmax-index"><a href="#3-partition-minmax-index" class="headerlink" title="3. partition minmax index"></a>3. partition minmax index</h4><p>针对分区键，MergeTree 还会创建一个 min/max 索引，来加速分区选择。</p>
+<p><img src="merge-tree-minmax-idx.png" alt="merge-tree-minmax-idx.png"></p>
+<h4 id="4-全景图"><a href="#4-全景图" class="headerlink" title="4. 全景图"></a>4. 全景图</h4><p><img src="merge-tree-layout.png" alt="merge-tree-layout.png"></p>
+<h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><p>现在熟悉了 MergeTree 的存储结构，我们通过几个查询来体验下。</p>
+<h3 id="1-分区键查询"><a href="#1-分区键查询" class="headerlink" title="1. 分区键查询"></a>1. 分区键查询</h3><p>语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> default.mt <span class="keyword">where</span> a<span class="operator">=</span><span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<p>查询会直接根据 <code>a=3</code> 定位到单个分区:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&lt;Debug&gt; InterpreterSelectQuery: MergeTreeWhereOptimizer: condition <span class="string">&quot;a = 3&quot;</span> moved to PREWHERE</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Key condition: unknown</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): MinMax index condition: (column <span class="number">0</span> in [<span class="number">3</span>, <span class="number">3</span>])</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Selected <span class="number">1</span> parts by a, <span class="number">1</span> parts by key, <span class="number">3</span> marks by primary key, <span class="number">3</span> marks to read from <span class="number">1</span> ranges</span><br><span class="line">┌─a─┬──b─┬──c─┐</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">4</span> │ <span class="number">10</span> │</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">5</span> │  <span class="number">9</span> │</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">6</span> │  <span class="number">8</span> │</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">7</span> │  <span class="number">7</span> │</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">8</span> │  <span class="number">6</span> │</span><br><span class="line">│ <span class="number">3</span> │  <span class="number">9</span> │  <span class="number">5</span> │</span><br><span class="line">│ <span class="number">3</span> │ <span class="number">10</span> │  <span class="number">4</span> │</span><br><span class="line">└───┴────┴────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-主键索引查询"><a href="#2-主键索引查询" class="headerlink" title="2. 主键索引查询"></a>2. 主键索引查询</h3><p>语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> default.mt <span class="keyword">where</span> b<span class="operator">=</span><span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<p>查询会先从 3 个分区读取 prmary.idx，然后定位到只有一个分区符合条件，找到要读取的 mark:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Key condition: (column <span class="number">0</span> in [<span class="number">5</span>, <span class="number">5</span>])</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): MinMax index condition: unknown</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Selected <span class="number">3</span> parts by a, <span class="number">1</span> parts by key, <span class="number">1</span> marks by primary key, <span class="number">1</span> marks to read from <span class="number">1</span> ranges</span><br><span class="line">┌─a─┬─b─┬─c─┐</span><br><span class="line">│ <span class="number">3</span> │ <span class="number">5</span> │ <span class="number">9</span> │</span><br><span class="line">└───┴───┴───┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-索引查询"><a href="#3-索引查询" class="headerlink" title="3. 索引查询"></a>3. 索引查询</h3><p>语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> default.mt <span class="keyword">where</span> c<span class="operator">=</span><span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<p>查询会先从 3 个分区读取 prmary.idx 和 skp_idx_idx_c.idx 进行 granule 过滤（没用的 drop 掉），然后定位到只有 3_x_x_x 分区的一个 granule 符合条件:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;Debug&gt; InterpreterSelectQuery: MergeTreeWhereOptimizer: condition <span class="string">&quot;b = 5&quot;</span> moved to PREWHERE</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Key condition: unknown</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): MinMax index condition: unknown</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Index `idx_c` has dropped <span class="number">1</span> / <span class="number">1</span> granules.</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Index `idx_c` has dropped <span class="number">1</span> / <span class="number">1</span> granules.</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Index `idx_c` has dropped <span class="number">2</span> / <span class="number">3</span> granules.</span><br><span class="line">&lt;Debug&gt; <span class="keyword">default</span>.<span class="built_in">mt</span> (SelectExecutor): Selected <span class="number">3</span> parts by a, <span class="number">1</span> parts by key, <span class="number">5</span> marks by primary key, <span class="number">1</span> marks to read from <span class="number">1</span> ranges</span><br><span class="line">┌─a─┬─b─┬─c─┐</span><br><span class="line">│ <span class="number">3</span> │ <span class="number">9</span> │ <span class="number">5</span> │</span><br><span class="line">└───┴───┴───┘</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文从磁盘存储结构入手，分析 ClickHouse MergeTree 的存储、索引设计。</p>
+<p>只有了解了这些底层机制，我们才好对自己的 SQL 和表结构进行优化，使其执行更加高效。</p>
+<p>ClickHouse MergeTree 设计简单、高效，它首要解决的问题是：在一种物理排序上，如何实现快速查找。</p>
+<p>针对这个问题，ClickHouse使用稀疏索引来解决。</p>
+<p>在官方 roadmap 上，列举了一个有意思的索引方向：Z-Order Indexing，目的是把多个维度编码到一维存储，当我们给出多维度条件的时候，可以快速定位到这个条件点集的空间位置，目前 ClickHouse 针对这个索引设计暂无进展。</p>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/" title="源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构" target="_blank" rel="external">http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" title="技术分享 | 如何为你的代码选择一个合适的开源协议？"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../08/27/percona-xtrabackup-2.4-vs-8.0/" title="问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
