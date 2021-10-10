@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="本文首发于 2020-09-03 21:22:14  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;08&#x2F;31&#x2F;clickhouse-and-friends-materialized-view&#x2F;以下为正文。   在 ClickHouse 里，物化视图(Materialized View)可以说是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理">
+<meta property="og:url" content="http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="本文首发于 2020-09-03 21:22:14  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;08&#x2F;31&#x2F;clickhouse-and-friends-materialized-view&#x2F;以下为正文。   在 ClickHouse 里，物化视图(Materialized View)可以说是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/clickhouse-map-2020-materializeview.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2020-09-03T13:22:14.000Z">
+<meta property="article:modified_time" content="2021-10-10T13:13:57.643Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="ClickHouse和他的朋友们">
+<meta property="article:tag" content="ClickHouse">
+<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="Materialized View">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/clickhouse-map-2020-materializeview.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号数据库内核：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Postgres-X2/">Postgres-X2</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/B-Tree/" rel="tag">B-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LSM-Tree/" rel="tag">LSM-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Materialized-View/" rel="tag">Materialized View</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MergeTree/" rel="tag">MergeTree</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Parser/" rel="tag">Parser</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-X2/" rel="tag">Postgres-X2</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-XC/" rel="tag">Postgres-XC</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WAL/" rel="tag">WAL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pipeline/" rel="tag">pipeline</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/processor/" rel="tag">processor</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.38px;">APUE</a> <a href="../../../../tags/B-Tree/" style="font-size: 13px;">B-Tree</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.88px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.88px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 13.75px;">C语言</a> <a href="../../../../tags/DAG-Scheduler/" style="font-size: 13px;">DAG Scheduler</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.25px;">GreenPlum</a> <a href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" style="font-size: 13px;">HEAP引擎</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/LSM-Tree/" style="font-size: 13px;">LSM-Tree</a> <a href="../../../../tags/Linux/" style="font-size: 13.5px;">Linux</a> <a href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" style="font-size: 13px;">MEMORY引擎</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/Materialized-View/" style="font-size: 13px;">Materialized View</a> <a href="../../../../tags/MergeTree/" style="font-size: 13.13px;">MergeTree</a> <a href="../../../../tags/MySQL/" style="font-size: 13.63px;">MySQL</a> <a href="../../../../tags/Parser/" style="font-size: 13px;">Parser</a> <a href="../../../../tags/Percona/" style="font-size: 13px;">Percona</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 13.88px;">PostgreSQL</a> <a href="../../../../tags/Postgres-X2/" style="font-size: 13px;">Postgres-X2</a> <a href="../../../../tags/Postgres-XC/" style="font-size: 13px;">Postgres-XC</a> <a href="../../../../tags/RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.25px;">UNIX</a> <a href="../../../../tags/WAL/" style="font-size: 13.13px;">WAL</a> <a href="../../../../tags/Xenon/" style="font-size: 13px;">Xenon</a> <a href="../../../../tags/Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/getopt/" style="font-size: 13px;">getopt</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/pipeline/" style="font-size: 13px;">pipeline</a> <a href="../../../../tags/processor/" style="font-size: 13px;">processor</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.13px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.13px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.13px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" style="font-size: 13px;">本地事务</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 14px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.13px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.13px;">问题定位</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/09/">九月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="" class="title">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-09-03T13:22:14.000Z" itemprop="datePublished">2020-09-03</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../08/28/clickhouse-and-friends-11-mysql-gtid-replication/" class="title">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-28T12:40:14.000Z" itemprop="datePublished">2020-08-28</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../08/27/percona-xtrabackup-2.4-vs-8.0/" class="title">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../08/20/clickhouse-and-friends-10-merge-tree-wal/" class="title">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-20T11:55:14.000Z" itemprop="datePublished">2020-08-20</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E7%89%A9%E5%8C%96%E8%A7%86%E5%9B%BE"><span class="toc-number">1.</span> <span class="toc-text">什么是物化视图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%89%A9%E5%8C%96%E8%A7%86%E5%9B%BE"><span class="toc-number">2.</span> <span class="toc-text">创建物化视图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%A9%E5%8C%96%E5%85%A8%E9%87%8F%E6%95%B0%E6%8D%AE"><span class="toc-number">3.</span> <span class="toc-text">物化全量数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%A9%E5%8C%96%E5%A2%9E%E9%87%8F%E6%95%B0%E6%8D%AE"><span class="toc-number">4.</span> <span class="toc-text">物化增量数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%A9%E5%8C%96%E8%A7%86%E5%9B%BE%E5%8E%9F%E7%90%86"><span class="toc-number">5.</span> <span class="toc-text">物化视图原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-clickhouse-and-friends-12-materialized-view" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2020-09-03T13:22:14.000Z" itemprop="datePublished">2020-09-03</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a>, <a class="article-tag-link-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a>, <a class="article-tag-link-link" href="../../../../tags/Materialized-View/" rel="tag">Materialized View</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1.8k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 8(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+<p><strong>本文首发于 2020-09-03 21:22:14</strong></p>
+<blockquote>
+<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2020/08/31/clickhouse-and-friends-materialized-view/">https://bohutang.me/2020/08/31/clickhouse-and-friends-materialized-view/</a><br>以下为正文。</p>
+</blockquote>
+<p><img src="clickhouse-map-2020-materializeview.png" alt="clickhouse-map-2020-materializeview.png"></p>
+<p>在 ClickHouse 里，物化视图(Materialized View)可以说是一个神奇且强大的东西，用途别具一格。</p>
+<p>本文从底层机制进行分析，看看 ClickHouse 的 Materalized View 是怎么工作的，以方便更好的使用它。</p>
+<h2 id="什么是物化视图"><a href="#什么是物化视图" class="headerlink" title="什么是物化视图"></a>什么是物化视图</h2><p>对大部分人来说，物化视图这个概念会比较抽象，物化？视图？。。。</p>
+<p>为了更好的理解它，我们先看一个场景。</p>
+<p>假设你是 <code>*hub</code> 一个“幸福”的小程序员，某天产品经理有个需求：实时统计每小时视频下载量。</p>
+<p>用户下载明细表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> download LIMIT <span class="number">10</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+--------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">when</span>                <span class="operator">|</span> userid <span class="operator">|</span> bytes  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+--------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">06</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">530314</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">06</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">872957</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">06</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">107047</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">07</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">214876</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">07</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">820943</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">07</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">693959</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">08</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">882151</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">08</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">644223</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">08</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">199800</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">22</span>:<span class="number">09</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span> <span class="number">511439</span> <span class="operator">|</span></span><br><span class="line">... ....</span><br></pre></td></tr></table></figure>
+
+<p>计算每小时下载量：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span> toStartOfHour(<span class="keyword">when</span>) <span class="keyword">AS</span> <span class="keyword">hour</span>, userid, <span class="built_in">count</span>() <span class="keyword">as</span> downloads, <span class="built_in">sum</span>(bytes) <span class="keyword">AS</span> bytes <span class="keyword">FROM</span> download <span class="keyword">GROUP</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">hour</span>                <span class="operator">|</span> userid <span class="operator">|</span> downloads <span class="operator">|</span> bytes      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6822</span> <span class="operator">|</span> <span class="number">3378623036</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">19</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5424173178</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">20</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5418656068</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">21</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404309443</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">22</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5354077456</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">23</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5390852563</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5369839540</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">01</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5384161012</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">02</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404581759</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">03</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6778</span> <span class="operator">|</span> <span class="number">3399557322</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="number">10</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.13</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>很容易嘛，不过有个问题：每次都要以 <code>download</code> 表为基础数据进行计算，<code>*hub</code> 数据量太大，无法忍受。</p>
+<p>想到一个办法：如果对 <code>download</code> 进行预聚合，把结果保存到一个新表 <code>download_hour_mv</code>，并随着 <code>download</code> 增量实时更新，每次去查询<code>download_hour_mv</code> 不就可以了。</p>
+<p>这个新表可以看做是一个物化视图，它在 ClickHouse 是一个普通表。</p>
+<h2 id="创建物化视图"><a href="#创建物化视图" class="headerlink" title="创建物化视图"></a>创建物化视图</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">CREATE</span> MATERIALIZED <span class="keyword">VIEW</span> download_hour_mv</span><br><span class="line">ENGINE <span class="operator">=</span> SummingMergeTree</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> toYYYYMM(<span class="keyword">hour</span>) <span class="keyword">ORDER</span> <span class="keyword">BY</span> (userid, <span class="keyword">hour</span>)</span><br><span class="line"><span class="keyword">AS</span> <span class="keyword">SELECT</span></span><br><span class="line">  toStartOfHour(<span class="keyword">when</span>) <span class="keyword">AS</span> <span class="keyword">hour</span>,</span><br><span class="line">  userid,</span><br><span class="line">  <span class="built_in">count</span>() <span class="keyword">as</span> downloads,</span><br><span class="line">  <span class="built_in">sum</span>(bytes) <span class="keyword">AS</span> bytes</span><br><span class="line"><span class="keyword">FROM</span> download <span class="keyword">WHERE</span> <span class="keyword">when</span> <span class="operator">&gt;=</span> toDateTime(<span class="string">&#x27;2020-09-01 04:00:00&#x27;</span>)</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span></span><br></pre></td></tr></table></figure>
+
+<p>这个语句主要做了：</p>
+<ul>
+<li>创建一个引擎为 <code>SummingMergeTree</code> 的物化视图 <code>download_hour_mv</code></li>
+<li>物化视图的数据来源于 <code>download</code> 表，并根据 <code>select</code> 语句中的表达式进行相应“物化”操作</li>
+<li>选取一个未来时间(当前时间是 <code>2020-08-31 18:00:00</code>)作为开始点 <code>WHERE when &gt;= toDateTime(&#39;2020-09-01 04:00:00&#39;)</code>，表示在<code>2020-09-01 04:00:00</code> 之后的数据才会被同步到 <code>download_hour_mv</code></li>
+</ul>
+<p>这样，目前 <code>download_hour_mv</code> 是一个空表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> download_hour_mv <span class="keyword">ORDER</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span>;</span><br><span class="line"><span class="keyword">Empty</span> <span class="keyword">set</span> (<span class="number">0.02</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>注意：官方有 <a target="_blank" rel="noopener" href="https://clickhouse.tech/docs/en/sql-reference/statements/create/view/#materialized">POPULATE</a> 关键字，但是不建议使用，因为视图创建期间 <code>download</code> 如果有写入数据会丢失，这也是我们加一个 <code>WHERE</code> 作为数据同步点的原因。</p>
+<p>那么，我们如何让源表数据可以一致性的同步到 <code>download_hour_mv</code> 呢？</p>
+<h2 id="物化全量数据"><a href="#物化全量数据" class="headerlink" title="物化全量数据"></a>物化全量数据</h2><p>在<code>2020-09-01 04:00:00</code>之后，我们可以通过一个带 <code>WHERE</code> 快照的<code>INSERT INTO SELECT...</code> 对 <code>download</code> 历史数据进行物化：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> download_hour_mv</span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">  toStartOfHour(<span class="keyword">when</span>) <span class="keyword">AS</span> <span class="keyword">hour</span>,</span><br><span class="line">  userid,</span><br><span class="line">  <span class="built_in">count</span>() <span class="keyword">as</span> downloads,</span><br><span class="line">  <span class="built_in">sum</span>(bytes) <span class="keyword">AS</span> bytes</span><br><span class="line"><span class="keyword">FROM</span> download <span class="keyword">WHERE</span> <span class="keyword">when</span> <span class="operator">&lt;</span> toDateTime(<span class="string">&#x27;2020-09-01 04:00:00&#x27;</span>)</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span></span><br></pre></td></tr></table></figure>
+
+<p>查询物化视图：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> download_hour_mv <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="keyword">hour</span>, userid, downloads <span class="keyword">DESC</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">hour</span>                <span class="operator">|</span> userid <span class="operator">|</span> downloads <span class="operator">|</span> bytes      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6822</span> <span class="operator">|</span> <span class="number">3378623036</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">19</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5424173178</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">20</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5418656068</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">21</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404309443</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">22</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5354077456</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">23</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5390852563</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5369839540</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">01</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5384161012</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">02</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404581759</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">03</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6778</span> <span class="operator">|</span> <span class="number">3399557322</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="number">10</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.05</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到数据已经“物化”到 <code>download_hour_mv</code>。</p>
+<h2 id="物化增量数据"><a href="#物化增量数据" class="headerlink" title="物化增量数据"></a>物化增量数据</h2><p>写一些数据到 <code>download</code>表:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> download</span><br><span class="line">       <span class="keyword">SELECT</span></span><br><span class="line">         toDateTime(<span class="string">&#x27;2020-09-01 04:00:00&#x27;</span>) <span class="operator">+</span> number<span class="operator">*</span>(<span class="number">1</span><span class="operator">/</span><span class="number">3</span>) <span class="keyword">as</span> <span class="keyword">when</span>,</span><br><span class="line">         <span class="number">19</span>,</span><br><span class="line">         rand() <span class="operator">%</span> <span class="number">1000000</span></span><br><span class="line">       <span class="keyword">FROM</span> system.numbers</span><br><span class="line">       LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>查询物化视图 <code>download_hour_mv</code>:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> download_hour_mv <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="keyword">hour</span>, userid, downloads;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">hour</span>                <span class="operator">|</span> userid <span class="operator">|</span> downloads <span class="operator">|</span> bytes      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">18</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6822</span> <span class="operator">|</span> <span class="number">3378623036</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">19</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5424173178</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">20</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5418656068</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">21</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404309443</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">22</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5354077456</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-08</span><span class="number">-31</span> <span class="number">23</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5390852563</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5369839540</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">01</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5384161012</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">02</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>     <span class="number">10800</span> <span class="operator">|</span> <span class="number">5404581759</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">03</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>      <span class="number">6778</span> <span class="operator">|</span> <span class="number">3399557322</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>     <span class="number">19</span> <span class="operator">|</span>        <span class="number">10</span> <span class="operator">|</span>    <span class="number">5732600</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+--------+-----------+------------+</span></span><br><span class="line"><span class="number">11</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到最后一条数据就是我们增量的一个物化聚合，已经实时同步，这是如何做到的呢？</p>
+<h2 id="物化视图原理"><a href="#物化视图原理" class="headerlink" title="物化视图原理"></a>物化视图原理</h2><p>ClickHouse 的物化视图原理并不复杂，在 <code>download</code> 表有新的数据写入时，如果检测到有物化视图跟它关联，会针对这批写入的数据进行物化操作。</p>
+<p>比如上面新增数据是通过以下 SQL 生成的：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">clickhouse<span class="operator">&gt;</span> <span class="keyword">SELECT</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>          toDateTime(<span class="string">&#x27;2020-09-01 04:00:00&#x27;</span>) <span class="operator">+</span> number<span class="operator">*</span>(<span class="number">1</span><span class="operator">/</span><span class="number">3</span>) <span class="keyword">as</span> <span class="keyword">when</span>,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>          <span class="number">19</span>,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>          rand() <span class="operator">%</span> <span class="number">1000000</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>        <span class="keyword">FROM</span> system.numbers</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>        LIMIT <span class="number">10</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+------+-------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">when</span>                <span class="operator">|</span> <span class="number">19</span>   <span class="operator">|</span> modulo(rand(), <span class="number">1000000</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+------+-------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">870495</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">322270</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">983422</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">01</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">759708</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">01</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">975636</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">01</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">365507</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">02</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">865569</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">02</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">975742</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">02</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                   <span class="number">85827</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-09</span><span class="number">-01</span> <span class="number">04</span>:<span class="number">00</span>:<span class="number">03</span> <span class="operator">|</span>   <span class="number">19</span> <span class="operator">|</span>                  <span class="number">992779</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+------+-------------------------+</span></span><br><span class="line"><span class="number">10</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.02</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>物化视图执行的语句类似：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> download_hour_mv</span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">  toStartOfHour(<span class="keyword">when</span>) <span class="keyword">AS</span> <span class="keyword">hour</span>,</span><br><span class="line">  userid,</span><br><span class="line">  <span class="built_in">count</span>() <span class="keyword">as</span> downloads,</span><br><span class="line">  <span class="built_in">sum</span>(bytes) <span class="keyword">AS</span> bytes</span><br><span class="line"><span class="keyword">FROM</span> [新增的<span class="number">10</span>条数据] <span class="keyword">WHERE</span> <span class="keyword">when</span> <span class="operator">&gt;=</span> toDateTime(<span class="string">&#x27;2020-09-01 04:00:00&#x27;</span>)</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> userid, <span class="keyword">hour</span></span><br></pre></td></tr></table></figure>
+
+<p>代码导航：</p>
+<ol>
+<li><p>添加视图 OutputStream， <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/cb4644ea6d04b3d5900868b4f8d686a03082379a/src/Interpreters/InterpreterInsertQuery.cpp#L313">InterpreterInsertQuery.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (table-&gt;<span class="built_in">noPushingToViews</span>() &amp;&amp; !no_destination)</span><br><span class="line">    out = table-&gt;<span class="built_in">write</span>(query_ptr, metadata_snapshot, context);</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    out = std::make_shared&lt;PushingToViewsBlockOutputStream&gt;(table, metadata_snapshot, context, query_ptr, no_destination);</span><br></pre></td></tr></table></figure></li>
+<li><p>构造 Insert ， <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/cb4644ea6d04b3d5900868b4f8d686a03082379a/src/DataStreams/PushingToViewsBlockOutputStream.cpp#L85">PushingToViewsBlockOutputStream.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ASTPtr <span class="title">insert_query_ptr</span><span class="params">(insert.release())</span></span>;</span><br><span class="line"><span class="function">InterpreterInsertQuery <span class="title">interpreter</span><span class="params">(insert_query_ptr, *insert_context)</span></span>;</span><br><span class="line">BlockIO io = interpreter.<span class="built_in">execute</span>();</span><br><span class="line">out = io.out;</span><br></pre></td></tr></table></figure></li>
+<li><p>物化新增数据：<a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/cb4644ea6d04b3d5900868b4f8d686a03082379a/src/DataStreams/PushingToViewsBlockOutputStream.cpp#L331">PushingToViewsBlockOutputStream.cpp</a></p>
+</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Context local_context = *select_context;</span><br><span class="line">local_context.<span class="built_in">addViewSource</span>(</span><br><span class="line">    StorageValues::<span class="built_in">create</span>(</span><br><span class="line">        storage-&gt;<span class="built_in">getStorageID</span>(), metadata_snapshot-&gt;<span class="built_in">getColumns</span>(), block, storage-&gt;<span class="built_in">getVirtuals</span>()));</span><br><span class="line">select.<span class="built_in">emplace</span>(view.query, local_context, <span class="built_in">SelectQueryOptions</span>());</span><br><span class="line">in = std::make_shared&lt;MaterializingBlockInputStream&gt;(select-&gt;<span class="built_in">execute</span>().<span class="built_in">getInputStream</span>()</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>物化视图的用途较多。</p>
+<p>比如可以解决表索引问题，我们可以用物化视图创建另外一种物理序，来满足某些条件下的查询问题。</p>
+<p>还有就是通过物化视图的实时同步数据能力，我们可以做到更加灵活的表结构变更。</p>
+<p>更强大的地方是它可以借助 MergeTree 家族引擎(SummingMergeTree、Aggregatingmergetree等)，得到一个实时的预聚合，满足快速查询。</p>
+<p>原理是把增量的数据根据 <code>AS SELECT ...</code> 对其进行处理并写入到物化视图表，物化视图是一种普通表，可以直接读取和写入。</p>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/" title="源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理" target="_blank" rel="external">http://dbkernel.github.io/2020/09/03/clickhouse-and-friends-12-materialized-view/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" title="技术分享 | 如何为你的代码选择一个合适的开源协议？"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../08/28/clickhouse-and-friends-11-mysql-gtid-replication/" title="源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
