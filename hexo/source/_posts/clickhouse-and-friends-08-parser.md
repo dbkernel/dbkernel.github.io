@@ -1,5 +1,5 @@
 ---
-title: 源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器
+title: 源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器
 date: 2020-07-26 21:55:10
 categories:
 - ClickHouse
