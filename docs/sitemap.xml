@@ -2,7 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://dbkernel.github.io/2020/10/02/clickhouse-and-friends-06-merge-tree-disk-layout/</loc>
+    <loc>http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/</loc>
+    
+    <lastmod>2021-10-10</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/</loc>
     
     <lastmod>2021-10-10</lastmod>
     
@@ -719,6 +726,13 @@
   
   <url>
     <loc>http://dbkernel.github.io/tags/MergeTree/</loc>
+    <lastmod>2021-10-10</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/tags/Parser/</loc>
     <lastmod>2021-10-10</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>

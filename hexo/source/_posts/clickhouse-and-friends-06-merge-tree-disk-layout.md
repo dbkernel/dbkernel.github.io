@@ -1,6 +1,6 @@
 ---
 title: 源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构
-date: 2020-10-02 10:37:10
+date: 2020-06-30 21:41:12
 categories:
 - ClickHouse
 tags:
@@ -13,7 +13,7 @@ toc: true
 
 <!-- more -->
 
-**本文首发于 2020-10-02 10:37:10**
+**本文首发于 2020-06-30 21:41:12**
 
 >《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
 >https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/

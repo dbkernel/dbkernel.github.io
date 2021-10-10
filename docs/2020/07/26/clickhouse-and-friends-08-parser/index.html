@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
+  
+  
+  <title>源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器 | DBKernel - 专注于分享数据库技术</title>
+  <meta name="description" content="本文首发于 2020-07-26 21:55:10  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;07&#x2F;25&#x2F;clickhouse-and-friends-parser&#x2F;以下为正文。  现实生活中的物品一旦被标记为“纯手工打造”，给人的第一感觉就是“上乘之品”，一个字“贵”，比如北京老布鞋。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器">
+<meta property="og:url" content="http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="本文首发于 2020-07-26 21:55:10  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2020&#x2F;07&#x2F;25&#x2F;clickhouse-and-friends-parser&#x2F;以下为正文。  现实生活中的物品一旦被标记为“纯手工打造”，给人的第一感觉就是“上乘之品”，一个字“贵”，比如北京老布鞋。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/parser.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2020-07-26T13:55:10.000Z">
+<meta property="article:modified_time" content="2021-10-10T12:05:18.670Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="ClickHouse和他的朋友们">
+<meta property="article:tag" content="ClickHouse">
+<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="Parser">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/parser.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
+          <img class="img-circle img-rotate" src="../../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库开发工程师</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="../../../../links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号数据库内核：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/MySQL/">MySQL</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/Postgres-X2/">Postgres-X2</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/B-Tree/" rel="tag">B-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/LSM-Tree/" rel="tag">LSM-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MergeTree/" rel="tag">MergeTree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Parser/" rel="tag">Parser</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-X2/" rel="tag">Postgres-X2</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Postgres-XC/" rel="tag">Postgres-XC</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WAL/" rel="tag">WAL</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/pipeline/" rel="tag">pipeline</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/processor/" rel="tag">processor</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../../tags/APUE/" style="font-size: 13.38px;">APUE</a> <a href="../../../../tags/B-Tree/" style="font-size: 13px;">B-Tree</a> <a href="../../../../tags/ClickHouse/" style="font-size: 13.63px;">ClickHouse</a> <a href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.63px;">ClickHouse和他的朋友们</a> <a href="../../../../tags/Count/" style="font-size: 13px;">Count</a> <a href="../../../../tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 13.88px;">C语言</a> <a href="../../../../tags/DAG-Scheduler/" style="font-size: 13px;">DAG Scheduler</a> <a href="../../../../tags/GreenPlum/" style="font-size: 13.25px;">GreenPlum</a> <a href="../../../../tags/HEAP%E5%BC%95%E6%93%8E/" style="font-size: 13px;">HEAP引擎</a> <a href="../../../../tags/LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../../../../tags/LSM-Tree/" style="font-size: 13px;">LSM-Tree</a> <a href="../../../../tags/Linux/" style="font-size: 13.63px;">Linux</a> <a href="../../../../tags/MEMORY%E5%BC%95%E6%93%8E/" style="font-size: 13px;">MEMORY引擎</a> <a href="../../../../tags/Makefile/" style="font-size: 13px;">Makefile</a> <a href="../../../../tags/MergeTree/" style="font-size: 13px;">MergeTree</a> <a href="../../../../tags/MySQL/" style="font-size: 13.5px;">MySQL</a> <a href="../../../../tags/Parser/" style="font-size: 13px;">Parser</a> <a href="../../../../tags/Percona/" style="font-size: 13px;">Percona</a> <a href="../../../../tags/PostgreSQL/" style="font-size: 14px;">PostgreSQL</a> <a href="../../../../tags/Postgres-X2/" style="font-size: 13px;">Postgres-X2</a> <a href="../../../../tags/Postgres-XC/" style="font-size: 13px;">Postgres-XC</a> <a href="../../../../tags/RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../../../../tags/Select/" style="font-size: 13px;">Select</a> <a href="../../../../tags/UNIX/" style="font-size: 13.25px;">UNIX</a> <a href="../../../../tags/WAL/" style="font-size: 13px;">WAL</a> <a href="../../../../tags/Xenon/" style="font-size: 13px;">Xenon</a> <a href="../../../../tags/Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../../../../tags/auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../../../../tags/crontab/" style="font-size: 13px;">crontab</a> <a href="../../../../tags/daemon/" style="font-size: 13px;">daemon</a> <a href="../../../../tags/df/" style="font-size: 13px;">df</a> <a href="../../../../tags/du/" style="font-size: 13px;">du</a> <a href="../../../../tags/gcc/" style="font-size: 13px;">gcc</a> <a href="../../../../tags/gcov/" style="font-size: 13px;">gcov</a> <a href="../../../../tags/getopt/" style="font-size: 13px;">getopt</a> <a href="../../../../tags/github/" style="font-size: 13px;">github</a> <a href="../../../../tags/lcov/" style="font-size: 13px;">lcov</a> <a href="../../../../tags/libpq/" style="font-size: 13px;">libpq</a> <a href="../../../../tags/pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../../../../tags/pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../../../../tags/pgbench/" style="font-size: 13px;">pgbench</a> <a href="../../../../tags/pipeline/" style="font-size: 13px;">pipeline</a> <a href="../../../../tags/processor/" style="font-size: 13px;">processor</a> <a href="../../../../tags/shell/" style="font-size: 13px;">shell</a> <a href="../../../../tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.13px;">主从同步</a> <a href="../../../../tags/%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../../../../tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../../../../tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.13px;">字节对齐</a> <a href="../../../../tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.13px;">字节序</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../../../../tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../../../../tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" style="font-size: 13px;">本地事务</a> <a href="../../../../tags/%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 13.75px;">源码分析</a> <a href="../../../../tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../../../../tags/%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.13px;">网络序</a> <a href="../../../../tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../../../../tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.13px;">问题定位</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/03/">三月 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/%E9%80%9A%E7%94%A8/">通用</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/MySQL/">MySQL</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../08/27/percona-xtrabackup-2.4-vs-8.0/" class="title">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="" class="title">源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-07-26T13:55:10.000Z" itemprop="datePublished">2020-07-26</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../06/30/clickhouse-and-friends-06-merge-tree-disk-layout/" class="title">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-30T13:41:12.000Z" itemprop="datePublished">2020-06-30</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../06/22/clickhouse-and-friends-05-merge-tree-algo/" class="title">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-06-22T13:55:10.000Z" itemprop="datePublished">2020-06-22</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#token"><span class="toc-number">1.</span> <span class="toc-text">token</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ast"><span class="toc-number">2.</span> <span class="toc-text">ast</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-clickhouse-and-friends-08-parser" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2020-07-26T13:55:10.000Z" itemprop="datePublished">2020-07-26</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../../categories/ClickHouse/">ClickHouse</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../../tags/ClickHouse/" rel="tag">ClickHouse</a>, <a class="article-tag-link-link" href="../../../../tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a>, <a class="article-tag-link-link" href="../../../../tags/Parser/" rel="tag">Parser</a>, <a class="article-tag-link-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a>
+  </span>
+
+
+        
+	<span class="article-read hidden-xs">
+	    <i class="icon icon-eye-fill" aria-hidden="true"></i>
+	    <span id="busuanzi_container_page_pv">
+			<span id="busuanzi_value_page_pv">0</span>
+		</span>
+	</span>
+
+
+	<span class="article-read hidden-xs">
+    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
+    	<span id="" class="leancloud_visitors"  data-flag-title="源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器">0</span>
+    </span>
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 1.5k(字)</span>
+	
+	
+		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 7(分)</span>
+	
+
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <span id="more"></span>
+
+<p><strong>本文首发于 2020-07-26 21:55:10</strong></p>
+<blockquote>
+<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/">https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/</a><br>以下为正文。</p>
+</blockquote>
+<p>现实生活中的物品一旦被标记为“纯手工打造”，给人的第一感觉就是“上乘之品”，一个字“贵”，比如北京老布鞋。</p>
+<p>但是在计算机世界里，如果有人告诉你 ClickHouse 的 SQL 解析器是纯手工打造的，是不是很惊讶！</p>
+<p>这个问题引起了不少网友的关注，所以本篇聊聊 ClickHouse 的纯手工解析器，看看它们的底层工作机制及优缺点。</p>
+<p>枯燥先从一个 SQL 开始：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> a,b <span class="keyword">FROM</span> t1</span><br></pre></td></tr></table></figure>
+
+<h2 id="token"><a href="#token" class="headerlink" title="token"></a>token</h2><p>首先对 SQL 里的字符逐个做判断，然后根据其关联性做 token 分割：</p>
+<p><img src="parser.png" alt="parser.png"></p>
+<p>比如连续的 WordChar，那它就是 BareWord，解析函数在 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/Lexer.cpp#L61">Lexer::nextTokenImpl()</a>，解析调用栈：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">DB::Lexer::<span class="built_in">nextTokenImpl</span>() Lexer.cpp:<span class="number">63</span></span><br><span class="line">DB::Lexer::<span class="built_in">nextToken</span>() Lexer.cpp:<span class="number">52</span></span><br><span class="line">DB::Tokens::<span class="keyword">operator</span>[](<span class="keyword">unsigned</span> <span class="keyword">long</span>) TokenIterator.h:<span class="number">36</span></span><br><span class="line">DB::TokenIterator::<span class="built_in">get</span>() TokenIterator.h:<span class="number">62</span></span><br><span class="line">DB::TokenIterator::<span class="keyword">operator</span>-&gt;() TokenIterator.h:<span class="number">64</span></span><br><span class="line">DB::<span class="built_in">tryParseQuery</span>(DB::IParser&amp;, <span class="keyword">char</span> <span class="keyword">const</span>*&amp;, <span class="keyword">char</span> <span class="keyword">const</span>*, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt;&amp;, <span class="keyword">bool</span>, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, <span class="keyword">bool</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>) parseQuery.cpp:<span class="number">224</span></span><br><span class="line">DB::<span class="built_in">parseQueryAndMovePosition</span>(DB::IParser&amp;, <span class="keyword">char</span> <span class="keyword">const</span>*&amp;, <span class="keyword">char</span> <span class="keyword">const</span>*, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, <span class="keyword">bool</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>) parseQuery.cpp:<span class="number">314</span></span><br><span class="line">DB::<span class="built_in">parseQuery</span>(DB::IParser&amp;, <span class="keyword">char</span> <span class="keyword">const</span>*, <span class="keyword">char</span> <span class="keyword">const</span>*, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, <span class="keyword">unsigned</span> <span class="keyword">long</span>, <span class="keyword">unsigned</span> <span class="keyword">long</span>) parseQuery.cpp:<span class="number">332</span></span><br><span class="line">DB::<span class="built_in">executeQueryImpl</span>(<span class="keyword">const</span> <span class="keyword">char</span> *, <span class="keyword">const</span> <span class="keyword">char</span> *, DB::Context &amp;, <span class="keyword">bool</span>, DB::QueryProcessingStage::Enum, <span class="keyword">bool</span>, DB::ReadBuffer *) executeQuery.cpp:<span class="number">272</span></span><br><span class="line">DB::<span class="built_in">executeQuery</span>(DB::ReadBuffer&amp;, DB::WriteBuffer&amp;, <span class="keyword">bool</span>, DB::Context&amp;, std::__1::function&lt;<span class="built_in"><span class="keyword">void</span></span> (std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;, std::__1::basic_string&lt;<span class="keyword">char</span>, std::__1::char_traits&lt;<span class="keyword">char</span>&gt;, std::__1::allocator&lt;<span class="keyword">char</span>&gt; &gt; <span class="keyword">const</span>&amp;)&gt;) executeQuery.cpp:<span class="number">731</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">comQuery</span>(DB::ReadBuffer&amp;) MySQLHandler.cpp:<span class="number">313</span></span><br><span class="line">DB::MySQLHandler::<span class="built_in">run</span>() MySQLHandler.cpp:<span class="number">150</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="ast"><a href="#ast" class="headerlink" title="ast"></a>ast</h2><p>token 是最基础的元组，他们之间没有任何关联，只是一堆生冷的词组与符号，所以我们还需对其进行<strong>语法解析</strong>，让这些 token 之间建立一定的关系，达到一个可描述的活力。</p>
+<p>ClickHouse 在解每一个 token 的时候，会根据当前的 token 进行状态空间进行预判（parse 返回 true 则进入子状态空间继续），然后决定状态跳转，比如：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN  <span class="comment">-- TokenType::BareWord</span></span><br></pre></td></tr></table></figure>
+
+<p>逻辑首先会进入Parsers/ParserQuery.cpp 的 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserQuery.cpp#L26">ParserQuery::parseImpl</a> 方法：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> res = query_with_output_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || insert_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || use_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || set_role_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || set_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || system_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || create_user_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || create_role_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || create_quota_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || create_row_policy_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || create_settings_profile_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || drop_access_entity_p.<span class="built_in">parse</span>(pos, node, expected)</span><br><span class="line">    || grant_p.<span class="built_in">parse</span>(pos, node, expected);</span><br></pre></td></tr></table></figure>
+
+<p>这里会对所有 query 类型进行 parse 方法的调用，直到有分支返回 true。</p>
+<p>我们来看<strong>第一层</strong> query_with_output_p.parse <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserQueryWithOutput.cpp#L31">Parsers/ParserQueryWithOutput.cpp</a>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> parsed =</span><br><span class="line">       explain_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || select_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_create_access_entity_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_tables_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || table_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || describe_table_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_processlist_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || create_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || alter_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || rename_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || drop_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || check_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || kill_query_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || optimize_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || watch_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_access_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_access_entities_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_grants_p.<span class="built_in">parse</span>(pos, query, expected)</span><br><span class="line">    || show_privileges_p.<span class="built_in">parse</span>(pos, query, expected</span><br></pre></td></tr></table></figure>
+
+<p>跳进<strong>第二层</strong> explain_p.parse <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserExplainQuery.cpp#L10">ParserExplainQuery::parseImpl</a>状态空间：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ParserExplainQuery::parseImpl</span><span class="params">(Pos &amp; pos, ASTPtr &amp; node, Expected &amp; expected)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ASTExplainQuery::ExplainKind kind;</span><br><span class="line">    <span class="keyword">bool</span> old_syntax = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_ast</span><span class="params">(<span class="string">&quot;AST&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_analyze</span><span class="params">(<span class="string">&quot;ANALYZE&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_explain</span><span class="params">(<span class="string">&quot;EXPLAIN&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_syntax</span><span class="params">(<span class="string">&quot;SYNTAX&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_pipeline</span><span class="params">(<span class="string">&quot;PIPELINE&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_plan</span><span class="params">(<span class="string">&quot;PLAN&quot;</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    ... ...</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (s_explain.<span class="built_in">ignore</span>(pos, expected))</span><br><span class="line">    &#123;</span><br><span class="line">       ... ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ... ...</span><br><span class="line"></span><br><span class="line">    ParserSelectWithUnionQuery select_p;</span><br><span class="line">    ASTPtr query;</span><br><span class="line">    <span class="keyword">if</span> (!select_p.<span class="built_in">parse</span>(pos, query, expected))</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    ... ...</span><br></pre></td></tr></table></figure>
+
+<p>s_explain.ignore 方法会进行一个 keyword 解析，解析出 ast node:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="comment">-- keyword</span></span><br></pre></td></tr></table></figure>
+
+<p>跃进<strong>第三层</strong> select_p.parse <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserSelectWithUnionQuery.cpp#L26">ParserSelectWithUnionQuery::parseImpl</a>状态空间：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ParserSelectWithUnionQuery::parseImpl</span><span class="params">(Pos &amp; pos, ASTPtr &amp; node, Expected &amp; expected)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ASTPtr list_node;</span><br><span class="line"></span><br><span class="line">    <span class="function">ParserList <span class="title">parser</span><span class="params">(std::make_unique&lt;ParserUnionQueryElement&gt;(), std::make_unique&lt;ParserKeyword&gt;(<span class="string">&quot;UNION ALL&quot;</span>), <span class="literal">false</span>)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (!parser.<span class="built_in">parse</span>(pos, list_node, expected))</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>parser.parse 里又调用<strong>第四层</strong> <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserSelectQuery.cpp#L24">ParserSelectQuery::parseImpl</a> 状态空间：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ParserSelectQuery::parseImpl</span><span class="params">(Pos &amp; pos, ASTPtr &amp; node, Expected &amp; expected)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> select_query = std::make_shared&lt;ASTSelectQuery&gt;();</span><br><span class="line">    node = select_query;</span><br><span class="line"></span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_select</span><span class="params">(<span class="string">&quot;SELECT&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_distinct</span><span class="params">(<span class="string">&quot;DISTINCT&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_from</span><span class="params">(<span class="string">&quot;FROM&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_prewhere</span><span class="params">(<span class="string">&quot;PREWHERE&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_where</span><span class="params">(<span class="string">&quot;WHERE&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_group_by</span><span class="params">(<span class="string">&quot;GROUP BY&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_with</span><span class="params">(<span class="string">&quot;WITH&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_totals</span><span class="params">(<span class="string">&quot;TOTALS&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_having</span><span class="params">(<span class="string">&quot;HAVING&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_order_by</span><span class="params">(<span class="string">&quot;ORDER BY&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_limit</span><span class="params">(<span class="string">&quot;LIMIT&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_settings</span><span class="params">(<span class="string">&quot;SETTINGS&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_by</span><span class="params">(<span class="string">&quot;BY&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_rollup</span><span class="params">(<span class="string">&quot;ROLLUP&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_cube</span><span class="params">(<span class="string">&quot;CUBE&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_top</span><span class="params">(<span class="string">&quot;TOP&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_with_ties</span><span class="params">(<span class="string">&quot;WITH TIES&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserKeyword <span class="title">s_offset</span><span class="params">(<span class="string">&quot;OFFSET&quot;</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function">ParserNotEmptyExpressionList <span class="title">exp_list</span><span class="params">(<span class="literal">false</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserNotEmptyExpressionList <span class="title">exp_list_for_with_clause</span><span class="params">(<span class="literal">false</span>)</span></span>;</span><br><span class="line">    <span class="function">ParserNotEmptyExpressionList <span class="title">exp_list_for_select_clause</span><span class="params">(<span class="literal">true</span>)</span></span>;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!exp_list_for_select_clause.<span class="built_in">parse</span>(pos, select_expression_list, expected))</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>第五层</strong> exp_list_for_select_clause.parse <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ExpressionListParsers.cpp#L520">ParserExpressionList::parseImpl</a>状态空间继续：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ParserExpressionList::parseImpl</span><span class="params">(Pos &amp; pos, ASTPtr &amp; node, Expected &amp; expected)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">ParserList</span>(</span><br><span class="line">        std::make_unique&lt;ParserExpressionWithOptionalAlias&gt;(allow_alias_without_as_keyword),</span><br><span class="line">        std::make_unique&lt;ParserToken&gt;(TokenType::Comma))</span><br><span class="line">        .<span class="built_in">parse</span>(pos, node, expected);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>… … 写不下去个鸟！</p>
+<p>可以发现，ast parser 的时候，预先构造好状态空间，比如 select 的状态空间:</p>
+<ol>
+<li>expression list</li>
+<li>from tables</li>
+<li>where</li>
+<li>group by</li>
+<li>with …</li>
+<li>order by</li>
+<li>limit</li>
+</ol>
+<p>在一个状态空间內，还可以根据 parse 返回的 bool 判断是否继续进入子状态空间，一直递归解析出整个 ast。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>手工 parser 的好处是代码清晰简洁，每个细节可防可控，以及友好的错误处理，改动起来不会一发动全身。</p>
+<p>缺点是手工成本太高，需要大量的测试来保证其正确性，还需要一些fuzz来保证可靠性。</p>
+<p>好在ClickHouse 已经实现的比较全面，即使有新的需求，在现有基础上修修补补即可。</p>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>开源中国（oschina）</td>
+<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/" title="源码分析 | ClickHouse和他的朋友们（８）纯手工打造的SQL解析器" target="_blank" rel="external">http://dbkernel.github.io/2020/07/26/clickhouse-and-friends-08-parser/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN 许可协议</a>，转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/dbkernel" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/dbkernel" target="_blank"><span class="text-dark">DBKernel</span><small class="ml-1x">资深数据库开发工程师</small></a></h3>
+        <div>目前从事云数据库MySQL/PostgreSQL的研发工作，曾做过PGXC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../../08/27/percona-xtrabackup-2.4-vs-8.0/" title="问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../../../06/30/clickhouse-and-friends-06-merge-tree-disk-layout/" title="源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,qzone,facebook,twitter,linkedin" data-mobile-sites="weibo,qq,wechat,qzone,linkedin"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../../images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="../../../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="../../../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        &copy; 2021 DBKernel
+        
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../../js/plugin.min.js"></script>
+
+
+<script src="../../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: true,
+    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
+    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
+    placeholder: '欢迎评论交流经验',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: true
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
