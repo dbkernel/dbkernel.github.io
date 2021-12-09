@@ -8,3 +8,6 @@
 	path = hexo/themes/pure
 	url = https://github.com/lu-front-end/hexo-theme-pure.git
 	branch = master
+[submodule "hugo/themes/hugo-theme-stack"]
+	path = hugo/themes/hugo-theme-stack
+	url = https://github.com/CaiJimmy/hugo-theme-stack/

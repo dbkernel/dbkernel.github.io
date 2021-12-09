@@ -1,6 +1,7 @@
 baseURL = "http://dbkernel.github.io/"
 languageCode = "en-us"
-theme = "hugo-theme-yelee"
+#theme = "hugo-theme-stack"
+theme = "hugo-theme-stack"
 
 disablePathToLower = true
 

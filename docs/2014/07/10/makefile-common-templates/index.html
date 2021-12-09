@@ -49,6 +49,8 @@
   
   
   
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.4.0/dist/gitalk.min.css">
+  
 <meta name="generator" content="Hexo 5.4.0"></head>
 
 
@@ -386,11 +388,6 @@
 	</span>
 
 
-	<span class="article-read hidden-xs">
-    	<i class="icon icon-eye-fill" aria-hidden="true"></i>
-    	<span id="" class="leancloud_visitors"  data-flag-title="程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件">0</span>
-    </span>
-
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
@@ -496,7 +493,7 @@
     
   <section id="comments">
   	
-      <div id="vcomments"></div>
+           
     
   </section>
 
@@ -605,7 +602,7 @@
 
     <div class="copyright">
     	
-        &copy; 2021 DBKernel
+        &copy; 2022 DBKernel
         
         <div class="publishby">
         	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
@@ -656,33 +653,38 @@ window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
 
    
     
-  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <!-- <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css"> -->
+  <script src="//cdn.jsdelivr.net/npm/gitalk@1.4.0/dist/gitalk.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/blueimp-md5@2.10.0/js/md5.min.js"></script>
   <script type="text/javascript">
-  var GUEST = ['nick', 'mail', 'link'];
-  var meta = 'nick,mail,link';
-  meta = meta.split(',').filter(function(item) {
-    return GUEST.indexOf(item) > -1;
-  });
-  new Valine({
-    el: '#vcomments',
-    verify: false,
-    notify: true,
-    appId: 'XcvDLqOi5qLd384zrL6m78sT-MdYXbMMI',
-    appKey: 'QIR4X0m5HxHTbkfxoxT4Bhdq',
-    placeholder: '欢迎评论交流经验',
-    avatar: 'mm',
-    meta: meta,
-    pageSize: '10' || 10,
-    visitor: true
-  });
+  var gitalk = new Gitalk({
+    clientID: '642675de9efee853bde8',
+    clientSecret: 'e481d901d83ac31b4041437ec30a4fd00d112cfa',
+    repo: 'dbkernel/gitalk-comment',
+    owner: 'dbkernel',
+    admin: ['dbkernel1989'],
+    id: md5(location.pathname),
+    distractionFreeMode: true
+  })
+  gitalk.render('comments')
   </script>
 
-     
+      
 
 
 
 
+
+
+    <script defer>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?bf7f972e25b6a36ff4b828ba0214e515";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
 
 
 
