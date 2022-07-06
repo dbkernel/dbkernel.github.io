@@ -11,3 +11,6 @@
 [submodule "hugo/themes/hugo-theme-stack"]
 	path = hugo/themes/hugo-theme-stack
 	url = https://github.com/CaiJimmy/hugo-theme-stack/
+[submodule "hugo/themes/meme"]
+	path = hugo/themes/meme
+	url = https://github.com/reuixiy/hugo-theme-meme.git
