@@ -2,18 +2,18 @@
 title: 程序人生 | UNIX环境高级编程技巧之 df 指令实现
 date: 2014-07-10 09:48:48
 categories:
-- C语言
+  - C语言
 tags:
-- APUE
-- C语言
-- UNIX
-- df
+  - APUE
+  - C语言
+  - UNIX
+  - df
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2014-07-10 09:48:48**
+> **本文首发于 2014-07-10 09:48:48**
 
 ## 代码
 
@@ -135,6 +135,7 @@ $ gcc -g -Wall testdf.c -o testdf
 ## 运行
 
 - `testdf`执行效果：
+
 ```bash
 $ ./testdf
 Filesystem                Size      Used Available Use% Mounted on
@@ -154,7 +155,9 @@ tmpfs                796.17 MB    0.00 B 796.17 MB   0% /run/user/1000
 /dev/loop6            55.50 MB  55.50 MB    0.00 B 100% /snap/core18/2128
 /dev/loop0            32.38 MB  32.38 MB    0.00 B 100% /snap/snapd/12883
 ```
+
 - `原生df`执行效果：
+
 ```bash
 $ df -h
 Filesystem      Size  Used Avail Use% Mounted on
@@ -174,7 +177,7 @@ tmpfs           797M     0  797M   0% /run/user/1000
 /dev/loop0       33M   33M     0 100% /snap/snapd/12883
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -186,5 +189,5 @@ tmpfs           797M     0  797M   0% /run/user/1000
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

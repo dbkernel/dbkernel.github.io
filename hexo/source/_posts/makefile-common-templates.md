@@ -2,23 +2,23 @@
 title: 程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件
 date: 2014-07-10 11:51:10
 categories:
-- 编译调试
+  - 编译调试
 tags:
-- Makefile
+  - Makefile
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2014-07-10 11:51:10**
+> **本文首发于 2014-07-10 11:51:10**
 
 ## 前言
 
-本文把 makefile 分成了三份：生成可执行文件的 makefile，生成静态链接库的 makefile，生成动态链接库的 makefile。
+本文把 makefile  分成了三份：生成可执行文件的 makefile，生成静态链接库的 makefile，生成动态链接库的 makefile。
 
-这些 makefile 都很简单，一般都是一看就会用，用法也很容易，只需要把它们拷贝到你的代码的同一目录下，然后就可以用 make 来生成目标文件了。
+这些 makefile 都很简单，一般都是一看就会用，用法也很容易，只需要把它们拷贝到你的代码的同一目录下，然后就可以用  make  来生成目标文件了。
 
-下面是三个makefile的源代码： 
+下面是三个 makefile 的源代码：
 
 ## 生成可执行文件的 makefile
 
@@ -173,7 +173,7 @@ $(TARGET) : $(OBJS)
     $(CC) $(CXXFLAGS) $(SHARE) $@ $(OBJS) $(LDFLAGS) $(LIBS)
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -185,5 +185,5 @@ $(TARGET) : $(OBJS)
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

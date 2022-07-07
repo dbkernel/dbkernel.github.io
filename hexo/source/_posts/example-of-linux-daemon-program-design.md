@@ -2,31 +2,31 @@
 title: 程序人生 | Linux Daemon 程序设计示例
 date: 2014-08-08 17:55:32
 categories:
-- Linux
+  - Linux
 tags:
-- C语言
-- Linux
-- shell
-- daemon
+  - C语言
+  - Linux
+  - shell
+  - daemon
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2014-08-08 17:55:32**
+> **本文首发于 2014-08-08 17:55:32**
 
 # 概念
 
-daemon 程序，又称为守护进程，通常在系统后台长时间运行，由于没有控制终端而无法与前台交互。daemon程序一般作为系统服务使用，Linux系统中运行着很多这样的守护进程，如 iptables，nfs，ypbind，dhcpd 等。
+daemon 程序，又称为守护进程，通常在系统后台长时间运行，由于没有控制终端而无法与前台交互。daemon 程序一般作为系统服务使用，Linux 系统中运行着很多这样的守护进程，如 iptables，nfs，ypbind，dhcpd 等。
 
 # daemon 程序设计步骤
 
-1. 程序运行后调用fork，并让父进程退出。子进程获得一个新的进程ID，但继承了父进程的进程组ID。
-2. 调用setsid创建一个新的session，使自己成为新session和新进程组的leader，并使进程没有控制终端(tty)。
-3. 设置文件创建mask为0，避免创建文件时权限的影响。
-4. 关闭不需要的打开文件描述符。因为 daemon 程序在后台执行，不需要于终端交互，通常就关闭STDIN、STDOUT和STDERR。其它根据实际情况处理。
-5. daemon 无法输出信息，可以使用SYSLOG或自己的日志系统进行日志处理。（可选）
-6. 编写管理 daemon 的SHELL脚本，使用service对 daemon 进行管理和监控。（可选）
+1. 程序运行后调用 fork，并让父进程退出。子进程获得一个新的进程 ID，但继承了父进程的进程组 ID。
+2. 调用 setsid 创建一个新的 session，使自己成为新 session 和新进程组的 leader，并使进程没有控制终端(tty)。
+3. 设置文件创建 mask 为 0，避免创建文件时权限的影响。
+4. 关闭不需要的打开文件描述符。因为 daemon 程序在后台执行，不需要于终端交互，通常就关闭 STDIN、STDOUT 和 STDERR。其它根据实际情况处理。
+5. daemon 无法输出信息，可以使用 SYSLOG 或自己的日志系统进行日志处理。（可选）
+6. 编写管理 daemon 的 SHELL 脚本，使用 service 对 daemon 进行管理和监控。（可选）
 
 # 示例
 
@@ -109,7 +109,8 @@ exit(0);
 
 ## daemon 程序管理脚本
 
-daemon 程序可以使用 service 工具进行管理，包括启动、停止、查看状态等，但前题是需要编写一个如下的简单SHELL脚本，比如 `/etc/init.d/wsiod` ：
+daemon 程序可以使用 service 工具进行管理，包括启动、停止、查看状态等，但前题是需要编写一个如下的简单 SHELL 脚本，比如 `/etc/init.d/wsiod` ：
+
 ```bash
 #!/bin/sh
 #
@@ -177,11 +178,12 @@ exit $RETVAL
 ## daemon 程序指令
 
 由上述脚本可知，该 daemon 程序支持的指令有 start|stop|restart|reload|status ，以启动 daemon 程序为例，指令为：
+
 ```bash
 /etc/init.d/wsiod start
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -193,7 +195,5 @@ exit $RETVAL
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

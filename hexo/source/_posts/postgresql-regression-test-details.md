@@ -2,17 +2,17 @@
 title: 源码分析 | PostgreSQL 回归测试详解
 date: 2016-03-30 15:29:35
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- PostgreSQL
-- 回归测试
-- 源码分析
+  - PostgreSQL
+  - 回归测试
+  - 源码分析
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2016-03-30 15:29:35**
+> **本文首发于 2016-03-30 15:29:35**
 
 ## 背景
 
@@ -195,7 +195,7 @@ test: boolean char name varchar text int2 int4 int8 oid float4 float8 bit numeri
 ......
 ```
 
-调度文件的 test: 后面跟的就是sql目录下的文件名(不含 .sql 后缀)。
+调度文件的 test: 后面跟的就是 sql 目录下的文件名(不含 .sql 后缀)。
 
 ```bash
 postgres@digoal-> less sql/
@@ -457,7 +457,8 @@ subdir = contrib/ltree
 REGRESS = ltree
 ```
 
-所以我们在 contrib/ltree 中执行 make check 会执行：(指PGXS未定义时)
+所以我们在 contrib/ltree 中执行 make check 会执行：(指 PGXS 未定义时)
+
 ```bash
 	$(pg_regress_check) --extra-install=$(subdir) $(REGRESS_OPTS) $(REGRESS)
 ```
@@ -557,7 +558,8 @@ test ltree                    ... ok
 1. http://www.postgresql.org/docs/devel/static/regress-run.html
 2. http://www.postgresql.org/docs/devel/static/regress-variant.html
 
-各种Makefile
+各种 Makefile
+
 ```
 src/Makefile.global
 src/Makefile
@@ -567,14 +569,13 @@ contrib/xx/Makefile
 ......
 ```
 
->本文转自：https://github.com/digoal/blog/blob/master/201509/20150907_04.md
+> 本文转自：https://github.com/digoal/blog/blob/master/201509/20150907_04.md
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -582,6 +583,5 @@ contrib/xx/Makefile
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

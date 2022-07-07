@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈
 date: 2020-06-07 17:17:10
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MySQL
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MySQL
+  - 源码分析
 toc: true
 ---
 
@@ -15,11 +15,11 @@ toc: true
 
 **本文首发于 2020-06-07 17:17:10**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/06/07/clickhouse-and-friends-mysql-protocol-read-stack/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/06/07/clickhouse-and-friends-mysql-protocol-read-stack/
+> 以下为正文。
 
-作为一个 OLAP 的 DBMS 来说，有2个端非常重要：
+作为一个 OLAP 的 DBMS 来说，有 2 个端非常重要：
 
 - 用户如何方便的链进来，这是入口端
   - ClickHouse 除了自己的 client 外，还提供了 MySQL/PG/GRPC/HTTP 等接入方式
@@ -30,7 +30,7 @@ toc: true
 
 今天谈的是入口端的 MySQL 协议，也是本系列 ClickHouse 的第一个好朋友，用户可通过 MySQL 客户端或相关 Driver 直接链接到 ClickHouse，进行数据读写等操作。
 
-本文通过 MySQL的 Query 请求，借用调用栈来了解下 ClickHouse 的数据读取全过程。
+本文通过 MySQL 的 Query 请求，借用调用栈来了解下 ClickHouse 的数据读取全过程。
 
 ## **如何实现？**
 
@@ -46,9 +46,9 @@ toc: true
 
 MySQL Protocol 实现在: [Core/MySQLProtocol.h](https://github.com/ClickHouse/ClickHouse/blob/master/src/Core/MySQLProtocol.h)
 
->最近的代码中调整为了 [Core/MySQL/PacketsProtocolText.h](https://github.com/ClickHouse/ClickHouse/blob/master/src/Core/MySQL/PacketsProtocolText.h)
+> 最近的代码中调整为了 [Core/MySQL/PacketsProtocolText.h](https://github.com/ClickHouse/ClickHouse/blob/master/src/Core/MySQL/PacketsProtocolText.h)
 
-### **Query请求**
+### **Query 请求**
 
 当认证通过后，就可以进行正常的数据交互了。
 
@@ -66,7 +66,7 @@ MySQL Protocol 实现在: [Core/MySQLProtocol.h](https://github.com/ClickHouse/C
 
 3. MySQLClient 接收到结果
 
-在步骤2里，executeQuery(executeQuery.cpp)非常重要。
+在步骤 2 里，executeQuery(executeQuery.cpp)非常重要。
 
 它是所有前端 Server 和 ClickHouse 内核的接入口，第一个参数是 SQL 文本(‘select 1’)，第二个参数是结果集要发送到哪里去(socket net)。
 
@@ -101,7 +101,7 @@ DB::MySQLHandler::run() MySQLHandler.cpp:141
 Pipes pipes = storage->read(required_columns, metadata_snapshot, query_info, *context, processing_stage, max_block_size, max_streams);
 ```
 
-### 2. Pipeline构造
+### 2. Pipeline 构造
 
 ```cpp
 DB::LimitTransform::LimitTransform(DB::Block const&, unsigned long, unsigned long, unsigned long, bool, bool, std::__1::vector<DB::SortColumnDescription, std::__1::allocator<DB::SortColumnDescription> >) LimitTransform.cpp:21
@@ -119,7 +119,7 @@ DB::MySQLHandler::comQuery(DB::ReadBuffer&) MySQLHandler.cpp:307
 DB::MySQLHandler::run() MySQLHandler.cpp:141
 ```
 
-### 3. Pipeline执行
+### 3. Pipeline 执行
 
 ```cpp
 DB::LimitTransform::prepare(std::__1::vector<unsigned long, std::__1::allocator<unsigned long> > const&, std::__1::vector<unsigned long, std::__1::allocator<unsigned long> > const&) LimitTransform.cpp:67
@@ -142,7 +142,7 @@ DB::MySQLHandler::comQuery(DB::ReadBuffer&) MySQLHandler.cpp:307
 DB::MySQLHandler::run() MySQLHandler.cpp:141
 ```
 
-### 4. Output执行发送
+### 4. Output 执行发送
 
 ```cpp
 DB::MySQLOutputFormat::consume(DB::Chunk) MySQLOutputFormat.cpp:53
@@ -178,7 +178,7 @@ ClickHouse 的 Transformer 调度系统叫做 Processor，也是决定性能的�
 
 ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -190,6 +190,5 @@ ClickHouse 是一辆手动挡的豪华跑车，免费拥有，海啸们！
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

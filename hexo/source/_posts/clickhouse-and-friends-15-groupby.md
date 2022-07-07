@@ -2,23 +2,22 @@
 title: 源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快
 date: 2021-01-26 21:31:12
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- group by
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - group by
+  - 源码分析
 toc: true
 ---
 
 <!-- more -->
 
-
 **本文首发于 2021-01-26 21:31:12**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/
+> 以下为正文。
 
 在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。
 
@@ -169,7 +168,7 @@ modulo(number, 3) 类型为 UInt8
 ### 4.3 AggregatingTransform
 
 AggregatingTransform 是 Group By 高性能的核心所在。
-本示例中的 `modulo(number, 3)` 类型为 UInt8，在做优化上，ClickHouse 会选择使用数组代替 hashtable作为分组，区分逻辑见 [Interpreters/Aggregator.cpp](https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Interpreters/Aggregator.cpp#L526)
+本示例中的 `modulo(number, 3)` 类型为 UInt8，在做优化上，ClickHouse 会选择使用数组代替 hashtable 作为分组，区分逻辑见 [Interpreters/Aggregator.cpp](https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Interpreters/Aggregator.cpp#L526)
 
 在计算 sum 的时候，首先会生成一个数组 [1024]，然后做了一个编译展开(代码 [addBatchLookupTable8@AggregateFunctions/IAggregateFunction.h](https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/AggregateFunctions/IAggregateFunction.h#L412-L487)):
 
@@ -245,13 +244,11 @@ hashtable 测试代码：[Interpreters/tests](https://github.com/ClickHouse/Clic
 
 lookuptable 测试代码： [tests/average.cpp](https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Common/tests/average.cpp)
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -259,7 +256,5 @@ lookuptable 测试代码： [tests/average.cpp](https://github.com/ClickHouse/Cl
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

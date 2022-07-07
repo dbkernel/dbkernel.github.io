@@ -20,16 +20,16 @@
   
   
   <title>源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="本文首发于 2021-01-26 21:31:12  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2021&#x2F;01&#x2F;21&#x2F;clickhouse-and-friends-groupby&#x2F;以下为正文。  在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。 在虎哥看来，一个">
+  <meta name="description" content="本文首发于 2021-01-26 21:31:12  《ClickHouse 和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2021&#x2F;01&#x2F;21&#x2F;clickhouse-and-friends-groupby&#x2F;以下为正文。  在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。 在虎哥看来，一个">
 <meta property="og:type" content="article">
 <meta property="og:title" content="源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快">
 <meta property="og:url" content="http://dbkernel.github.io/2021/01/26/clickhouse-and-friends-15-groupby/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="本文首发于 2021-01-26 21:31:12  《ClickHouse和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2021&#x2F;01&#x2F;21&#x2F;clickhouse-and-friends-groupby&#x2F;以下为正文。  在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。 在虎哥看来，一个">
+<meta property="og:description" content="本文首发于 2021-01-26 21:31:12  《ClickHouse 和他的朋友们》系列文章转载自圈内好友 BohuTANG 的博客，原文链接：https:&#x2F;&#x2F;bohutang.me&#x2F;2021&#x2F;01&#x2F;21&#x2F;clickhouse-and-friends-groupby&#x2F;以下为正文。  在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。 在虎哥看来，一个">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2021-01-26T13:31:12.000Z">
-<meta property="article:modified_time" content="2021-10-10T13:44:00.164Z">
+<meta property="article:modified_time" content="2022-07-07T02:13:35.596Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="ClickHouse和他的朋友们">
 <meta property="article:tag" content="ClickHouse">
@@ -406,10 +406,9 @@
       
         <span id="more"></span>
 
-
 <p><strong>本文首发于 2021-01-26 21:31:12</strong></p>
 <blockquote>
-<p>《ClickHouse和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/">https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/</a><br>以下为正文。</p>
+<p>《ClickHouse 和他的朋友们》系列文章转载自圈内好友 <a target="_blank" rel="noopener" href="https://bohutang.me/">BohuTANG</a> 的博客，原文链接：<br><a target="_blank" rel="noopener" href="https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/">https://bohutang.me/2021/01/21/clickhouse-and-friends-groupby/</a><br>以下为正文。</p>
 </blockquote>
 <p>在揭秘 ClickHouse Group By 之前，先聊聊数据库的性能对比测试问题。</p>
 <p>在虎哥看来，一个“讲武德”的性能对比测试应该提供什么信息呢？</p>
@@ -442,7 +441,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">┌─number─┬─modulo(number, <span class="number">3</span>)─┐</span><br><span class="line">│      <span class="number">0</span> │                 <span class="number">0</span> │</span><br><span class="line">│      <span class="number">1</span> │                 <span class="number">1</span> │</span><br><span class="line">│      <span class="number">2</span> │                 <span class="number">2</span> │</span><br><span class="line">│      <span class="number">3</span> │                 <span class="number">0</span> │</span><br><span class="line">│      <span class="number">4</span> │                 <span class="number">1</span> │</span><br><span class="line">│      <span class="number">5</span> │                 <span class="number">2</span> │</span><br><span class="line">│      <span class="number">6</span> │                 <span class="number">0</span> │</span><br><span class="line">│      <span class="number">7</span> │                 <span class="number">1</span> │</span><br><span class="line">│      <span class="number">8</span> │                 <span class="number">2</span> │</span><br><span class="line">│      <span class="number">9</span> │                 <span class="number">0</span> │</span><br><span class="line">└────────┴───────────────────┘</span><br><span class="line">number 类型为 UInt64</span><br><span class="line">modulo(number, <span class="number">3</span>) 类型为 UInt8</span><br></pre></td></tr></table></figure>
 
 <p>代码主要在 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Interpreters/ExpressionActions.cpp#L416">ExpressionActions::execute@Interpreters/ExpressionActions.cpp</a></p>
-<h3 id="4-3-AggregatingTransform"><a href="#4-3-AggregatingTransform" class="headerlink" title="4.3 AggregatingTransform"></a>4.3 AggregatingTransform</h3><p>AggregatingTransform 是 Group By 高性能的核心所在。<br>本示例中的 <code>modulo(number, 3)</code> 类型为 UInt8，在做优化上，ClickHouse 会选择使用数组代替 hashtable作为分组，区分逻辑见 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Interpreters/Aggregator.cpp#L526">Interpreters/Aggregator.cpp</a></p>
+<h3 id="4-3-AggregatingTransform"><a href="#4-3-AggregatingTransform" class="headerlink" title="4.3 AggregatingTransform"></a>4.3 AggregatingTransform</h3><p>AggregatingTransform 是 Group By 高性能的核心所在。<br>本示例中的 <code>modulo(number, 3)</code> 类型为 UInt8，在做优化上，ClickHouse 会选择使用数组代替 hashtable 作为分组，区分逻辑见 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/Interpreters/Aggregator.cpp#L526">Interpreters/Aggregator.cpp</a></p>
 <p>在计算 sum 的时候，首先会生成一个数组 [1024]，然后做了一个编译展开(代码 <a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/blob/27ddf78ba572b893cb5351541f566d1080d8a9c6/src/AggregateFunctions/IAggregateFunction.h#L412-L487">addBatchLookupTable8@AggregateFunctions/IAggregateFunction.h</a>):</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keyword">size_t</span> UNROLL_COUNT = <span class="number">4</span>;</span><br><span class="line">std::unique_ptr&lt;Data[]&gt; places&#123;<span class="keyword">new</span> Data[<span class="number">256</span> * UNROLL_COUNT]&#125;;</span><br><span class="line"><span class="keyword">bool</span> has_data[<span class="number">256</span> * UNROLL_COUNT]&#123;&#125;; <span class="comment">/// Separate flags array to avoid heavy initialization.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">size_t</span> i = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// Aggregate data into different lookup tables.</span></span><br><span class="line"><span class="keyword">size_t</span> batch_size_unrolled = batch_size / UNROLL_COUNT * UNROLL_COUNT;</span><br><span class="line"><span class="keyword">for</span> (; i &lt; batch_size_unrolled; i += UNROLL_COUNT)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">size_t</span> j = <span class="number">0</span>; j &lt; UNROLL_COUNT; ++j)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">size_t</span> idx = j * <span class="number">256</span> + key[i + j];</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">unlikely</span>(!has_data[idx]))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">new</span> (&amp;places[idx]) Data;</span><br><span class="line">            has_data[idx] = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        func.<span class="built_in">add</span>(<span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">char</span> *&gt;(&amp;places[idx]), columns, i + j, <span class="literal">nullptr</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -462,7 +461,6 @@
 <hr>
 <p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 <table>
 <thead>
@@ -488,8 +486,8 @@
 <td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
 </tr>
 <tr>
-<td>开源中国（oschina）</td>
-<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
 </tr>
 <tr>
 <td>博客园（cnblogs）</td>

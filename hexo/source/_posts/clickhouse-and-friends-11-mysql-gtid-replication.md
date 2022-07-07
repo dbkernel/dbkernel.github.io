@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式
 date: 2020-08-28 20:40:14
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MySQL
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MySQL
+  - 源码分析
 toc: true
 ---
 
@@ -15,13 +15,13 @@ toc: true
 
 **本文首发于 2020-08-28 20:40:14**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/08/26/clickhouse-and-friends-mysql-gtid-replication/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/08/26/clickhouse-and-friends-mysql-gtid-replication/
+> 以下为正文。
 
 ![clickhouse-map-2020-materialzemysql.png](clickhouse-map-2020-materialzemysql.png)
 
-[MySQL实时复制原理篇](https://bohutang.me/2020/07/26/clickhouse-and-friends-mysql-replication/)
+[MySQL 实时复制原理篇](https://bohutang.me/2020/07/26/clickhouse-and-friends-mysql-replication/)
 
 几天前 ClickHouse 官方发布了 [v20.8.1.4447-testing](https://github.com/ClickHouse/ClickHouse/releases/tag/v20.8.1.4447-testing)，这个版本已经包含了 MaterializeMySQL 引擎，实现了 ClickHouse 实时复制 MySQL 数据的能力，感兴趣的朋友可以通过官方安装包来做体验，安装方式参考 <https://clickhouse.tech/#quick-start>，需要注意的是要选择 testing 分支。
 
@@ -60,11 +60,11 @@ s2> 新主 MySQL 发现本地没有 mysql-bin.000002 文件，因为它做过 re
 
 着急的话可以自己编译或通过 [ClickHouse Build Check for master-20.9.1](https://clickhouse-builds.s3.yandex.net/0/2b8ad576cc3892d2d760f3f8b670adf17db0c2a0/clickhouse_build_check/report.html) 下载安装。
 
-## 基于GTID同步
+## 基于 GTID 同步
 
 GTID 是 MySQL 复制增强版，从 MySQL 5.6 版本开始支持，目前已经是 MySQL 主流复制模式。
 
-它为每个 event 分配一个全局唯一ID和序号，我们可以不用关心 MySQL 集群主从拓扑结构，直接告知 MySQL 这个 GTID 即可，.metadata变为:
+它为每个 event 分配一个全局唯一 ID 和序号，我们可以不用关心 MySQL 集群主从拓扑结构，直接告知 MySQL 这个 GTID 即可，.metadata 变为:
 
 ```
 Version:	2
@@ -72,7 +72,7 @@ Executed GTID:	f4aee41e-e36f-11ea-8b37-0242ac110002:1-5
 Data Version:	1
 ```
 
-`f4aee41e-e36f-11ea-8b37-0242ac110002` 是生成 event的主机UUID，`1-5`是已经同步的event区间。
+`f4aee41e-e36f-11ea-8b37-0242ac110002` 是生成 event 的主机 UUID，`1-5`是已经同步的 event 区间。
 
 这样流程就变为:
 
@@ -82,7 +82,7 @@ s2> MySQL 根据 GTID:f4aee41e-e36f-11ea-8b37-0242ac110002:1-5 找到本地位�
 s3> ClickHouse 接收 binlog event 并更新 .metadata GTID信息
 ```
 
-## MySQL开启GTID
+## MySQL 开启 GTID
 
 那么，MySQL 侧怎么开启 GTID 呢？增加以下两个参数即可:
 
@@ -115,7 +115,7 @@ MaterializeMySQL 引擎还处于不停迭代中，对于它我们有一个初步
 
 MaterializeMySQL 已经是社区功能，仍然有不少的工作要做。期待更多的力量加入，我们的征途不止星辰大海。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -123,10 +123,9 @@ MaterializeMySQL 已经是社区功能，仍然有不少的工作要做。期待
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

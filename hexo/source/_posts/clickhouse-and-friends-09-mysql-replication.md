@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现
 date: 2020-07-28 21:50:10
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MySQL
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MySQL
+  - 源码分析
 toc: true
 ---
 
@@ -15,10 +15,9 @@ toc: true
 
 **本文首发于 2020-07-28 21:50:10**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/
->以下为正文。
-
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/
+> 以下为正文。
 
 ![clickhouse-map-2020-materialzemysql.png](clickhouse-map-2020-materialzemysql.png)
 
@@ -28,13 +27,13 @@ ClickHouse 可以挂载为 MySQL 的一个从库 ，先全量再增量的实时�
 
 目前支持 MySQL 5.6/5.7/8.0 版本，兼容 Delete/Update 语句，及大部分常用的 DDL 操作。
 
-[代码](https://github.com/ClickHouse/ClickHouse/pull/10851)已经合并到 upstream master 分支，预计在20.8版本作为experimental 功能发布。
+[代码](https://github.com/ClickHouse/ClickHouse/pull/10851)已经合并到 upstream master 分支，预计在 20.8 版本作为 experimental 功能发布。
 
 毕竟是两个异构生态的融合，仍然有不少的工作要做，同时也期待着社区用户的反馈，以加速迭代。
 
 ### 代码获取
 
-获取 [clickhouse/master](https://github.com/ClickHouse/ClickHouse) 代码编译即可，方法见 [ClickHouse和他的朋友们（1）编译、开发、测试](https://bohutang.me/2020/06/05/clickhouse-and-friends-development/)…
+获取 [clickhouse/master](https://github.com/ClickHouse/ClickHouse) 代码编译即可，方法见 [ClickHouse 和他的朋友们（1）编译、开发、测试](https://bohutang.me/2020/06/05/clickhouse-and-friends-development/)…
 
 ### MySQL Master
 
@@ -241,7 +240,7 @@ WATCH lv1
 
 在当前配置下，ClickHouse slave 单线程回放消费能力大于 MySQL master 256 并发下生产能力，通过测试可以看到它们保持**实时同步**。
 
-benchyou 压测数据，**2.1w** 事务/秒(MySQL 在当前环境下TPS上不去):
+benchyou 压测数据，**2.1w** 事务/秒(MySQL 在当前环境下 TPS 上不去):
 
 ```
 ./bin/benchyou --mysql-host=192.168.0.3 --mysql-user=test --mysql-password=123 --oltp-tables-count=1 --write-threads=256 --read-threads=0
@@ -313,7 +312,7 @@ ClickHouse 侧单线程回放能力，**2.1w** 事务/秒，实时同步：
 
 当一个事务提交后，MySQL 会把执行的 SQL 处理成相应的 binlog event，并持久化到 binlog 文件。
 
-binlog 是 MySQL 对外输出的重要途径，只要你实现 MySQL Replication Protocol，就可以流式的消费MySQL 生产的 binlog event，具体协议见 [Replication Protocol](https://dev.mysql.com/doc/internals/en/replication-protocol.html)。
+binlog 是 MySQL 对外输出的重要途径，只要你实现 MySQL Replication Protocol，就可以流式的消费 MySQL 生产的 binlog event，具体协议见 [Replication Protocol](https://dev.mysql.com/doc/internals/en/replication-protocol.html)。
 
 由于历史原因，协议繁琐而诡异，这不是本文重点。
 
@@ -360,13 +359,13 @@ SETTINGS index_granularity = 8192
 
 可以看到：
 
-- 默认增加了 2 个隐藏字段：`_sign`(-1删除, 1写入) 和 `_version`(数据版本)
-- 引擎转换成了 ReplacingMergeTree，以 _version 作为 column version
+- 默认增加了 2 个隐藏字段：`_sign`(-1 删除, 1 写入) 和 `_version`(数据版本)
+- 引擎转换成了 ReplacingMergeTree，以 \_version 作为 column version
 - 原主键字段 a 作为排序和分区键
 
-这只是一个表的复制，其他还有非常多的DDL处理，比如增加列、索引等，感兴趣可以观摩 Parsers/MySQL 下代码。
+这只是一个表的复制，其他还有非常多的 DDL 处理，比如增加列、索引等，感兴趣可以观摩 Parsers/MySQL 下代码。
 
-#### Update和Delete
+#### Update 和 Delete
 
 当我们在 MySQL master 执行：
 
@@ -375,7 +374,7 @@ mysql> delete from t1 where a=1;
 mysql> update t1 set b=b+1;
 ```
 
-ClickHouse t1数据（把 `_sign` 和 `_version` 一并查询）：
+ClickHouse t1 数据（把 `_sign` 和 `_version` 一并查询）：
 
 ```sql
 clickhouse :) select a,b,_sign, _version from t1;
@@ -494,7 +493,7 @@ FROM t1
 说明：这里还有一条删除记录，_sign为-1
 ```
 
-MaterializeMySQL 被定义成一种存储引擎，所以在读取的时候，会根据 `_sign` 状态进行判断，如果是-1则是已经删除，进行过滤。
+MaterializeMySQL 被定义成一种存储引擎，所以在读取的时候，会根据 `_sign` 状态进行判断，如果是-1 则是已经删除，进行过滤。
 
 ### 并行回放
 
@@ -526,7 +525,7 @@ event2 和 event3 则可以并行，event4 需要等待前面 event 完成才可
 2. 基于 group commit 并行
 3. 基于主键不冲突的 write set 并行
 
-最大程度上让 MySQL slave加速回放，整套机制还是异常复杂的。
+最大程度上让 MySQL slave 加速回放，整套机制还是异常复杂的。
 
 回到 ClickHouse slave 问题，我们采用的单线程回放，延迟已经不是主要问题，这是由它们的机制决定的：
 
@@ -535,9 +534,9 @@ event2 和 event3 则可以并行，event4 需要等待前面 event 完成才可
 
 ### 读取最新
 
-虽然 ClickHouse slave 回放非常快，接近于实时，如何在ClickHouse slave上总是读取到最新的数据呢？
+虽然 ClickHouse slave 回放非常快，接近于实时，如何在 ClickHouse slave 上总是读取到最新的数据呢？
 
-其实非常简单，借助 MySQL binlog GTID 特性，每次读的时候，我们跟 ｍaster 做一次 executed_gtid 同步，然后等待这些 executed_gtid 回放完毕即可。
+其实非常简单，借助 MySQL binlog GTID 特性，每次读的时候，我们跟 ｍ aster 做一次 executed_gtid 同步，然后等待这些 executed_gtid 回放完毕即可。
 
 ### 数据一致性
 
@@ -552,30 +551,27 @@ ClickHouse 实时复制同步 MySQL 数据是 upstream 2020 的一个 roadmap，
 - 对 MySQL 复制通道与协议非常熟悉
 - 对 ClickHouse 整体机制非常熟悉
 
-这样，在两个本来有点遥远的山头中间架起了一座高速，这条 [10851号](https://github.com/ClickHouse/ClickHouse/pull/10851) 高速由 zhang1024(ClickHouse侧) 和 BohuTANG(MySQL复制) 两个修路工联合承建，目前已经合并到 upstream 分支。
+这样，在两个本来有点遥远的山头中间架起了一座高速，这条 [10851 号](https://github.com/ClickHouse/ClickHouse/pull/10851) 高速由 zhang1024(ClickHouse 侧) 和 BohuTANG(MySQL 复制) 两个修路工联合承建，目前已经合并到 upstream 分支。
 
 关于同步 MySQL 的数据，目前大家的方案基本都是在中间安置一个 binlog 消费工具，这个工具对 event 进行解析，然后再转换成 ClickHouse 的 SQL 语句，写到 ClickHouse server，链路较长，性能损耗较大。
 
-[10851号](https://github.com/ClickHouse/ClickHouse/pull/10851) 高速是在 ClickHouse 内部实现一套 binlog 消费方案，然后根据 event 解析成 ClickHouse 内部的 block 结构，再直接回写到底层存储引擎，几乎是最高效的一种实现方式，实现与 MySQL 实时同步的能力，让分析更接近现实。
+[10851 号](https://github.com/ClickHouse/ClickHouse/pull/10851) 高速是在 ClickHouse 内部实现一套 binlog 消费方案，然后根据 event 解析成 ClickHouse 内部的 block 结构，再直接回写到底层存储引擎，几乎是最高效的一种实现方式，实现与 MySQL 实时同步的能力，让分析更接近现实。
 
 基于 database 级的复制，实现了多源复制的功能，如果复制通道坏掉，我们只需在 ClickHouse 侧删掉 database 再重建一次即可，非常快速、方便，OLTP+OLAP 就是这么简单！
 
 要想富，先修路！
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
 
-
-| 标题 | 网址 |
-| -------------------- | --------------------------------- |
-| GitHub | https://dbkernel.github.io |
-| 知乎 | https://www.zhihu.com/people/dbkernel/posts |
-| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel |
-| 掘金 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina） | https://my.oschina.net/dbkernel |
-| 博客园（cnblogs） | https://www.cnblogs.com/dbkernel |
-
-
+| 标题                 | 网址                                                  |
+| -------------------- | ----------------------------------------------------- |
+| GitHub               | https://dbkernel.github.io                            |
+| 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
+| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
+| 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
+| 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

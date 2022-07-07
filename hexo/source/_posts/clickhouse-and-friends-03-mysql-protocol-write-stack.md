@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈
 date: 2020-06-08 19:57:10
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MySQL
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MySQL
+  - 源码分析
 toc: true
 ---
 
@@ -15,13 +15,13 @@ toc: true
 
 **本文首发于 2020-06-08 19:57:10**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/06/08/clickhouse-and-friends-mysql-protocol-write-stack/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/06/08/clickhouse-and-friends-mysql-protocol-write-stack/
+> 以下为正文。
 
-上篇的[MySQL Protocol和Read调用](https://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/)里介绍了 ClickHouse 一条查询语句的调用栈，本文继续介绍写的调用栈，开整。
+上篇的[MySQL Protocol 和 Read 调用](https://dbkernel.github.io/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/)里介绍了 ClickHouse 一条查询语句的调用栈，本文继续介绍写的调用栈，开整。
 
-## **Write请求**
+## **Write 请求**
 
 1. 建表:
 
@@ -69,7 +69,7 @@ res.in = std::make_shared<InputStreamFromASTInsertQuery>(query_ptr, nullptr, que
 res.in = std::make_shared<NullAndDoCopyBlockInputStream>(res.in, out_streams.at(0));
 ```
 
-通过 NullAndDoCopyBlockInputStream的 copyData 方法构造出 Block：
+通过 NullAndDoCopyBlockInputStream 的 copyData 方法构造出 Block：
 
 ```cpp
 DB::ValuesBlockInputFormat::readRow(std::__1::vector<COW<DB::IColumn>::mutable_ptr<DB::IColumn>, std::__1::allocator<COW<DB::IColumn>::mutable_ptr<DB::IColumn> > >&, unsigned long) ValuesBlockInputFormat.cpp:93
@@ -109,7 +109,7 @@ DB::MySQLHandler::run() MySQLHandler.cpp:141
 5. PushingToViewsBlockOutputStream
 6. MergeTreeBlockOutputStream
 
-### 4. 写入OutputStream
+### 4. 写入 OutputStream
 
 ```cpp
 DB::MergeTreeBlockOutputStream::write(DB::Block const&) MergeTreeBlockOutputStream.cpp:17
@@ -161,7 +161,7 @@ INSERT INTO test VALUES(1,1,1), (2,2,2);
 
 ClickHouse 的 OutputStream 编排还是比较复杂，缺少类似 Pipeline 的调度和编排，但是由于模式比较固化，目前看还算清晰。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -173,5 +173,5 @@ ClickHouse 的 OutputStream 编排还是比较复杂，缺少类似 Pipeline 的
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

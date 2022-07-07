@@ -20,16 +20,16 @@
   
   
   <title>系统运维 | Ubuntu 下安装配置samba 服务的详细过程 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="本文首发于 2014-08-05 10:14:48  1. Samba作用Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。 当然，也可用于VMWare虚拟机与宿主机之间的资源共享。 2. 安装我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两">
+  <meta name="description" content="本文首发于 2014-08-05 10:14:48  1. Samba 作用Samba 的主要任务就是实现 Linux 系统和 Windows 系统之间的资源共享。我们现在是要在 Linux 下配置 Samba，让 Windows 的用户可以访问你的 PC。 当然，也可用于 VMWare 虚拟机与宿主机之间的资源共享。 2. 安装我是在 ubuntu 上实现的，所以我只需在配置好 ubunt">
 <meta property="og:type" content="article">
 <meta property="og:title" content="系统运维 | Ubuntu 下安装配置samba 服务的详细过程">
 <meta property="og:url" content="http://dbkernel.github.io/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="本文首发于 2014-08-05 10:14:48  1. Samba作用Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。 当然，也可用于VMWare虚拟机与宿主机之间的资源共享。 2. 安装我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两">
+<meta property="og:description" content="本文首发于 2014-08-05 10:14:48  1. Samba 作用Samba 的主要任务就是实现 Linux 系统和 Windows 系统之间的资源共享。我们现在是要在 Linux 下配置 Samba，让 Windows 的用户可以访问你的 PC。 当然，也可用于 VMWare 虚拟机与宿主机之间的资源共享。 2. 安装我是在 ubuntu 上实现的，所以我只需在配置好 ubunt">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2014-08-05T02:14:48.000Z">
-<meta property="article:modified_time" content="2021-09-24T04:07:48.629Z">
+<meta property="article:modified_time" content="2022-07-07T02:15:40.589Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="Linux">
 <meta property="article:tag" content="系统运维">
@@ -341,7 +341,7 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Samba%E4%BD%9C%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">1. Samba作用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">2. 安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Samba%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9E%84%E6%88%90"><span class="toc-number">3.</span> <span class="toc-text">3. Samba服务的构成</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Samba%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">4.</span> <span class="toc-text">4. Samba配置文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.</span> <span class="toc-text">5. 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%AE%BE%E7%BD%AE%E5%85%B1%E4%BA%AB%E7%9B%AE%E5%BD%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. 设置共享目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. 修改配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%B7%BB%E5%8A%A0Samba%E7%94%A8%E6%88%B7"><span class="toc-number">5.3.</span> <span class="toc-text">5.3. 添加Samba用户</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-%E9%87%8D%E5%90%AF%E6%9C%8D%E5%8A%A1"><span class="toc-number">5.4.</span> <span class="toc-text">5.4. 重启服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E4%BD%BF%E7%94%A8"><span class="toc-number">5.5.</span> <span class="toc-text">5.5. 使用</span></a></li></ol></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Samba-%E4%BD%9C%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">1. Samba 作用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">2. 安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Samba-%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9E%84%E6%88%90"><span class="toc-number">3.</span> <span class="toc-text">3. Samba 服务的构成</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Samba-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">4.</span> <span class="toc-text">4. Samba 配置文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.</span> <span class="toc-text">5. 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%AE%BE%E7%BD%AE%E5%85%B1%E4%BA%AB%E7%9B%AE%E5%BD%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. 设置共享目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. 修改配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%B7%BB%E5%8A%A0-Samba-%E7%94%A8%E6%88%B7"><span class="toc-number">5.3.</span> <span class="toc-text">5.3. 添加 Samba 用户</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-%E9%87%8D%E5%90%AF%E6%9C%8D%E5%8A%A1"><span class="toc-number">5.4.</span> <span class="toc-text">5.4. 重启服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E4%BD%BF%E7%94%A8"><span class="toc-number">5.5.</span> <span class="toc-text">5.5. 使用</span></a></li></ol></li></ol>
     </nav>
   </div>
 </aside>
@@ -392,7 +392,7 @@
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 875(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 882(字)</span>
 	
 	
 		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 3(分)</span>
@@ -407,25 +407,27 @@
 <blockquote>
 <p><strong>本文首发于 2014-08-05 10:14:48</strong></p>
 </blockquote>
-<h1 id="1-Samba作用"><a href="#1-Samba作用" class="headerlink" title="1. Samba作用"></a>1. Samba作用</h1><p>Samba的主要任务就是实现Linux系统和Windows系统之间的资源共享。我们现在是要在Linux下配置Samba，让Windows的用户可以访问你的PC。</p>
-<p>当然，也可用于VMWare虚拟机与宿主机之间的资源共享。</p>
-<h1 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h1><p>我是在ubuntu上实现的，所以我只需在配置好ubuntu的更新源之后，在终端中使用一下两句命令，就可以安装Samba的软件包</p>
+<h1 id="1-Samba-作用"><a href="#1-Samba-作用" class="headerlink" title="1. Samba 作用"></a>1. Samba 作用</h1><p>Samba 的主要任务就是实现 Linux 系统和 Windows 系统之间的资源共享。我们现在是要在 Linux 下配置 Samba，让 Windows 的用户可以访问你的 PC。</p>
+<p>当然，也可用于 VMWare 虚拟机与宿主机之间的资源共享。</p>
+<h1 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h1><p>我是在 ubuntu 上实现的，所以我只需在配置好 ubuntu 的更新源之后，在终端中使用一下两句命令，就可以安装 Samba 的软件包</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install smaba</span><br><span class="line">sudo apt-get install smbfs</span><br></pre></td></tr></table></figure>
 
-<h1 id="3-Samba服务的构成"><a href="#3-Samba服务的构成" class="headerlink" title="3. Samba服务的构成"></a>3. Samba服务的构成</h1><p>Samba的核心是两个守护进程<code>smbd</code>和<code>nmbd</code> 。它们的配置信息都保存在<code>/etc/samba/smb.conf</code>里面。</p>
-<p>其中<code>smbd</code>处理Samba软件与Linux协商，<code>nmbd</code>使其他主机能浏览Linux服务器。</p>
-<h1 id="4-Samba配置文件"><a href="#4-Samba配置文件" class="headerlink" title="4. Samba配置文件"></a>4. Samba配置文件</h1><p>配置文件为<code>/etc/samba/smb.conf</code>，如果担心改了之后有问题，可以先备份一下：</p>
+<h1 id="3-Samba-服务的构成"><a href="#3-Samba-服务的构成" class="headerlink" title="3. Samba 服务的构成"></a>3. Samba 服务的构成</h1><p>Samba 的核心是两个守护进程<code>smbd</code>和<code>nmbd</code> 。它们的配置信息都保存在<code>/etc/samba/smb.conf</code>里面。</p>
+<p>其中<code>smbd</code>处理 Samba 软件与 Linux 协商，<code>nmbd</code>使其他主机能浏览 Linux 服务器。</p>
+<h1 id="4-Samba-配置文件"><a href="#4-Samba-配置文件" class="headerlink" title="4. Samba 配置文件"></a>4. Samba 配置文件</h1><p>配置文件为<code>/etc/samba/smb.conf</code>，如果担心改了之后有问题，可以先备份一下：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo cp /etc/samba/smb.conf /etc/samba/smb_conf_backup</span><br></pre></td></tr></table></figure>
 
-<p><strong>一个完整的Samba配置文件包含两部分：</strong></p>
+<p><strong>一个完整的 Samba 配置文件包含两部分：</strong></p>
 <ul>
-<li><p>Samba Global Settings 全局参数设置</p>
-<blockquote>
+<li>Samba Global Settings 全局参数设置<blockquote>
 <p>该部分由<code>[global]段</code>来完成配置，主要是设置整体的规则。其中参数<code>workgroup</code>比较特殊，用于提供<code>NT域名或者工作组名</code>，需要根据实际情况修改：</p>
 </blockquote>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">workgroup=mygroup</span><br></pre></td></tr></table></figure></li>
-<li><p>Share Definitions 共享定义</p>
-<blockquote>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">workgroup=mygroup</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Share Definitions 共享定义<blockquote>
 <p>有很多段，都用<code>[]标志</code>开始的，需要根据实际情况修改。</p>
 </blockquote>
 </li>
@@ -434,7 +436,7 @@
 <ul>
 <li>每个部分有消息头和参数构成，消息头用<code>[]</code>表示，如<code>[global]</code>就是一个消息头。</li>
 <li>参数的结构形式是<code>parameter=value</code>。</li>
-<li>注释用 <code>#</code> 表示，这个和shell脚本有点像。</li>
+<li>注释用 <code>#</code> 表示，这个和 shell 脚本有点像。</li>
 <li>有一些配置前面有 <code>;</code> ，这个表示这一行的配置可以更改，如需修改，则要去掉<code>;</code>，配置才可能生效。</li>
 </ul>
 <h1 id="5-示例"><a href="#5-示例" class="headerlink" title="5. 示例"></a>5. 示例</h1><h2 id="5-1-设置共享目录"><a href="#5-1-设置共享目录" class="headerlink" title="5.1. 设置共享目录"></a>5.1. 设置共享目录</h2><p>假定共享目录为<code>/home/share/samba</code>：</p>
@@ -443,31 +445,32 @@
 <h2 id="5-2-修改配置文件"><a href="#5-2-修改配置文件" class="headerlink" title="5.2. 修改配置文件"></a>5.2. 修改配置文件</h2><p>修改 global 段：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[global]</span></span><br><span class="line">    <span class="attr">workgroup</span> = WORKGROUP</span><br><span class="line">    display <span class="attr">charset</span> = UTF-<span class="number">8</span></span><br><span class="line">    unix <span class="attr">charset</span> = UTF-<span class="number">8</span></span><br><span class="line">    dos <span class="attr">charset</span> = cp936</span><br></pre></td></tr></table></figure>
 
-<p>添加Share段：</p>
+<p>添加 Share 段：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Share]</span></span><br><span class="line">    <span class="attr">comment</span> = Shared Folder with username and password</span><br><span class="line">    <span class="attr">path</span> = /home/share/samba</span><br><span class="line">    <span class="attr">public</span> = <span class="literal">yes</span></span><br><span class="line">    <span class="attr">writable</span> = <span class="literal">no</span></span><br><span class="line">    valid <span class="attr">users</span> = user</span><br><span class="line">    create <span class="attr">mask</span> = <span class="number">0300</span></span><br><span class="line">    directory <span class="attr">mask</span> = <span class="number">0300</span></span><br><span class="line">    force <span class="attr">user</span> = nobody</span><br><span class="line">    force <span class="attr">group</span> = nogroup</span><br><span class="line">    <span class="attr">available</span> = <span class="literal">yes</span></span><br><span class="line">    <span class="attr">browseable</span> = <span class="literal">yes</span></span><br></pre></td></tr></table></figure>
 
 <p>搜索到 security 配置项，修改为：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security</span> = user</span><br><span class="line">username <span class="attr">map</span> = /etc/samba/smbusers</span><br></pre></td></tr></table></figure>
 
 <p>保存并关闭配置文件。</p>
-<h2 id="5-3-添加Samba用户"><a href="#5-3-添加Samba用户" class="headerlink" title="5.3. 添加Samba用户"></a>5.3. 添加Samba用户</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo useradd user <span class="comment">#增加了一个叫做user的用户</span></span><br><span class="line">sudo smbpasswd user <span class="comment">#修改user的对samba服务的密码，系统会提示输入密码</span></span><br></pre></td></tr></table></figure>
+<h2 id="5-3-添加-Samba-用户"><a href="#5-3-添加-Samba-用户" class="headerlink" title="5.3. 添加 Samba 用户"></a>5.3. 添加 Samba 用户</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo useradd user <span class="comment">#增加了一个叫做user的用户</span></span><br><span class="line">sudo smbpasswd user <span class="comment">#修改user的对samba服务的密码，系统会提示输入密码</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="5-4-重启服务"><a href="#5-4-重启服务" class="headerlink" title="5.4. 重启服务"></a>5.4. 重启服务</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /etc/init.d/samba restart</span><br></pre></td></tr></table></figure>
 
 <h2 id="5-5-使用"><a href="#5-5-使用" class="headerlink" title="5.5. 使用"></a>5.5. 使用</h2><ul>
-<li><p>在windows系统下使用</p>
+<li><p>在 windows 系统下使用</p>
 <ul>
-<li>方法一：在IE地址栏中输入：<code>\\你的IP</code>，然后回车，可能要求你输入用户名和密码（第5.3小节设定的）。</li>
+<li>方法一：在 IE 地址栏中输入：<code>\\你的IP</code>，然后回车，可能要求你输入用户名和密码（第 5.3 小节设定的）。</li>
 <li>方法二：在<code>网上邻居</code>中新建<code>邻居</code>，在路径中输入: <code>\\你的IP\Share</code>，然后点击下一步完成（可能会要求输入用户名和密码）。</li>
 </ul>
 </li>
-<li><p>在Linux下访问：在终端中挂载文件系统</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo mount -t smbfs -o username=user,password=123456 //218.*.*.*/Share /mnt</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>其中，<code>-t参数</code>指示了文件系统的类型，<code>username</code>是用户名，<code>password</code>是密码，<code>218.*.*.*</code>是你的IP，<code>Share</code>是在配置文件中已经指明的段名，<code>/mnt</code>是要挂载到的文件夹。</p>
-</blockquote>
+<li><p>在 Linux 下访问：在终端中挂载文件系统</p>
 </li>
 </ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo mount -t smbfs -o username=user,password=123456 //218.*.*.*/Share /mnt</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其中，<code>-t参数</code>指示了文件系统的类型，<code>username</code>是用户名，<code>password</code>是密码，<code>218.*.*.*</code>是你的 IP，<code>Share</code>是在配置文件中已经指明的段名，<code>/mnt</code>是要挂载到的文件夹。</p>
+</blockquote>
 <hr>
 <p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
@@ -496,8 +499,8 @@
 <td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
 </tr>
 <tr>
-<td>开源中国（oschina）</td>
-<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
 </tr>
 <tr>
 <td>博客园（cnblogs）</td>

@@ -2,13 +2,13 @@
 title: 源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log
 date: 2020-08-20 19:55:14
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MergeTree
-- WAL
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MergeTree
+  - WAL
+  - 源码分析
 toc: true
 ---
 
@@ -16,10 +16,9 @@ toc: true
 
 **本文首发于 2020-08-20 19:55:14**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/08/18/clickhouse-and-friends-merge-tree-wal/
->以下为正文。
-
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/08/18/clickhouse-and-friends-merge-tree-wal/
+> 以下为正文。
 
 数据库系统为了提高写入性能，会把数据先写到内存，等“攒”到一定程度后再回写到磁盘，比如 MySQL 的 buffer pool 机制。
 
@@ -49,9 +48,9 @@ toc: true
 
 很显然，这种模式不适合频繁写操作的情况，否则会生成非常多的分区目录和文件，引发 `Too many parts` 错误。
 
-### 2. WAL模式
+### 2. WAL 模式
 
-设置SETTINGS: `min_rows_for_compact_part=2`，分别执行２条写 SQL，数据会先写到 wal.bin 文件：
+设置 SETTINGS: `min_rows_for_compact_part=2`，分别执行２条写 SQL，数据会先写到 wal.bin 文件：
 
 ![mergetree-part-wal.png](mergetree-part-wal.png)
 
@@ -64,7 +63,6 @@ insert into default.mt(a,b,c) values(1,3,3)
 数据块(分区)会继续追加到 wal.bin 尾部：
 
 ![mergetree-part-wal-merge.png](mergetree-part-wal-merge.png)
-
 
 此时，3 条数据分布在两个地方：分区 `1_1_2_1`， wal.bin 里的 `1_3_3_0`。
 
@@ -84,7 +82,7 @@ WAL 功能在 [PR＃8290](https://github.com/ClickHouse/ClickHouse/pull/8290) �
 
 MergeTree 通过 WAL 来保护客户端的高频、少量写机制，减少服务端目录和文件数量，让客户端操作尽可能简单、高效。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -92,11 +90,9 @@ MergeTree 通过 WAL 来保护客户端的高频、少量写机制，减少服�
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

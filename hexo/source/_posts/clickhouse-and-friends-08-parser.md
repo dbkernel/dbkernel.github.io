@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器
 date: 2020-07-26 21:55:10
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- Parser
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - Parser
+  - 源码分析
 toc: true
 ---
 
@@ -15,9 +15,9 @@ toc: true
 
 **本文首发于 2020-07-26 21:55:10**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/07/25/clickhouse-and-friends-parser/
+> 以下为正文。
 
 现实生活中的物品一旦被标记为“纯手工打造”，给人的第一感觉就是“上乘之品”，一个字“贵”，比如北京老布鞋。
 
@@ -36,7 +36,6 @@ EXPLAIN SELECT a,b FROM t1
 首先对 SQL 里的字符逐个做判断，然后根据其关联性做 token 分割：
 
 ![parser.png](parser.png)
-
 
 比如连续的 WordChar，那它就是 BareWord，解析函数在 [Lexer::nextTokenImpl()](https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/Lexer.cpp#L61)，解析调用栈：
 
@@ -65,7 +64,7 @@ ClickHouse 在解每一个 token 的时候，会根据当前的 token 进行状�
 EXPLAIN  -- TokenType::BareWord
 ```
 
-逻辑首先会进入Parsers/ParserQuery.cpp 的 [ParserQuery::parseImpl](https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserQuery.cpp#L26) 方法：
+逻辑首先会进入 Parsers/ParserQuery.cpp 的 [ParserQuery::parseImpl](https://github.com/ClickHouse/ClickHouse/blob/558f9c76306ffc4e6add8fd34c2071b64e914103/src/Parsers/ParserQuery.cpp#L26) 方法：
 
 ```cpp
 bool res = query_with_output_p.parse(pos, node, expected)
@@ -225,23 +224,21 @@ bool ParserExpressionList::parseImpl(Pos & pos, ASTPtr & node, Expected & expect
 
 手工 parser 的好处是代码清晰简洁，每个细节可防可控，以及友好的错误处理，改动起来不会一发动全身。
 
-缺点是手工成本太高，需要大量的测试来保证其正确性，还需要一些fuzz来保证可靠性。
+缺点是手工成本太高，需要大量的测试来保证其正确性，还需要一些 fuzz 来保证可靠性。
 
-好在ClickHouse 已经实现的比较全面，即使有新的需求，在现有基础上修修补补即可。
+好在 ClickHouse 已经实现的比较全面，即使有新的需求，在现有基础上修修补补即可。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
 
-
-| 标题 | 网址 |
-| -------------------- | --------------------------------- |
-| GitHub | https://dbkernel.github.io |
-| 知乎 | https://www.zhihu.com/people/dbkernel/posts |
-| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel |
-| 掘金 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina） | https://my.oschina.net/dbkernel |
-| 博客园（cnblogs） | https://www.cnblogs.com/dbkernel |
-
+| 标题                 | 网址                                                  |
+| -------------------- | ----------------------------------------------------- |
+| GitHub               | https://dbkernel.github.io                            |
+| 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
+| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
+| 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
+| 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理
 date: 2020-09-03 21:22:14
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- Materialized View
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - Materialized View
+  - 源码分析
 toc: true
 ---
 
@@ -15,10 +15,9 @@ toc: true
 
 **本文首发于 2020-09-03 21:22:14**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/08/31/clickhouse-and-friends-materialized-view/
->以下为正文。
-
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/08/31/clickhouse-and-friends-materialized-view/
+> 以下为正文。
 
 ![clickhouse-map-2020-materializeview.png](clickhouse-map-2020-materializeview.png)
 
@@ -271,12 +270,11 @@ in = std::make_shared<MaterializingBlockInputStream>(select->execute().getInputS
 
 还有就是通过物化视图的实时同步数据能力，我们可以做到更加灵活的表结构变更。
 
-更强大的地方是它可以借助 MergeTree 家族引擎(SummingMergeTree、Aggregatingmergetree等)，得到一个实时的预聚合，满足快速查询。
+更强大的地方是它可以借助 MergeTree 家族引擎(SummingMergeTree、Aggregatingmergetree 等)，得到一个实时的预聚合，满足快速查询。
 
 原理是把增量的数据根据 `AS SELECT ...` 对其进行处理并写入到物化视图表，物化视图是一种普通表，可以直接读取和写入。
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -284,12 +282,9 @@ in = std::make_shared<MaterializingBlockInputStream>(select->execute().getInputS
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-
-

@@ -2,37 +2,39 @@
 title: 实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例
 date: 2015-12-23 21:04:17
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- PostgreSQL
-- pgbench
+  - PostgreSQL
+  - pgbench
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2015-12-23 21:04:17**
+> **本文首发于 2015-12-23 21:04:17**
 
 # 环境
 
-PG数据库提供了一款轻量级的压力测试工具叫 `pgbench`，其实就是一个编译好后的扩展性的可执行文件。
+PG 数据库提供了一款轻量级的压力测试工具叫 `pgbench`，其实就是一个编译好后的扩展性的可执行文件。
 
 **测试环境：**
->CentOS 5.7 in VMWare 8.0
+
+> CentOS 5.7 in VMWare 8.0
 >
->PG：9.1.2
+> PG：9.1.2
 
 **数据库参数：**
->max_connection=100
->
->其他默认
->
->**注意：** 本文只为说明 `pgbench` 的使用方法，因此，并未对数据库参数调优。
 
+> max_connection=100
+>
+> 其他默认
+>
+> **注意：** 本文只为说明 `pgbench` 的使用方法，因此，并未对数据库参数调优。
 
 # 安装
 
 进入源码安装包，编译、安装：
+
 ```bash
 cd postgresql-9.1.2/contrib/pgbench/
 make all
@@ -40,6 +42,7 @@ make install
 ```
 
 安装完毕以后可以在 bin 文件夹下看到新生成的 pgbench 文件：
+
 ```bash
 $ ll $PGHOME/bin/pgbench
 -rwxr-xr-x. 1 postgres postgres 50203 Jul  8 20:28 pgbench
@@ -88,6 +91,7 @@ Common options:
 ```
 
 部分参数中文含义：
+
 ```
 -c, --client=NUM
 数据库客户端数量, 可以理解为数据库会话数量(postgres进程数), 默认为1
@@ -139,6 +143,7 @@ vacuum...done.
 ```
 
 查看表数据：
+
 ```sql
 [postgres@localhost  ~]$ psql -d pgbench
 psql (9.1.2)
@@ -224,12 +229,13 @@ Options: fillfactor=100
 ```
 
 **说明：**
+
 1. 这里使用的是默认的参数值，`-s`参数时可指定测试数据的数据量，`-f`可以指定测试的脚本，这里用的是默认脚本。
 2. 不要在生产的库上做，新建一个测试库（当生产上有同名的测试表时将被重置）。
 
 # 测试
 
-## 1个session
+## 1 个 session
 
 ```bash
 [postgres@localhost  ~]$ nohup pgbench -c 1 -T 20 -r pgbench > file.out  2>&1
@@ -260,7 +266,7 @@ statement latencies in milliseconds:
         0.919101        END;
 ```
 
-## 2. 50个session
+## 2. 50 个 session
 
 ```bash
 [postgres@localhost  ~]$nohup pgbench -c 50 -T 20 -r pgbench > file.out  2>&1
@@ -291,9 +297,9 @@ statement latencies in milliseconds:
         2.243497        END;
 ```
 
-## 3. 100个session
+## 3. 100 个 session
 
-超过100个会报错，因为数据库当前设置最大 session 是100。
+超过 100 个会报错，因为数据库当前设置最大 session 是 100。
 
 ```bash
 [postgres@localhost  ~]$ nohup pgbench -c 100 -T 20 -r pgbench> file.out  2>&1
@@ -328,13 +334,11 @@ statement latencies in milliseconds:
 
 http://www.postgresql.org/docs/9.1/static/pgbench.html
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -342,6 +346,5 @@ http://www.postgresql.org/docs/9.1/static/pgbench.html
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

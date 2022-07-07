@@ -2,17 +2,17 @@
 title: 应用案例 | PostgreSQL libpq 网络库接口操作数据库示例
 date: 2015-11-12 09:23:46
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- C语言
-- PostgreSQL
-- libpq
+  - C语言
+  - PostgreSQL
+  - libpq
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2015-11-12 09:23:46**
+> **本文首发于 2015-11-12 09:23:46**
 
 # 前言
 
@@ -20,7 +20,7 @@ toc: true
 
 关于 libpq 各个函数接口的说明，参考：http://www.postgres.cn/docs/9.3/libpq.html
 
-# 示例1
+# 示例 1
 
 ```cpp
 /*
@@ -143,7 +143,7 @@ main(int argc, char **argv)
 }
 ```
 
-# 示例2
+# 示例 2
 
 ```cpp
 /*
@@ -277,7 +277,7 @@ main(int argc, char **argv)
 }
 ```
 
-# 示例3
+# 示例 3
 
 ```cpp
 /*
@@ -493,12 +493,11 @@ main(int argc, char **argv)
 }
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -506,5 +505,5 @@ main(int argc, char **argv)
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

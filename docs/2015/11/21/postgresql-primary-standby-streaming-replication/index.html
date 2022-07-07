@@ -32,7 +32,7 @@
 <meta property="og:image" content="http://dbkernel.github.io/2015/11/21/postgresql-primary-standby-streaming-replication/postgresql-standby-mode-and-apply-log.jpg">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2015-11-21T12:02:26.000Z">
-<meta property="article:modified_time" content="2021-09-24T13:56:03.183Z">
+<meta property="article:modified_time" content="2022-07-07T02:18:13.098Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="PostgreSQL">
 <meta property="article:tag" content="主从同步">
@@ -344,7 +344,7 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E5%A4%87%E6%80%BB%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">主备总体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#walsender-%E5%92%8C-walreceiver-%E8%BF%9B%E7%A8%8B%E6%B5%81%E5%A4%8D%E5%88%B6%E8%BF%87%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">walsender 和 walreceiver 进程流复制过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#walreceiver%E5%92%8Cstartup%E8%BF%9B%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">walreceiver和startup进程</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E5%A4%87%E6%80%BB%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">主备总体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#walsender-%E5%92%8C-walreceiver-%E8%BF%9B%E7%A8%8B%E6%B5%81%E5%A4%8D%E5%88%B6%E8%BF%87%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">walsender 和 walreceiver 进程流复制过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#walreceiver-%E5%92%8C-startup-%E8%BF%9B%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">walreceiver 和 startup 进程</span></a></li></ol>
     </nav>
   </div>
 </aside>
@@ -395,7 +395,7 @@
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 993(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 991(字)</span>
 	
 	
 		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 4(分)</span>
@@ -427,10 +427,10 @@
 <li>walreceiver 启动后通过 <code>recovery.conf</code> 文件中的 <code>primary_conninfo</code> 参数信息连向主库，主库通过连接参数 <code>replication=true</code> 启动 walsender 进程；</li>
 <li>walreceiver 执行 <code>identify_system</code> 命令，获取主库 <code>systemid/timeline/xlogpos</code> 等信息，执行 <code>TIMELINE_HISTORY</code> 命令拉取 history 文件；</li>
 <li>执行 <code>wal_startstreaming</code> 开始启动流复制，通过 <code>walrcv_receive</code> 获取 WAL 日志，期间也会回应主库发过来的心跳信息(接收位点、flush 位点、apply 位点)，向主库发送 feedback 信息(最老的事务 id)，避免 vacuum 删掉备库正在使用的记录；</li>
-<li>执行 <code>walrcv_endstreaming</code> 结束流复制，等待 startup 进程更新 <code>receiveStart</code> 和 <code>receiveStartTLI</code>，一旦更新，进入步骤2。</li>
+<li>执行 <code>walrcv_endstreaming</code> 结束流复制，等待 startup 进程更新 <code>receiveStart</code> 和 <code>receiveStartTLI</code>，一旦更新，进入步骤 2。</li>
 </ol>
 <p><img src="postgresql-stream-replication-process.jpg" alt="PostgreSQL 流复制过程"></p>
-<h2 id="walreceiver和startup进程"><a href="#walreceiver和startup进程" class="headerlink" title="walreceiver和startup进程"></a>walreceiver和startup进程</h2><p>startup 进程进入 standby 模式和 apply 日志主要过程：</p>
+<h2 id="walreceiver-和-startup-进程"><a href="#walreceiver-和-startup-进程" class="headerlink" title="walreceiver 和 startup 进程"></a>walreceiver 和 startup 进程</h2><p>startup 进程进入 standby 模式和 apply 日志主要过程：</p>
 <ol>
 <li><p>读取 <code>pg_control</code> 文件，找到 redo 位点；读取 <code>recovery.conf</code>，如果配置 <code>standby_mode=on</code> 则进入 standby 模式。</p>
 </li>
@@ -443,11 +443,11 @@
 </ol>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">MemSet</span>((<span class="keyword">char</span> *) htup, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(HeapTupleHeaderData));</span><br><span class="line"> <span class="comment">/* PG73FORMAT: get bitmap [+ padding] [+ oid] + data */</span></span><br><span class="line"> <span class="built_in">memcpy</span>((<span class="keyword">char</span> *) htup + <span class="built_in">offsetof</span>(HeapTupleHeaderData, t_bits),</span><br><span class="line"> 	   (<span class="keyword">char</span> *) xlrec + SizeOfHeapInsert + SizeOfHeapHeader,</span><br><span class="line"> 	   newlen);</span><br><span class="line"> newlen += <span class="built_in">offsetof</span>(HeapTupleHeaderData, t_bits);</span><br><span class="line"> htup-&gt;t_infomask2 = xlhdr.t_infomask2;</span><br><span class="line"> htup-&gt;t_infomask = xlhdr.t_infomask;</span><br><span class="line"> htup-&gt;t_hoff = xlhdr.t_hoff;</span><br><span class="line"> <span class="built_in">HeapTupleHeaderSetXmin</span>(htup, record-&gt;xl_xid);</span><br><span class="line"> <span class="built_in">HeapTupleHeaderSetCmin</span>(htup, FirstCommandId);</span><br><span class="line"> htup-&gt;t_ctid = xlrec-&gt;target.tid;</span><br><span class="line"></span><br><span class="line"> offnum = <span class="built_in">PageAddItem</span>(page, (Item) htup, newlen, offnum, <span class="literal">true</span>, <span class="literal">true</span>);</span><br><span class="line"> <span class="keyword">if</span> (offnum == InvalidOffsetNumber)</span><br><span class="line"> 	<span class="built_in">elog</span>(PANIC, <span class="string">&quot;heap_insert_redo: failed to add tuple&quot;</span>);</span><br><span class="line"></span><br><span class="line"> freespace = <span class="built_in">PageGetHeapFreeSpace</span>(page);		<span class="comment">/* needed to update FSM below */</span></span><br><span class="line"></span><br><span class="line"> <span class="built_in">PageSetLSN</span>(page, lsn);</span><br><span class="line"></span><br><span class="line"> <span class="keyword">if</span> (xlrec-&gt;flags &amp; XLOG_HEAP_ALL_VISIBLE_CLEARED)</span><br><span class="line"> 	<span class="built_in">PageClearAllVisible</span>(page);</span><br><span class="line"></span><br><span class="line"> <span class="built_in">MarkBufferDirty</span>(buffer);</span><br></pre></td></tr></table></figure>
 
-<p>还有部分 redo 操作(vacuum 产生的 record)需要检查在 Hot Standby模式下的查询冲突，比如某些 tuples 需要 remove，而存在正在执行的query 可能读到这些 tuples，这样就会破坏事务隔离级别。通过函数 <code>ResolveRecoveryConflictWithSnapshot</code> 检测冲突，如果发生冲突，那么就把这个 query 所在的进程 kill 掉。</p>
+<p>还有部分 redo 操作(vacuum 产生的 record)需要检查在 Hot Standby 模式下的查询冲突，比如某些 tuples 需要 remove，而存在正在执行的 query 可能读到这些 tuples，这样就会破坏事务隔离级别。通过函数 <code>ResolveRecoveryConflictWithSnapshot</code> 检测冲突，如果发生冲突，那么就把这个 query 所在的进程 kill 掉。</p>
 <ol start="5">
-<li><p>检查一致性，如果一致了，Hot Standby 模式可以接受用户只读查询；更新共享内存中 <code>XLogCtlData</code> 的 apply 位点和时间线；如果恢复到时间点，时间线或者事务id需要检查是否恢复到当前目标；</p>
+<li><p>检查一致性，如果一致了，Hot Standby 模式可以接受用户只读查询；更新共享内存中 <code>XLogCtlData</code> 的 apply 位点和时间线；如果恢复到时间点，时间线或者事务 id 需要检查是否恢复到当前目标；</p>
 </li>
-<li><p>回到步骤3，读取next WAL record 。</p>
+<li><p>回到步骤 3，读取 next WAL record 。</p>
 </li>
 </ol>
 <p><img src="postgresql-standby-mode-and-apply-log.jpg" alt="PostgreSQL standby 模式和 apply 日志过程"></p>
@@ -457,7 +457,6 @@
 <hr>
 <p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 <table>
 <thead>
@@ -483,8 +482,8 @@
 <td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
 </tr>
 <tr>
-<td>开源中国（oschina）</td>
-<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
 </tr>
 <tr>
 <td>博客园（cnblogs）</td>

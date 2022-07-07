@@ -2,27 +2,27 @@
 title: 程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例
 date: 2015-01-03 21:04:36
 categories:
-- C语言
+  - C语言
 tags:
-- C语言
-- 网络编程
-- APUE
+  - C语言
+  - 网络编程
+  - APUE
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2015-01-03 21:04:36**
+> **本文首发于 2015-01-03 21:04:36**
 
 # 概述
 
 IPv4 中使用 `gethostbyname()` 函数完成**主机名到地址解析**，这个函数仅仅支持 IPv4 ，且不允许调用者指定所需地址类型的任何信息，返回的结构只包含了用于存储 IPv4 地址的空间。
 
-IPv6中引入了`getaddrinfo()`的新API，它是协议无关的，既可用于 IPv4 也可用于IPv6 。
+IPv6 中引入了`getaddrinfo()`的新 API，它是协议无关的，既可用于 IPv4 也可用于 IPv6 。
 
-`getaddrinfo`函数能够处理**名字到地址**以及**服务到端口**这两种转换，返回的是一个`addrinfo`的结构（列表）指针而不是一个地址清单。这些`addrinfo`结构随后可由socket函数直接使用。
+`getaddrinfo`函数能够处理**名字到地址**以及**服务到端口**这两种转换，返回的是一个`addrinfo`的结构（列表）指针而不是一个地址清单。这些`addrinfo`结构随后可由 socket 函数直接使用。
 
-`getaddrinfo`函数把协议相关性安全隐藏在这个库函数内部。应用程序只要处理由getaddrinfo函数填写的套接口地址结构。该函数在 POSIX规范中定义了。
+`getaddrinfo`函数把协议相关性安全隐藏在这个库函数内部。应用程序只要处理由 getaddrinfo 函数填写的套接口地址结构。该函数在 POSIX 规范中定义了。
 
 # 函数说明
 
@@ -49,27 +49,28 @@ int getaddrinfo( const char *hostname, const char *service, const struct addrinf
 
 **返回值：**
 
-0：成功；非0：出错。
+0：成功；非 0：出错。
 
 # 参数设置
 
-在`getaddrinfo`函数之前通常需要对以下6个参数进行以下设置：`nodename、servname、hints的ai_flags、ai_family、ai_socktype、ai_protocol`。
+在`getaddrinfo`函数之前通常需要对以下 6 个参数进行以下设置：`nodename、servname、hints的ai_flags、ai_family、ai_socktype、ai_protocol`。
 
-在6项参数中，对函数影响最大的是`nodename，sername`和`hints.ai_flag`，而`ai_family`只是有地址为v4地址或v6地址的区别。`ai_protocol`一般为0不作改动。
+在 6 项参数中，对函数影响最大的是`nodename，sername`和`hints.ai_flag`，而`ai_family`只是有地址为 v4 地址或 v6 地址的区别。`ai_protocol`一般为 0 不作改动。
 
-**getaddrinfo在实际使用中的几种常用参数设置：**
+**getaddrinfo 在实际使用中的几种常用参数设置：**
 
-一般情况下，client/server编程中，server端调用`bind`（如果面向连接的还需要`listen`）；client则无需调用`bind`函数，解析地址后直接`connect`（面向连接）或直接发送数据（无连接）。因此，比较常见的情况有：
+一般情况下，client/server 编程中，server 端调用`bind`（如果面向连接的还需要`listen`）；client 则无需调用`bind`函数，解析地址后直接`connect`（面向连接）或直接发送数据（无连接）。因此，比较常见的情况有：
 
-1. 通常服务器端在调用`getaddrinfo`之前，`ai_flags`设置`AI_PASSIVE`，用于`bind`；主机名`nodename`通常会设置为NULL，返回通配地址`[::]`。
+1. 通常服务器端在调用`getaddrinfo`之前，`ai_flags`设置`AI_PASSIVE`，用于`bind`；主机名`nodename`通常会设置为 NULL，返回通配地址`[::]`。
 2. 客户端调用`getaddrinfo`时，`ai_flags`一般不设置`AI_PASSIVE`，但是主机名`nodename`和服务名`servname`（更愿意称之为端口）则应该不为空。
-3. 当然，即使不设置`AI_PASSIVE`，取出的地址也并非不可以被bind，很多程序中`ai_flags`直接设置为0，即3个标志位都不设置，这种情况下只要hostname和servname设置的没有问题就可以正确bind。
+3. 当然，即使不设置`AI_PASSIVE`，取出的地址也并非不可以被 bind，很多程序中`ai_flags`直接设置为 0，即 3 个标志位都不设置，这种情况下只要 hostname 和 servname 设置的没有问题就可以正确 bind。
 
-上述情况只是简单的client/server中的使用，但实际在使用getaddrinfo和查阅国外开源代码的时候，曾遇到一些将servname（即端口）设为NULL的情况（当然，此时nodename必不为NULL，否则调用getaddrinfo会报错）。
+上述情况只是简单的 client/server 中的使用，但实际在使用 getaddrinfo 和查阅国外开源代码的时候，曾遇到一些将 servname（即端口）设为 NULL 的情况（当然，此时 nodename 必不为 NULL，否则调用 getaddrinfo 会报错）。
 
 # 使用须知
 
-1）如果本函数返回成功，那么由result参数指向的变量已被填入一个指针，它指向的是由其中的`ai_next`成员串联起来的`addrinfo`结构链表。
+1）如果本函数返回成功，那么由 result 参数指向的变量已被填入一个指针，它指向的是由其中的`ai_next`成员串联起来的`addrinfo`结构链表。
+
 ```cpp
 struct addrinfo
 { 　　　　　　　
@@ -84,7 +85,8 @@ struct addrinfo
 };
 ```
 
-其中，sockaddr结构体为：
+其中，sockaddr 结构体为：
+
 ```cpp
 在linux环境下，结构体struct sockaddr在/usr/include/linux/socket.h中定义，具体如下：
 typedef unsigned short sa_family_t;
@@ -95,6 +97,7 @@ struct sockaddr {
 ```
 
 而且，`sockaddr`一般要转换为`sockaddr_in`：
+
 ```cpp
 struct sockaddr_in
 {
@@ -105,36 +108,38 @@ struct sockaddr_in
 }
 ```
 
-2）可以导致返回多个addrinfo结构的情形有以下2个：
+2）可以导致返回多个 addrinfo 结构的情形有以下 2 个：
 
->1. 如果与hostname参数关联的地址有多个，那么适用于所请求地址簇的每个地址都返回一个对应的结构。
->2. 如果service参数指定的服务支持多个套接口类型，那么每个套接口类型都可能返回一个对应的结构，具体取决于hints结构的ai_socktype成员。
+> 1.  如果与 hostname 参数关联的地址有多个，那么适用于所请求地址簇的每个地址都返回一个对应的结构。
+> 2.  如果 service 参数指定的服务支持多个套接口类型，那么每个套接口类型都可能返回一个对应的结构，具体取决于 hints 结构的 ai_socktype 成员。
 
-举例来说：如果指定的服务既支持TCP也支持UDP，那么调用者可以把`hints`结构中的`ai_socktype`成员设置成`SOCK_DGRAM`，使得返回的仅仅是适用于数据报套接口的信息。
+举例来说：如果指定的服务既支持 TCP 也支持 UDP，那么调用者可以把`hints`结构中的`ai_socktype`成员设置成`SOCK_DGRAM`，使得返回的仅仅是适用于数据报套接口的信息。
 
-3）我们必须先分配一个hints结构，把它清零后填写需要的字段，再调用getaddrinfo，然后遍历一个链表逐个尝试每个返回地址。
+3）我们必须先分配一个 hints 结构，把它清零后填写需要的字段，再调用 getaddrinfo，然后遍历一个链表逐个尝试每个返回地址。
 
-4）**getaddrinfo解决了把主机名和服务名转换成套接口地址结构的问题**。
+4）**getaddrinfo 解决了把主机名和服务名转换成套接口地址结构的问题**。
 
-5）如果getaddrinfo出错，那么返回一个非0的错误值。输出出错信息，不要用perror，而应该用`gai_strerror`，该函数原型为：
+5）如果 getaddrinfo 出错，那么返回一个非 0 的错误值。输出出错信息，不要用 perror，而应该用`gai_strerror`，该函数原型为：
 
 ```cpp
 const char *gai_strerror( int error );
 ```
->该函数以`getaddrinfo`返回的非0错误值的名字和含义为他的唯一参数，返回一个指向对应的出错信息串的指针。
 
-6）**由getaddrinfo返回的所有存储空间都是动态获取的，这些存储空间必须通过调用`freeaddrinfo`返回给系统**，该函数原型为：
+> 该函数以`getaddrinfo`返回的非 0 错误值的名字和含义为他的唯一参数，返回一个指向对应的出错信息串的指针。
+
+6）**由 getaddrinfo 返回的所有存储空间都是动态获取的，这些存储空间必须通过调用`freeaddrinfo`返回给系统**，该函数原型为：
 
 ```cpp
 void freeaddrinfo( struct addrinfo *ai );
 ```
->`ai`参数应指向由`getaddrinfo`返回的第一个addrinfo结构。
+
+> `ai`参数应指向由`getaddrinfo`返回的第一个 addrinfo 结构。
 
 这个链表中的所有结构以及它们指向的任何动态存储空间都被释放掉。
 
 # 示例
 
-## 1. 根据主机名获取IP地址
+## 1. 根据主机名获取 IP 地址
 
 ```cpp
 #include <sys/types.h>
@@ -361,7 +366,7 @@ listen_failed:
 }
 ```
 
-## 4. 使用ioctl获取指定网卡IP地址
+## 4. 使用 ioctl 获取指定网卡 IP 地址
 
 ```cpp
 #include <arpa/inet.h>
@@ -399,9 +404,9 @@ int main()
 }
 ```
 
-## 5. 使用ping指令，根据hostname获取ip地址
+## 5. 使用 ping 指令，根据 hostname 获取 ip 地址
 
-本例未用 getaddrinfo，而是采用shell指令方法（不推荐）。
+本例未用 getaddrinfo，而是采用 shell 指令方法（不推荐）。
 
 ```cpp
 #include <stdio.h>
@@ -455,7 +460,7 @@ int main()
 }
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -467,8 +472,5 @@ int main()
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-
-

@@ -2,16 +2,16 @@
 title: 特性分析 | PostgreSQL Primary/Standby 主备流复制机制
 date: 2015-11-21 20:02:26
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- PostgreSQL
-- 主从同步
+  - PostgreSQL
+  - 主从同步
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2015-11-21 20:02:26**
+> **本文首发于 2015-11-21 20:02:26**
 
 ## 引言
 
@@ -41,7 +41,6 @@ PostmasterMain()->StartupDataBase()->AuxiliaryProcessMain()->StartupProcessMain(
 
 ![PostgreSQL 主备总体框架](postgresql-primary-standby-architecture.jpg)
 
-
 ## walsender 和 walreceiver 进程流复制过程
 
 **walsender 和 walreceiver 交互主要分为以下几个步骤：**
@@ -49,12 +48,11 @@ PostmasterMain()->StartupDataBase()->AuxiliaryProcessMain()->StartupProcessMain(
 1. walreceiver 启动后通过 `recovery.conf` 文件中的 `primary_conninfo` 参数信息连向主库，主库通过连接参数 `replication=true` 启动 walsender 进程；
 2. walreceiver 执行 `identify_system` 命令，获取主库 `systemid/timeline/xlogpos` 等信息，执行 `TIMELINE_HISTORY` 命令拉取 history 文件；
 3. 执行 `wal_startstreaming` 开始启动流复制，通过 `walrcv_receive` 获取 WAL 日志，期间也会回应主库发过来的心跳信息(接收位点、flush 位点、apply 位点)，向主库发送 feedback 信息(最老的事务 id)，避免 vacuum 删掉备库正在使用的记录；
-4. 执行 `walrcv_endstreaming` 结束流复制，等待 startup 进程更新 `receiveStart` 和 `receiveStartTLI`，一旦更新，进入步骤2。
+4. 执行 `walrcv_endstreaming` 结束流复制，等待 startup 进程更新 `receiveStart` 和 `receiveStartTLI`，一旦更新，进入步骤 2。
 
 ![PostgreSQL 流复制过程](postgresql-stream-replication-process.jpg)
 
-
-## walreceiver和startup进程
+## walreceiver 和 startup 进程
 
 startup 进程进入 standby 模式和 apply 日志主要过程：
 
@@ -94,24 +92,21 @@ MemSet((char *) htup, 0, sizeof(HeapTupleHeaderData));
  MarkBufferDirty(buffer);
 ```
 
-还有部分 redo 操作(vacuum 产生的 record)需要检查在 Hot Standby模式下的查询冲突，比如某些 tuples 需要 remove，而存在正在执行的query 可能读到这些 tuples，这样就会破坏事务隔离级别。通过函数 `ResolveRecoveryConflictWithSnapshot` 检测冲突，如果发生冲突，那么就把这个 query 所在的进程 kill 掉。
+还有部分 redo 操作(vacuum 产生的 record)需要检查在 Hot Standby 模式下的查询冲突，比如某些 tuples 需要 remove，而存在正在执行的 query 可能读到这些 tuples，这样就会破坏事务隔离级别。通过函数 `ResolveRecoveryConflictWithSnapshot` 检测冲突，如果发生冲突，那么就把这个 query 所在的进程 kill 掉。
 
-5. 检查一致性，如果一致了，Hot Standby 模式可以接受用户只读查询；更新共享内存中 `XLogCtlData` 的 apply 位点和时间线；如果恢复到时间点，时间线或者事务id需要检查是否恢复到当前目标；
+5. 检查一致性，如果一致了，Hot Standby 模式可以接受用户只读查询；更新共享内存中 `XLogCtlData` 的 apply 位点和时间线；如果恢复到时间点，时间线或者事务 id 需要检查是否恢复到当前目标；
 
-6. 回到步骤3，读取next WAL record 。
+6. 回到步骤 3，读取 next WAL record 。
 
 ![PostgreSQL standby 模式和 apply 日志过程](postgresql-standby-mode-and-apply-log.jpg)
 
+> 本文转自：http://mysql.taobao.org/monthly/2015/10/04/
 
->本文转自：http://mysql.taobao.org/monthly/2015/10/04/
-
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -119,8 +114,5 @@ MemSet((char *) htup, 0, sizeof(HeapTupleHeaderData));
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-
-

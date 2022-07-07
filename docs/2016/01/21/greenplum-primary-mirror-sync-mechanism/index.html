@@ -20,18 +20,18 @@
   
   
   <title>特性分析 | GreenPlum Primary/Mirror 同步机制 | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="本文首发于 2016-01-21 20:02:26  引言PostgreSQL 主备同步机制是通过流复制实现，其原理见 PG主备流复制机制。 Greenplum 是基于 PostgreSQL 开发的，它的主备也是通过流复制实现，但是 Segment 节点中的 Primary 和 Mirror 之间的数据同步是基于文件级别的同步实现的。 为什么Primary和Mirror不能再使用流复制实现呢">
+  <meta name="description" content="本文首发于 2016-01-21 20:02:26  引言PostgreSQL 主备同步机制是通过流复制实现，其原理见 PG 主备流复制机制。 Greenplum 是基于 PostgreSQL 开发的，它的主备也是通过流复制实现，但是 Segment 节点中的 Primary 和 Mirror 之间的数据同步是基于文件级别的同步实现的。 为什么Primary和Mirror不能再使用流复制实现">
 <meta property="og:type" content="article">
 <meta property="og:title" content="特性分析 | GreenPlum Primary&#x2F;Mirror 同步机制">
 <meta property="og:url" content="http://dbkernel.github.io/2016/01/21/greenplum-primary-mirror-sync-mechanism/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="本文首发于 2016-01-21 20:02:26  引言PostgreSQL 主备同步机制是通过流复制实现，其原理见 PG主备流复制机制。 Greenplum 是基于 PostgreSQL 开发的，它的主备也是通过流复制实现，但是 Segment 节点中的 Primary 和 Mirror 之间的数据同步是基于文件级别的同步实现的。 为什么Primary和Mirror不能再使用流复制实现呢">
+<meta property="og:description" content="本文首发于 2016-01-21 20:02:26  引言PostgreSQL 主备同步机制是通过流复制实现，其原理见 PG 主备流复制机制。 Greenplum 是基于 PostgreSQL 开发的，它的主备也是通过流复制实现，但是 Segment 节点中的 Primary 和 Mirror 之间的数据同步是基于文件级别的同步实现的。 为什么Primary和Mirror不能再使用流复制实现">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://dbkernel.github.io/2016/01/21/greenplum-primary-mirror-sync-mechanism/greenplum-architecture-overview.jpg">
 <meta property="og:image" content="http://dbkernel.github.io/2016/01/21/greenplum-primary-mirror-sync-mechanism/greenplum-primary-mirror-sync.jpg">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2016-01-21T12:02:26.000Z">
-<meta property="article:modified_time" content="2021-09-22T15:24:33.178Z">
+<meta property="article:modified_time" content="2022-07-07T02:15:14.199Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="PostgreSQL">
 <meta property="article:tag" content="GreenPlum">
@@ -344,7 +344,7 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#GreenPlum-%E6%80%BB%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">GreenPlum 总体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Primary%E5%92%8CMirror%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">3.</span> <span class="toc-text">Primary和Mirror同步机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5"><span class="toc-number">3.1.</span> <span class="toc-text">1. 数据同步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5"><span class="toc-number">3.2.</span> <span class="toc-text">2. 文件同步</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#GreenPlum-%E6%80%BB%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">GreenPlum 总体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Primary-%E5%92%8C-Mirror-%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">3.</span> <span class="toc-text">Primary 和 Mirror 同步机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5"><span class="toc-number">3.1.</span> <span class="toc-text">1. 数据同步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5"><span class="toc-number">3.2.</span> <span class="toc-text">2. 文件同步</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
     </nav>
   </div>
 </aside>
@@ -395,7 +395,7 @@
         <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">评论</a></span>
         
 	
-		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 819(字)</span>
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">字数统计: 817(字)</span>
 	
 	
 		<span class="post-readcount hidden-xs" itemprop="timeRequired">阅读时长: 3(分)</span>
@@ -410,23 +410,23 @@
 <blockquote>
 <p><strong>本文首发于 2016-01-21 20:02:26</strong></p>
 </blockquote>
-<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>PostgreSQL 主备同步机制是通过流复制实现，其原理见 <a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2015/10/04/">PG主备流复制机制</a>。</p>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>PostgreSQL 主备同步机制是通过流复制实现，其原理见 <a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2015/10/04/">PG 主备流复制机制</a>。</p>
 <p>Greenplum 是基于 PostgreSQL 开发的，它的主备也是通过流复制实现，但是 <strong>Segment 节点中的 Primary 和 Mirror 之间的数据同步是基于文件级别的同步实现的</strong>。</p>
 <p><code>为什么Primary和Mirror不能再使用流复制实现呢？</code></p>
 <blockquote>
 <p>主要有两个原因:</p>
 <ol>
-<li><code>Append Only</code> 表不写 WAL 日志，所以 Append Only 表的数据就不能通过 XLOG 发送到 Mirror 再 Apply 。</li>
-<li><code>pg_control</code>等文件也是不写 WAL 日志，也只能通过文件方式同步到 Mirror 。</li>
+<li> <code>Append Only</code> 表不写 WAL 日志，所以 Append Only 表的数据就不能通过 XLOG 发送到 Mirror 再 Apply 。</li>
+<li> <code>pg_control</code>等文件也是不写 WAL 日志，也只能通过文件方式同步到 Mirror 。</li>
 </ol>
 </blockquote>
-<h2 id="GreenPlum-总体结构"><a href="#GreenPlum-总体结构" class="headerlink" title="GreenPlum 总体结构"></a>GreenPlum 总体结构</h2><p>Greenplum 的架构采用了 MPP 无共享体系。在 MPP 系统中，每个数据节点有自己的CPU、磁盘和内存(Share nothing)，每个节点内的 CPU 不能访问另一个节点的内存。节点之间的信息交互是通过节点互联网络实现的，这个过程一般称为<strong>数据重分配</strong>(Data Redistribution)。</p>
+<h2 id="GreenPlum-总体结构"><a href="#GreenPlum-总体结构" class="headerlink" title="GreenPlum 总体结构"></a>GreenPlum 总体结构</h2><p>Greenplum 的架构采用了 MPP 无共享体系。在 MPP 系统中，每个数据节点有自己的 CPU、磁盘和内存(Share nothing)，每个节点内的 CPU 不能访问另一个节点的内存。节点之间的信息交互是通过节点互联网络实现的，这个过程一般称为<strong>数据重分配</strong>(Data Redistribution)。</p>
 <p>Master 负责协调整个集群 ，一个数据节点可以配置多个节点实例(Segment Instances)，节点实例并行处理查询(SQL)。</p>
 <p><img src="greenplum-architecture-overview.jpg" alt="GreenPlum 总体架构"></p>
-<h2 id="Primary和Mirror同步机制"><a href="#Primary和Mirror同步机制" class="headerlink" title="Primary和Mirror同步机制"></a>Primary和Mirror同步机制</h2><p>Primary 和 Mirror 同步的内容主要有两部分，即<strong>文件</strong>和<strong>数据</strong>。之所以 Primary 和 Mirror 要同步文件，是 Primary 和 Mirror 之间可以自动 failover，只有两者保持同步才能相互替代。如果只把数据同步过去，<code>pg_control、pg_clog、pg_subtrans</code> 没有同步，那么从 Primary 切换到 Mirror 会出现问题。</p>
-<p>Master 和 slave 却不用担心这些问题，Append Only 表的数据只会存在 Segment，所以 <strong>WAL 日志足够保持 Master 和 slave 同步</strong>(只要是流复制，pg_control、pg_clog、pg_subtrans 这些文件Slave会自动更新，无需从 Master 同步)。</p>
-<h3 id="1-数据同步"><a href="#1-数据同步" class="headerlink" title="1. 数据同步"></a>1. 数据同步</h3><p>当 Master 向 Primary 下发执行计划后，Primary 开始执行，如果是 DML 操作，那么 Primary 会产生 XLOG 及更新 page。会在 <code>SlruPhysicalWritePage</code> 函数中(写数据页)产生<code>FileRepOperationOpen、FileRepOperationWrite、FileRepOperationFlush、FileRepOperationClose</code>等指令消息(消息中包含具体要更新的文件page及内容)，通过 <code>primary sender</code> 进程向 Mirror 发送 Message，然后 Mirror 的 <code>mirror consumer</code> 等进程解析消息，执行变更。XLOG 通过<code>XLogWrite</code>函数(写XLOG)执行同样的操作，把 XLOG 更新同步过去。</p>
-<h3 id="2-文件同步"><a href="#2-文件同步" class="headerlink" title="2. 文件同步"></a>2. 文件同步</h3><p>Primary 会有个 <code>recovery</code> 进程，这个进程会循环把 Primary 的  <code>pg_control、pg_clog、pg_subtrans</code> 等文件覆盖到 Mirror。同时检查 XLOG 是否一致，如果不一致以 Primary 为主，对 Mirror 进行覆盖。除了把 Primary 部分文件同步到 Mirror 之外，<code>recovery</code> 进程还会将 Mirror 上面的临时文件删掉。</p>
+<h2 id="Primary-和-Mirror-同步机制"><a href="#Primary-和-Mirror-同步机制" class="headerlink" title="Primary 和 Mirror 同步机制"></a>Primary 和 Mirror 同步机制</h2><p>Primary 和 Mirror 同步的内容主要有两部分，即<strong>文件</strong>和<strong>数据</strong>。之所以 Primary 和 Mirror 要同步文件，是 Primary 和 Mirror 之间可以自动 failover，只有两者保持同步才能相互替代。如果只把数据同步过去，<code>pg_control、pg_clog、pg_subtrans</code> 没有同步，那么从 Primary 切换到 Mirror 会出现问题。</p>
+<p>Master 和 slave 却不用担心这些问题，Append Only 表的数据只会存在 Segment，所以 <strong>WAL 日志足够保持 Master 和 slave 同步</strong>(只要是流复制，pg_control、pg_clog、pg_subtrans 这些文件 Slave 会自动更新，无需从 Master 同步)。</p>
+<h3 id="1-数据同步"><a href="#1-数据同步" class="headerlink" title="1. 数据同步"></a>1. 数据同步</h3><p>当 Master 向 Primary 下发执行计划后，Primary 开始执行，如果是 DML 操作，那么 Primary 会产生 XLOG 及更新 page。会在 <code>SlruPhysicalWritePage</code> 函数中(写数据页)产生<code>FileRepOperationOpen、FileRepOperationWrite、FileRepOperationFlush、FileRepOperationClose</code>等指令消息(消息中包含具体要更新的文件 page 及内容)，通过 <code>primary sender</code> 进程向 Mirror 发送 Message，然后 Mirror 的 <code>mirror consumer</code> 等进程解析消息，执行变更。XLOG 通过<code>XLogWrite</code>函数(写 XLOG)执行同样的操作，把 XLOG 更新同步过去。</p>
+<h3 id="2-文件同步"><a href="#2-文件同步" class="headerlink" title="2. 文件同步"></a>2. 文件同步</h3><p>Primary 会有个 <code>recovery</code> 进程，这个进程会循环把 Primary 的 <code>pg_control、pg_clog、pg_subtrans</code> 等文件覆盖到 Mirror。同时检查 XLOG 是否一致，如果不一致以 Primary 为主，对 Mirror 进行覆盖。除了把 Primary 部分文件同步到 Mirror 之外，<code>recovery</code> 进程还会将 Mirror 上面的临时文件删掉。</p>
 <p><img src="greenplum-primary-mirror-sync.jpg" alt="GreenPlum 主从同步机制"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Primary 和 Mirror 同步数据的时候，Primary 对于每一次写 page 都会通过消息发送到 Mirror，如果 Primary 大量的更新 page，那么 Primary 和 Mirror 同步将有可能成为瓶颈。</p>
 <blockquote>
@@ -435,7 +435,6 @@
 <hr>
 <p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 <table>
 <thead>
@@ -461,8 +460,8 @@
 <td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
 </tr>
 <tr>
-<td>开源中国（oschina）</td>
-<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
 </tr>
 <tr>
 <td>博客园（cnblogs）</td>

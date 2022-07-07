@@ -20,16 +20,16 @@
   
   
   <title>程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下） | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="本文首发于 2014-07-21 15:35:30  6. 附录6.1. 字节序与网络序6.1.1. 字节序字节序，顾名思义就是字节的高低位存放顺序。 对于单字节，大部分处理器以相同的顺序处理比特位，因此单字节的存放和传输方式一般相同。 对于多字节数据，如整型（32位机中一般占4字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。 6.1.1.1.">
+  <meta name="description" content="本文首发于 2014-07-21 15:35:30  6. 附录6.1. 字节序与网络序6.1.1. 字节序字节序，顾名思义就是字节的高低位存放顺序。 对于单字节，大部分处理器以相同的顺序处理比特位，因此单字节的存放和传输方式一般相同。 对于多字节数据，如整型（32 位机中一般占 4 字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。 6.1.1.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="程序人生 | C语言字节对齐问题详解 - 对齐&#x2F;字节序&#x2F;位序&#x2F;网络序等（下）">
 <meta property="og:url" content="http://dbkernel.github.io/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="本文首发于 2014-07-21 15:35:30  6. 附录6.1. 字节序与网络序6.1.1. 字节序字节序，顾名思义就是字节的高低位存放顺序。 对于单字节，大部分处理器以相同的顺序处理比特位，因此单字节的存放和传输方式一般相同。 对于多字节数据，如整型（32位机中一般占4字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。 6.1.1.1.">
+<meta property="og:description" content="本文首发于 2014-07-21 15:35:30  6. 附录6.1. 字节序与网络序6.1.1. 字节序字节序，顾名思义就是字节的高低位存放顺序。 对于单字节，大部分处理器以相同的顺序处理比特位，因此单字节的存放和传输方式一般相同。 对于多字节数据，如整型（32 位机中一般占 4 字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。 6.1.1.">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
 <meta property="article:published_time" content="2014-07-21T07:35:30.000Z">
-<meta property="article:modified_time" content="2021-09-24T03:56:47.650Z">
+<meta property="article:modified_time" content="2022-07-07T02:09:06.253Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="C语言">
 <meta property="article:tag" content="字节对齐">
@@ -343,7 +343,7 @@
   <div class="slimContent">
     <nav id="toc" class="article-toc">
       <h3 class="toc-title">文章目录</h3>
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E9%99%84%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">6. 附录</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E5%AD%97%E8%8A%82%E5%BA%8F%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%BA%8F"><span class="toc-number">1.1.</span> <span class="toc-text">6.1. 字节序与网络序</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-1-%E5%AD%97%E8%8A%82%E5%BA%8F"><span class="toc-number">1.1.1.</span> <span class="toc-text">6.1.1. 字节序</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-1-%E5%A4%A7%E5%AD%97%E8%8A%82%E5%BA%8F%EF%BC%88Big-Endian%EF%BC%8C%E5%8F%88%E7%A7%B0%E5%A4%A7%E7%AB%AF%E5%BA%8F%E6%88%96%E5%A4%A7%E5%B0%BE%E5%BA%8F%EF%BC%89"><span class="toc-number">1.1.1.1.</span> <span class="toc-text">6.1.1.1. 大字节序（Big-Endian，又称大端序或大尾序）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-2-%E5%B0%8F%E5%AD%97%E8%8A%82%E5%BA%8F%EF%BC%88Little-Endian%EF%BC%8C%E5%8F%88%E7%A7%B0%E5%B0%8F%E7%AB%AF%E5%BA%8F%E6%88%96%E5%B0%8F%E5%B0%BE%E5%BA%8F%EF%BC%89"><span class="toc-number">1.1.1.2.</span> <span class="toc-text">6.1.1.2. 小字节序（Little-Endian，又称小端序或小尾序）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-3-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.1.1.3.</span> <span class="toc-text">6.1.1.3. 注意事项</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-2-%E7%BD%91%E7%BB%9C%E5%BA%8F"><span class="toc-number">1.1.2.</span> <span class="toc-text">6.1.2. 网络序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-3-%E4%BD%8D%E5%BA%8F"><span class="toc-number">1.1.3.</span> <span class="toc-text">6.1.3. 位序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-4-%E5%A4%84%E7%90%86%E5%99%A8%E5%AD%97%E8%8A%82%E5%BA%8F"><span class="toc-number">1.1.4.</span> <span class="toc-text">6.1.4. 处理器字节序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-5-%E5%AD%97%E8%8A%82%E5%BA%8F%E7%BC%96%E7%A8%8B"><span class="toc-number">1.1.5.</span> <span class="toc-text">6.1.5. 字节序编程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%AF%B9%E9%BD%90%E6%97%B6%E7%9A%84%E5%A1%AB%E5%85%85%E5%AD%97%E8%8A%82"><span class="toc-number">1.2.</span> <span class="toc-text">6.2. 对齐时的填充字节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-pragma-pack%E8%AF%AD%E6%B3%95%E8%AF%B4%E6%98%8E"><span class="toc-number">1.3.</span> <span class="toc-text">6.3. pragma pack语法说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-Intel%E5%85%B3%E4%BA%8E%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="toc-number">1.4.</span> <span class="toc-text">6.4. Intel关于内存对齐的说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-5-%E4%B8%8D%E5%90%8C%E6%9E%B6%E6%9E%84%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E5%AF%B9%E9%BD%90%E8%A6%81%E6%B1%82"><span class="toc-number">1.5.</span> <span class="toc-text">6.5. 不同架构处理器的对齐要求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-6-ARM%E4%B8%8B%E7%9A%84%E5%AF%B9%E9%BD%90%E5%A4%84%E7%90%86"><span class="toc-number">1.6.</span> <span class="toc-text">6.6. ARM下的对齐处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-7-%E3%80%8AThe-C-Book%E3%80%8B%E4%B9%8B%E4%BD%8D%E5%9F%9F%E7%AF%87"><span class="toc-number">1.7.</span> <span class="toc-text">6.7. 《The C Book》之位域篇</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-8-C%E8%AF%AD%E8%A8%80%E5%AD%97%E8%8A%82%E7%9B%B8%E5%85%B3%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.</span> <span class="toc-text">6.8. C语言字节相关面试题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-8-1-Intel-%E5%BE%AE%E8%BD%AFC%E8%AF%AD%E8%A8%80%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.1.</span> <span class="toc-text">6.8.1. Intel&#x2F;微软C语言面试题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-8-2-%E4%B8%8A%E6%B5%B7%E7%BD%91%E5%AE%BF%E7%A7%91%E6%8A%80%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.2.</span> <span class="toc-text">6.8.2 上海网宿科技面试题</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E9%99%84%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">6. 附录</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E5%AD%97%E8%8A%82%E5%BA%8F%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%BA%8F"><span class="toc-number">1.1.</span> <span class="toc-text">6.1. 字节序与网络序</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-1-%E5%AD%97%E8%8A%82%E5%BA%8F"><span class="toc-number">1.1.1.</span> <span class="toc-text">6.1.1. 字节序</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-1-%E5%A4%A7%E5%AD%97%E8%8A%82%E5%BA%8F%EF%BC%88Big-Endian%EF%BC%8C%E5%8F%88%E7%A7%B0%E5%A4%A7%E7%AB%AF%E5%BA%8F%E6%88%96%E5%A4%A7%E5%B0%BE%E5%BA%8F%EF%BC%89"><span class="toc-number">1.1.1.1.</span> <span class="toc-text">6.1.1.1. 大字节序（Big-Endian，又称大端序或大尾序）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-2-%E5%B0%8F%E5%AD%97%E8%8A%82%E5%BA%8F%EF%BC%88Little-Endian%EF%BC%8C%E5%8F%88%E7%A7%B0%E5%B0%8F%E7%AB%AF%E5%BA%8F%E6%88%96%E5%B0%8F%E5%B0%BE%E5%BA%8F%EF%BC%89"><span class="toc-number">1.1.1.2.</span> <span class="toc-text">6.1.1.2. 小字节序（Little-Endian，又称小端序或小尾序）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-3-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.1.1.3.</span> <span class="toc-text">6.1.1.3. 注意事项</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-2-%E7%BD%91%E7%BB%9C%E5%BA%8F"><span class="toc-number">1.1.2.</span> <span class="toc-text">6.1.2. 网络序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-3-%E4%BD%8D%E5%BA%8F"><span class="toc-number">1.1.3.</span> <span class="toc-text">6.1.3. 位序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-4-%E5%A4%84%E7%90%86%E5%99%A8%E5%AD%97%E8%8A%82%E5%BA%8F"><span class="toc-number">1.1.4.</span> <span class="toc-text">6.1.4. 处理器字节序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-5-%E5%AD%97%E8%8A%82%E5%BA%8F%E7%BC%96%E7%A8%8B"><span class="toc-number">1.1.5.</span> <span class="toc-text">6.1.5. 字节序编程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%AF%B9%E9%BD%90%E6%97%B6%E7%9A%84%E5%A1%AB%E5%85%85%E5%AD%97%E8%8A%82"><span class="toc-number">1.2.</span> <span class="toc-text">6.2. 对齐时的填充字节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-pragma-pack-%E8%AF%AD%E6%B3%95%E8%AF%B4%E6%98%8E"><span class="toc-number">1.3.</span> <span class="toc-text">6.3. pragma pack 语法说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-Intel-%E5%85%B3%E4%BA%8E%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="toc-number">1.4.</span> <span class="toc-text">6.4. Intel 关于内存对齐的说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-5-%E4%B8%8D%E5%90%8C%E6%9E%B6%E6%9E%84%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E5%AF%B9%E9%BD%90%E8%A6%81%E6%B1%82"><span class="toc-number">1.5.</span> <span class="toc-text">6.5. 不同架构处理器的对齐要求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-6-ARM-%E4%B8%8B%E7%9A%84%E5%AF%B9%E9%BD%90%E5%A4%84%E7%90%86"><span class="toc-number">1.6.</span> <span class="toc-text">6.6. ARM 下的对齐处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-7-%E3%80%8AThe-C-Book%E3%80%8B%E4%B9%8B%E4%BD%8D%E5%9F%9F%E7%AF%87"><span class="toc-number">1.7.</span> <span class="toc-text">6.7. 《The C Book》之位域篇</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-8-C-%E8%AF%AD%E8%A8%80%E5%AD%97%E8%8A%82%E7%9B%B8%E5%85%B3%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.</span> <span class="toc-text">6.8. C 语言字节相关面试题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-8-1-Intel-%E5%BE%AE%E8%BD%AF-C-%E8%AF%AD%E8%A8%80%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.1.</span> <span class="toc-text">6.8.1. Intel&#x2F;微软 C 语言面试题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-8-2-%E4%B8%8A%E6%B5%B7%E7%BD%91%E5%AE%BF%E7%A7%91%E6%8A%80%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">1.8.2.</span> <span class="toc-text">6.8.2 上海网宿科技面试题</span></a></li></ol></li></ol></li></ol>
     </nav>
   </div>
 </aside>
@@ -411,48 +411,47 @@
 </blockquote>
 <h1 id="6-附录"><a href="#6-附录" class="headerlink" title="6. 附录"></a>6. 附录</h1><h2 id="6-1-字节序与网络序"><a href="#6-1-字节序与网络序" class="headerlink" title="6.1. 字节序与网络序"></a>6.1. 字节序与网络序</h2><h3 id="6-1-1-字节序"><a href="#6-1-1-字节序" class="headerlink" title="6.1.1. 字节序"></a>6.1.1. 字节序</h3><p><strong>字节序</strong>，顾名思义就是<strong>字节的高低位存放顺序</strong>。</p>
 <p>对于单字节，大部分处理器以相同的顺序处理比特位，因此单字节的存放和传输方式一般相同。</p>
-<p>对于多字节数据，如整型（32位机中一般占4字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。</p>
+<p>对于多字节数据，如整型（32 位机中一般占 4 字节），在不同的处理器的存放方式主要有两种（以内存中 0x0A0B0C0D 的存放方式为例）。</p>
 <h4 id="6-1-1-1-大字节序（Big-Endian，又称大端序或大尾序）"><a href="#6-1-1-1-大字节序（Big-Endian，又称大端序或大尾序）" class="headerlink" title="6.1.1.1. 大字节序（Big-Endian，又称大端序或大尾序）"></a>6.1.1.1. 大字节序（Big-Endian，又称大端序或大尾序）</h4><p>在计算机中，存储介质以下面方式存储整数 0x0A0B0C0D，则称为<strong>大字节序</strong>：</p>
 <blockquote>
-<p>数据以8bit为单位：<br>低地址方向 -&gt; 0x0A 0x0B    0x0C 0x0D -&gt; 高地址方向</p>
-<p>数据以16bit为单位：<br>低地址方向 -&gt; 0x0A0B 0x0C0D -&gt; 高地址方向</p>
+<p>数据以 8bit 为单位：<br>低地址方向 -&gt; 0x0A 0x0B 0x0C 0x0D -&gt; 高地址方向</p>
+<p>数据以 16bit 为单位：<br>低地址方向 -&gt; 0x0A0B 0x0C0D -&gt; 高地址方向</p>
 </blockquote>
-<p>其中，最高有效位(MSB，Most Significant Byte)0x0A存储在最低的内存地址处。下个字节0x0B存在后面的地址处。同时，最高的16bit单元0x0A0B存储在低位。</p>
+<p>其中，最高有效位(MSB，Most Significant Byte)0x0A 存储在最低的内存地址处。下个字节 0x0B 存在后面的地址处。同时，最高的 16bit 单元 0x0A0B 存储在低位。</p>
 <p>简而言之，大字节序就是<strong>高字节存入低地址，低字节存入高地址</strong>。</p>
 <blockquote>
 <p>这里讲个词源典故：“endian”一词来源于乔纳森·斯威夫特的小说《格列佛游记》。小说中，小人国为水煮蛋该从大的一端(Big-End)剥开还是小的一端(Little-End)剥开而争论，争论的双方分别被称为 Big-endians 和 Little-endians 。</p>
-<p>1980年，Danny Cohen在其著名的论文”<em>On Holy Wars and a Plea for Peace</em>“中为平息一场关于字节该以什么样的顺序传送的争论而引用了该词。</p>
+<p>1980 年，Danny Cohen 在其著名的论文”<em>On Holy Wars and a Plea for Peace</em>“中为平息一场关于字节该以什么样的顺序传送的争论而引用了该词。</p>
 </blockquote>
 <p>借用上面的典故，想象一下要把熟鸡蛋旋转着稳立起来，大头（高字节）肯定在下面（低地址）^_^</p>
 <h4 id="6-1-1-2-小字节序（Little-Endian，又称小端序或小尾序）"><a href="#6-1-1-2-小字节序（Little-Endian，又称小端序或小尾序）" class="headerlink" title="6.1.1.2. 小字节序（Little-Endian，又称小端序或小尾序）"></a>6.1.1.2. 小字节序（Little-Endian，又称小端序或小尾序）</h4><p>在计算机中，存储介质以下面方式存储整数 0x0A0B0C0D 则称为<strong>小字节序</strong>：</p>
 <blockquote>
-<p>数据以8bit为单位：<br>高地址方向 -&gt; 0x0A 0x0B    0x0C 0x0D -&gt; 低地址方向</p>
-<p>数据以16bit为单位：<br>高地址方向 -&gt; 0x0A0B 0x0C0D -&gt; 低地址方向</p>
+<p>数据以 8bit 为单位：<br>高地址方向 -&gt; 0x0A 0x0B 0x0C 0x0D -&gt; 低地址方向</p>
+<p>数据以 16bit 为单位：<br>高地址方向 -&gt; 0x0A0B 0x0C0D -&gt; 低地址方向</p>
 </blockquote>
-<p>其中，最低有效位(LSB，Least Significant Byte)0x0D存储在最低的内存地址处。后面字节依次存在后面的地址处。同时，最低的16bit单元0x0A0B存储在低位。</p>
+<p>其中，最低有效位(LSB，Least Significant Byte)0x0D 存储在最低的内存地址处。后面字节依次存在后面的地址处。同时，最低的 16bit 单元 0x0A0B 存储在低位。</p>
 <p>可见，小字节序就<strong>高字节存入高地址，低字节存入低地址</strong>。</p>
-<p>C语言中的位域结构也要遵循<strong>比特序(类似字节序)</strong> 。例如：</p>
+<p>C 语言中的位域结构也要遵循<strong>比特序(类似字节序)</strong> 。例如：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">bitfield</span>&#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> a: <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> b: <span class="number">6</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><strong>该位域结构占1个字节，假设赋值a=0x01和b=0x02，则大字节机器上该字节为(01)(000010)，小字节机器上该字节为(000010)(01)</strong> 。因此在编写可移植代码时，需要加条件编译。</p>
-<p>注意，在包含位域的C结构中，<strong>若位域A在位域B之前定义，则位域A所占用的内存空间地址低于位域B所占用的内存空间</strong>。</p>
-<p>另见以下联合体，在小字节机器上若low=0x01，high=0x02，则hex=0x21：</p>
+<p><strong>该位域结构占 1 个字节，假设赋值 a=0x01 和 b=0x02，则大字节机器上该字节为(01)(000010)，小字节机器上该字节为(000010)(01)</strong> 。因此在编写可移植代码时，需要加条件编译。</p>
+<p>注意，在包含位域的 C 结构中，<strong>若位域 A 在位域 B 之前定义，则位域 A 所占用的内存空间地址低于位域 B 所占用的内存空间</strong>。</p>
+<p>另见以下联合体，在小字节机器上若 low=0x01，high=0x02，则 hex=0x21：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">union</span>&#123;</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">char</span> hex;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span>&#123;</span></span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">char</span> low  : <span class="number">4</span>;</span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">char</span> high : <span class="number">4</span>;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;convert;</span><br><span class="line">    convert.low = <span class="number">0x01</span>;</span><br><span class="line">    convert.high = <span class="number">0x02</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;hex = 0x%0x\n&quot;</span>, convert.hex);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h4 id="6-1-1-3-注意事项"><a href="#6-1-1-3-注意事项" class="headerlink" title="6.1.1.3. 注意事项"></a>6.1.1.3. 注意事项</h4><p><strong>无论是大字节序，还是小字节序，变量的地址都等于变量所占字节中的低地址。</strong>例如，下述程序中，小字节序输出 0x0D，大字节序输出 0x0A 。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int32_t</span> a = <span class="number">0x0A0B0C0D</span>;</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;0x%0x\n&quot;</span>, *((<span class="keyword">int8_t</span>*)&amp;dwData));</span><br></pre></td></tr></table></figure>
 
-
-<h3 id="6-1-2-网络序"><a href="#6-1-2-网络序" class="headerlink" title="6.1.2. 网络序"></a>6.1.2. 网络序</h3><p>网络传输一般采用<strong>大字节序</strong>，也称为<strong>网络字节序</strong>或<strong>网络序</strong>。IP协议中定义大字节序为网络字节序。</p>
+<h3 id="6-1-2-网络序"><a href="#6-1-2-网络序" class="headerlink" title="6.1.2. 网络序"></a>6.1.2. 网络序</h3><p>网络传输一般采用<strong>大字节序</strong>，也称为<strong>网络字节序</strong>或<strong>网络序</strong>。IP 协议中定义大字节序为网络字节序。</p>
 <p>对于可移植的代码来说，将接收的网络数据转换成主机的字节序是必须的，一般会有成对的函数用于把网络数据转换成相应的主机字节序或反之（若主机字节序与网络字节序相同，通常将函数定义为空宏）。</p>
-<p>伯克利socket API定义了一组转换函数，用于16和32位整数在网络序和主机字节序之间的转换。<code>htonl、htons</code>用于<strong>主机序转换到网络序</strong>；<code>ntohl、ntohs</code>用于<strong>网络序转换到本机序</strong>。</p>
-<p>注意：在大小字节序转换时，必须考虑待转换数据的长度(如5.1.1节的数据单元)。另外<strong>对于单字符或小于单字符的几个bit数据，是不必转换的</strong>，因为<strong>在机器存储和网络发送的一个字符内的bit位存储顺序是一致的</strong>。</p>
-<h3 id="6-1-3-位序"><a href="#6-1-3-位序" class="headerlink" title="6.1.3. 位序"></a>6.1.3. 位序</h3><p>用于描述<strong>串行设备的传输顺序</strong>。<strong>一般硬件传输采用小字节序（先传低位），但I2C协议采用大字节序</strong>。网络协议中只有<strong>数据链路层</strong>的底端会涉及到。</p>
+<p>伯克利 socket API 定义了一组转换函数，用于 16 和 32 位整数在网络序和主机字节序之间的转换。<code>htonl、htons</code>用于<strong>主机序转换到网络序</strong>；<code>ntohl、ntohs</code>用于<strong>网络序转换到本机序</strong>。</p>
+<p>注意：在大小字节序转换时，必须考虑待转换数据的长度(如 5.1.1 节的数据单元)。另外<strong>对于单字符或小于单字符的几个 bit 数据，是不必转换的</strong>，因为<strong>在机器存储和网络发送的一个字符内的 bit 位存储顺序是一致的</strong>。</p>
+<h3 id="6-1-3-位序"><a href="#6-1-3-位序" class="headerlink" title="6.1.3. 位序"></a>6.1.3. 位序</h3><p>用于描述<strong>串行设备的传输顺序</strong>。<strong>一般硬件传输采用小字节序（先传低位），但 I2C 协议采用大字节序</strong>。网络协议中只有<strong>数据链路层</strong>的底端会涉及到。</p>
 <h3 id="6-1-4-处理器字节序"><a href="#6-1-4-处理器字节序" class="headerlink" title="6.1.4. 处理器字节序"></a>6.1.4. 处理器字节序</h3><p>不同处理器体系的字节序如下所示：</p>
 <ul>
 <li>X86、MOS Technology 6502、Z80、VAX、PDP-11 等处理器为 <strong>Little endian</strong>；</li>
-<li>Motorola 6800、Motorola 68000、PowerPC 970、System/370、SPARC(除V9外) 等处理器为 <strong>Big endian</strong>；</li>
-<li>ARM、PowerPC (除PowerPC 970外)、DEC Alpha，SPARC V9，MIPS，PA-RISC and IA64 等的字节序是<strong>可配置的</strong>。</li>
+<li>Motorola 6800、Motorola 68000、PowerPC 970、System/370、SPARC(除 V9 外) 等处理器为 <strong>Big endian</strong>；</li>
+<li>ARM、PowerPC (除 PowerPC 970 外)、DEC Alpha，SPARC V9，MIPS，PA-RISC and IA64 等的字节序是<strong>可配置的</strong>。</li>
 </ul>
 <h3 id="6-1-5-字节序编程"><a href="#6-1-5-字节序编程" class="headerlink" title="6.1.5. 字节序编程"></a>6.1.5. 字节序编程</h3><p>请看下面的语句：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;%c\n&quot;</span>, *((<span class="keyword">short</span>*)<span class="string">&quot;AB&quot;</span>) &gt;&gt; <span class="number">8</span>);</span><br></pre></td></tr></table></figure>
@@ -461,7 +460,7 @@
 <p>下面的代码可用来判断本地机器字节序：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//字节序枚举类型</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">enum</span>&#123;</span></span><br><span class="line">    ENDIAN_LITTLE = (INT8U)<span class="number">0X00</span>,</span><br><span class="line">    ENDIAN_BIG    = (INT8U)<span class="number">0X01</span></span><br><span class="line">&#125;E_ENDIAN_TYPE;</span><br><span class="line"></span><br><span class="line"><span class="function">E_ENDIAN_TYPE <span class="title">GetEndianType</span><span class="params">(VOID)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    INT32U dwData = <span class="number">0x12345678</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 取数都从低地址开始访问</span></span><br><span class="line">    <span class="keyword">if</span>(<span class="number">0x78</span> == *((INT8U*)&amp;dwData))</span><br><span class="line">        <span class="keyword">return</span> ENDIAN_LITTLE;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> ENDIAN_BIG;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//Start of GetEndianTypeTest//</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;endian.h&gt;</span></span></span><br><span class="line"><span class="function">VOID <span class="title">GetEndianTypeTest</span><span class="params">(VOID)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _BYTE_ORDER == _LITTLE_ENDIAN</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;[%s]&lt;Test Case&gt; Result: %s, EndianType = %s!\n&quot;</span>, __FUNCTION__,</span><br><span class="line">           (ENDIAN_LITTLE != <span class="built_in">GetEndianType</span>()) ? <span class="string">&quot;ERROR&quot;</span> : <span class="string">&quot;OK&quot;</span>, <span class="string">&quot;Little&quot;</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> _BYTE_ORDER == _BIG_ENDIAN</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;[%s]&lt;Test Case&gt; Result: %s, EndianType = %s!\n&quot;</span>, __FUNCTION__,</span><br><span class="line">           (ENDIAN_BIG != <span class="built_in">GetEndianType</span>()) ? <span class="string">&quot;ERROR&quot;</span> : <span class="string">&quot;OK&quot;</span>, <span class="string">&quot;Big&quot;</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//End of GetEndianTypeTest//</span></span><br></pre></td></tr></table></figure>
 
-<p><strong>在字节序不同的平台间的交换数据时，必须进行转换</strong>。比如对于int类型，大字节序写入文件：</p>
+<p><strong>在字节序不同的平台间的交换数据时，必须进行转换</strong>。比如对于 int 类型，大字节序写入文件：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> i = <span class="number">100</span>;</span><br><span class="line"><span class="built_in">write</span>(fd, &amp;i, <span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">int</span>));</span><br></pre></td></tr></table></figure>
 
 <p>小字节序读出后：</p>
@@ -473,53 +472,53 @@
 <h2 id="6-2-对齐时的填充字节"><a href="#6-2-对齐时的填充字节" class="headerlink" title="6.2. 对齐时的填充字节"></a>6.2. 对齐时的填充字节</h2><p>代码如下：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span>&#123;</span></span><br><span class="line">    <span class="keyword">char</span>  c;</span><br><span class="line">    <span class="keyword">int</span>   i;</span><br><span class="line">    <span class="keyword">short</span> s;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">A</span> <span class="title">a</span>;</span></span><br><span class="line">    a.c = <span class="number">1</span>; a.i = <span class="number">2</span>; a.s = <span class="number">3</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;sizeof(A)=%d\n&quot;</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(struct A));</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>执行后输出为sizeof(A)=12。</p>
-<h2 id="6-3-pragma-pack语法说明"><a href="#6-3-pragma-pack语法说明" class="headerlink" title="6.3. pragma pack语法说明"></a>6.3. pragma pack语法说明</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(n)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(push, 1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(pop)</span></span><br></pre></td></tr></table></figure>
+<p>执行后输出为 sizeof(A)=12。</p>
+<h2 id="6-3-pragma-pack-语法说明"><a href="#6-3-pragma-pack-语法说明" class="headerlink" title="6.3. pragma pack 语法说明"></a>6.3. pragma pack 语法说明</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(n)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(push, 1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(pop)</span></span><br></pre></td></tr></table></figure>
 
 <p>1）<code>#pragma pack(n)</code></p>
 <blockquote>
-<p>该指令指定结构和联合成员的紧凑对齐。而一个完整的转换单元的结构和联合的紧凑对齐由<code>/Zp</code>选项设置。紧凑对齐用pack编译指示在数据说明层设置。该编译指示在其出现后的第一个结构或者联合声明处生效。该编译指示对定义无效。</p>
-<p>当使用<code>#pragma pack (n)</code> 时，n 为1、2、4、8或16。第一个结构成员后的每个结构成员都被存储在更小的成员类型或n字节界限内。如果使用无参量的<code>#pragma pack</code>，结构成员被紧凑为以<code>/Zp</code>指定的值。该缺省<code>/Zp</code>紧凑值为<code>/Zp 8</code>。</p>
+<p>该指令指定结构和联合成员的紧凑对齐。而一个完整的转换单元的结构和联合的紧凑对齐由<code>/Zp</code>选项设置。紧凑对齐用 pack 编译指示在数据说明层设置。该编译指示在其出现后的第一个结构或者联合声明处生效。该编译指示对定义无效。</p>
+<p>当使用<code>#pragma pack (n)</code> 时，n 为 1、2、4、8 或 16。第一个结构成员后的每个结构成员都被存储在更小的成员类型或 n 字节界限内。如果使用无参量的<code>#pragma pack</code>，结构成员被紧凑为以<code>/Zp</code>指定的值。该缺省<code>/Zp</code>紧凑值为<code>/Zp 8</code>。</p>
 </blockquote>
 <p>2）编译器也支持以下增强型语法：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span>  pack( [ [ &#123; push | pop &#125; , ] [identifier, ] ] [ n] )</span></span><br></pre></td></tr></table></figure>
 
-<p>若不同的组件使用 pack编译指示 指定不同的紧凑对齐, 这个语法允许你把程序组件组合为一个单独的转换单元。</p>
-<p>带push参量的 pack编译指示 的每次出现将当前的紧凑对齐存储到一个内部编译器堆栈中。编译指示的参量表从左到右读取。如果使用push，则当前紧凑值被存储起来；如果给出一个n值，该值将成为新的紧凑值。若指定一个标识符，即选定一个名称，则该标识符将和这个新的的紧凑值联系起来。</p>
-<p>带一个pop参量的 pack编译指示 的每次出现都会检索内部编译器堆栈顶的值，并使该值为新的紧凑对齐值。如果使用pop参量且内部编译器堆栈是空的，则紧凑值为命令行给定的值，并将产生一个警告信息。若使用pop且指定一个n值，该值将成为新的紧凑值。</p>
-<p>若使用pop且指定一个标识符，所有存储在堆栈中的值将从栈中删除，直到找到一个匹配的标识符。这个与标识符相关的紧凑值也从栈中移出，并且这个仅在标识符入栈之前存在的紧凑值成为新的紧凑值。如果未找到匹配的标识符, 将使用命令行设置的紧凑值，并且将产生一个一级警告。缺省紧凑对齐为8。</p>
-<p><strong>pack编译指示 的新的增强功能让你在编写头文件时，确保在遇到该头文件的前后的紧凑值是一样的</strong>。</p>
-<h2 id="6-4-Intel关于内存对齐的说明"><a href="#6-4-Intel关于内存对齐的说明" class="headerlink" title="6.4. Intel关于内存对齐的说明"></a>6.4. Intel关于内存对齐的说明</h2><p>以下内容节选自《Intel Architecture 32 Manual》。</p>
-<p>字、双字和四字在自然边界上不需要在内存中对齐。（对于字、双字和四字来说，自然边界分别是偶数地址，可以被4整除的地址，和可以被8整除的地址。）</p>
+<p>若不同的组件使用 pack 编译指示 指定不同的紧凑对齐, 这个语法允许你把程序组件组合为一个单独的转换单元。</p>
+<p>带 push 参量的 pack 编译指示 的每次出现将当前的紧凑对齐存储到一个内部编译器堆栈中。编译指示的参量表从左到右读取。如果使用 push，则当前紧凑值被存储起来；如果给出一个 n 值，该值将成为新的紧凑值。若指定一个标识符，即选定一个名称，则该标识符将和这个新的的紧凑值联系起来。</p>
+<p>带一个 pop 参量的 pack 编译指示 的每次出现都会检索内部编译器堆栈顶的值，并使该值为新的紧凑对齐值。如果使用 pop 参量且内部编译器堆栈是空的，则紧凑值为命令行给定的值，并将产生一个警告信息。若使用 pop 且指定一个 n 值，该值将成为新的紧凑值。</p>
+<p>若使用 pop 且指定一个标识符，所有存储在堆栈中的值将从栈中删除，直到找到一个匹配的标识符。这个与标识符相关的紧凑值也从栈中移出，并且这个仅在标识符入栈之前存在的紧凑值成为新的紧凑值。如果未找到匹配的标识符, 将使用命令行设置的紧凑值，并且将产生一个一级警告。缺省紧凑对齐为 8。</p>
+<p><strong>pack 编译指示 的新的增强功能让你在编写头文件时，确保在遇到该头文件的前后的紧凑值是一样的</strong>。</p>
+<h2 id="6-4-Intel-关于内存对齐的说明"><a href="#6-4-Intel-关于内存对齐的说明" class="headerlink" title="6.4. Intel 关于内存对齐的说明"></a>6.4. Intel 关于内存对齐的说明</h2><p>以下内容节选自《Intel Architecture 32 Manual》。</p>
+<p>字、双字和四字在自然边界上不需要在内存中对齐。（对于字、双字和四字来说，自然边界分别是偶数地址，可以被 4 整除的地址，和可以被 8 整除的地址。）</p>
 <p>无论如何，为了提高程序的性能，数据结构(尤其是栈)应该尽可能地在自然边界上对齐。原因在于，为了访问未对齐的内存，处理器需要作两次内存访问；然而，对齐的内存访问仅需要一次访问。</p>
-<p>一个字或双字操作数跨越了4字节边界，或者一个四字操作数跨越了8字节边界，被认为是未对齐的，从而需要两次总线周期来访问内存。一个字起始地址是奇数但却没有跨越字边界被认为是对齐的，能够在一个总线周期中被访问。</p>
-<p>某些操作双四字的指令需要内存操作数在自然边界上对齐。如果操作数没有对齐，这些指令将会产生一个通用保护异常(#GP)。双四字的自然边界是能够被16整除的地址。其他操作双四字的指令允许未对齐的访问(不会产生通用保护异常)，然而，需要额外的内存总线周期来访问内存中未对齐的数据。</p>
-<h2 id="6-5-不同架构处理器的对齐要求"><a href="#6-5-不同架构处理器的对齐要求" class="headerlink" title="6.5. 不同架构处理器的对齐要求"></a>6.5. 不同架构处理器的对齐要求</h2><p><strong>RISC指令集处理器（MIPS/ARM）</strong>：这种处理器的设计以效率为先，要求所访问的多字节数据（short/int/long）的地址必须是此数据大小的倍数，如short数据地址应为2的倍数，long数据地址应为4的倍数，也就是说是对齐的。</p>
-<p><strong>CISC指令集处理器(X86)</strong> ：没有上述限制。</p>
+<p>一个字或双字操作数跨越了 4 字节边界，或者一个四字操作数跨越了 8 字节边界，被认为是未对齐的，从而需要两次总线周期来访问内存。一个字起始地址是奇数但却没有跨越字边界被认为是对齐的，能够在一个总线周期中被访问。</p>
+<p>某些操作双四字的指令需要内存操作数在自然边界上对齐。如果操作数没有对齐，这些指令将会产生一个通用保护异常(#GP)。双四字的自然边界是能够被 16 整除的地址。其他操作双四字的指令允许未对齐的访问(不会产生通用保护异常)，然而，需要额外的内存总线周期来访问内存中未对齐的数据。</p>
+<h2 id="6-5-不同架构处理器的对齐要求"><a href="#6-5-不同架构处理器的对齐要求" class="headerlink" title="6.5. 不同架构处理器的对齐要求"></a>6.5. 不同架构处理器的对齐要求</h2><p><strong>RISC 指令集处理器（MIPS/ARM）</strong>：这种处理器的设计以效率为先，要求所访问的多字节数据（short/int/long）的地址必须是此数据大小的倍数，如 short 数据地址应为 2 的倍数，long 数据地址应为 4 的倍数，也就是说是对齐的。</p>
+<p><strong>CISC 指令集处理器(X86)</strong> ：没有上述限制。</p>
 <p><strong>对齐处理策略</strong></p>
-<p>访问非对齐多字节数据时(pack数据)，编译器会将指令拆成多条(因为非对齐多字节数据可能跨越地址对齐边界)，保证每条指令都从正确的起始地址上获取数据，但也因此效率比较低。</p>
-<p>访问对齐数据时则只用一条指令获取数据，因此对齐数据必须确保其起始地址是在对齐边界上。如果不是在对齐的边界，对X86 CPU是安全的，但对MIPS/ARM这种RISC CPU会出现<code>总线访问异常</code>。</p>
-<p>为什么X86是安全的呢？</p>
+<p>访问非对齐多字节数据时(pack 数据)，编译器会将指令拆成多条(因为非对齐多字节数据可能跨越地址对齐边界)，保证每条指令都从正确的起始地址上获取数据，但也因此效率比较低。</p>
+<p>访问对齐数据时则只用一条指令获取数据，因此对齐数据必须确保其起始地址是在对齐边界上。如果不是在对齐的边界，对 X86 CPU 是安全的，但对 MIPS/ARM 这种 RISC CPU 会出现<code>总线访问异常</code>。</p>
+<p>为什么 X86 是安全的呢？</p>
 <blockquote>
-<p>X86 CPU是如何进行数据对齐的？</p>
-<p>X86 CPU的<code>EFLAGS寄存器</code>中包含一个特殊的位标志，称为<code>AC</code>(对齐检查的英文缩写)标志。</p>
-<p>按照默认设置，当CPU首次加电时，该标志被设置为0。</p>
-<p>当该标志是0时，CPU能够自动执行它应该执行的操作，以便成功地访问未对齐的数据值。</p>
-<p>然而，如果该标志被设置为1，每当系统试图访问未对齐的数据时，CPU就会发出一个<code>INT 17H中断</code>。</p>
-<p>X86的Windows 2000和Windows 98版本从来不改变这个CPU标志位。因此，当应用程序在X86处理器上运行时，你根本看不到应用程序中出现数据未对齐的异常条件。</p>
+<p>X86 CPU 是如何进行数据对齐的？</p>
+<p>X86 CPU 的<code>EFLAGS寄存器</code>中包含一个特殊的位标志，称为<code>AC</code>(对齐检查的英文缩写)标志。</p>
+<p>按照默认设置，当 CPU 首次加电时，该标志被设置为 0。</p>
+<p>当该标志是 0 时，CPU 能够自动执行它应该执行的操作，以便成功地访问未对齐的数据值。</p>
+<p>然而，如果该标志被设置为 1，每当系统试图访问未对齐的数据时，CPU 就会发出一个<code>INT 17H中断</code>。</p>
+<p>X86 的 Windows 2000 和 Windows 98 版本从来不改变这个 CPU 标志位。因此，当应用程序在 X86 处理器上运行时，你根本看不到应用程序中出现数据未对齐的异常条件。</p>
 </blockquote>
-<p>为什么MIPS/ARM不安全呢？</p>
+<p>为什么 MIPS/ARM 不安全呢？</p>
 <blockquote>
-<p><strong>因为MIPS/ARM CPU不能自动处理对未对齐数据的访问</strong>。当未对齐的数据访问发生时，CPU就会将这一情况通知操作系统。这时，操作系统将会确定它是否应该引发一个数据未对齐异常条件，对vxworks是会触发这个异常的。</p>
+<p><strong>因为 MIPS/ARM CPU 不能自动处理对未对齐数据的访问</strong>。当未对齐的数据访问发生时，CPU 就会将这一情况通知操作系统。这时，操作系统将会确定它是否应该引发一个数据未对齐异常条件，对 vxworks 是会触发这个异常的。</p>
 </blockquote>
-<h2 id="6-6-ARM下的对齐处理"><a href="#6-6-ARM下的对齐处理" class="headerlink" title="6.6. ARM下的对齐处理"></a>6.6. ARM下的对齐处理</h2><p>有部分摘自ARM编译器文档对齐部分。</p>
+<h2 id="6-6-ARM-下的对齐处理"><a href="#6-6-ARM-下的对齐处理" class="headerlink" title="6.6. ARM 下的对齐处理"></a>6.6. ARM 下的对齐处理</h2><p>有部分摘自 ARM 编译器文档对齐部分。</p>
 <p>对齐的使用：</p>
 <ol>
 <li><p><code>__align(num)</code> 用于修改最高级别对象的字节边界。</p>
 <blockquote>
 <ul>
-<li>在汇编中使用LDRD或STRD时就要用到此命令<code>__align(8)</code>进行修饰限制。来保证数据对象是相应对齐。</li>
-<li>这个修饰对象的命令最大是8个字节限制，可以让2字节的对象进行4字节对齐，但不能让4字节的对象2字节对齐。</li>
+<li>在汇编中使用 LDRD 或 STRD 时就要用到此命令<code>__align(8)</code>进行修饰限制。来保证数据对象是相应对齐。</li>
+<li>这个修饰对象的命令最大是 8 个字节限制，可以让 2 字节的对象进行 4 字节对齐，但不能让 4 字节的对象 2 字节对齐。</li>
 <li><code>__align</code>是存储类修改，只修饰最高级类型对象，不能用于结构或者函数对象。</li>
 </ul>
 </blockquote>
@@ -527,11 +526,11 @@
 <li><p><code>__packed</code> 进行一字节对齐。需注意：</p>
 <blockquote>
 <ul>
-<li>不能对packed的对象进行对齐；</li>
+<li>不能对 packed 的对象进行对齐；</li>
 <li>所有对象的读写访问都进行非对齐访问；</li>
-<li>float及包含float的结构联合及未用__packed的对象将不能字节对齐；</li>
-<li>__packed对局部整型变量无影响。</li>
-<li>强制由unpacked对象向packed对象转化时未定义。整型指针可以合法定义为packed，如__packed int* p(__packed int 则没有意义)</li>
+<li>float 及包含 float 的结构联合及未用__packed 的对象将不能字节对齐；</li>
+<li>__packed 对局部整型变量无影响。</li>
+<li>强制由 unpacked 对象向 packed 对象转化时未定义。整型指针可以合法定义为 packed，如**packed int* p(**packed int 则没有意义)</li>
 </ul>
 </blockquote>
 </li>
@@ -546,23 +545,24 @@
 <p>The main use of bitfields is either to allow tight packing of data or to be able to specify the fields within some externally produced data files. C gives no guarantee of the ordering of fields within machine words, so if you do use them for the latter reason, you program will not only be non-portable, it will be compiler-dependent too. The Standard says that fields are packed into ‘storage units’, which are typically machine words. The packing order, and whether or not a bitfield may cross a storage unit boundary, are implementation defined. To force alignment to a storage unit boundary, a zero width field is used before the one that you want to have aligned.</p>
 <p>Be careful using them. It can require a surprising amount of run-time code to manipulate these things and you can end up using more space than they save.</p>
 <p>Bit fields do not have addresses—you can’t have pointers to them or arrays of them.</p>
-<h2 id="6-8-C语言字节相关面试题"><a href="#6-8-C语言字节相关面试题" class="headerlink" title="6.8. C语言字节相关面试题"></a>6.8. C语言字节相关面试题</h2><h3 id="6-8-1-Intel-微软C语言面试题"><a href="#6-8-1-Intel-微软C语言面试题" class="headerlink" title="6.8.1. Intel/微软C语言面试题"></a>6.8.1. Intel/微软C语言面试题</h3><p>请看下面的问题：</p>
+<h2 id="6-8-C-语言字节相关面试题"><a href="#6-8-C-语言字节相关面试题" class="headerlink" title="6.8. C 语言字节相关面试题"></a>6.8. C 语言字节相关面试题</h2><h3 id="6-8-1-Intel-微软-C-语言面试题"><a href="#6-8-1-Intel-微软-C-语言面试题" class="headerlink" title="6.8.1. Intel/微软 C 语言面试题"></a>6.8.1. Intel/微软 C 语言面试题</h3><p>请看下面的问题：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack(8)</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">s1</span>&#123;</span></span><br><span class="line">    <span class="keyword">short</span> a; <span class="comment">// 按 min(1,8) 对齐</span></span><br><span class="line">    <span class="keyword">long</span>  b; <span class="comment">// 按 min(4,8) 对齐</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">s2</span>&#123;</span></span><br><span class="line">    <span class="keyword">char</span> c;</span><br><span class="line">    s1   d;</span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> e;  <span class="comment">//VC6.0下可能要用__int64代替双long</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> pack()</span></span><br></pre></td></tr></table></figure>
 
 <p><strong>问题：</strong></p>
 <ol>
 <li>sizeof(s2) = ？</li>
-<li>s2的s1中的a后面空了几个字节接着是b？</li>
+<li>s2 的 s1 中的 a 后面空了几个字节接着是 b？</li>
 </ol>
 <p>分析：</p>
 <blockquote>
 <p>成员对齐有一个重要的条件，即<strong>每个成员分别按自己的方式对齐</strong>。</p>
-<p>也就是说上面虽然指定了按8字节对齐，但并不是所有的成员都是以8字节对齐。其对齐的规则是：<strong>每个成员按 <code>其类型的对齐参数（通常是这个类型的大小）</code> 和 <code>指定对齐参数（这里是8字节）</code> 中较小的一个对齐，并且结构的长度必须为所用过的所有对齐参数的整数倍，不够就补空字节。</strong></p>
-<p>s1中成员a是1字节，默认按1字节对齐，而指定对齐参数为8，两值中取1，即a按1字节对齐；成员b是4个字节，默认按4字节对齐，这时就按4字节对齐，所以<code>sizeof(s1)应该为8</code>；</p>
-<p>s2中c和s1中a一样，按1字节对齐。而d是个8字节结构体，其默认对齐方式就是所有成员使用的对齐参数中最大的一个，s1的就是4。所以，成员d按4字节对齐。成员e是8个字节，默认按8字节对齐，和指定的一样，所以它对到8字节的边界上。这时，已经使用了12个字节，所以又添加4个字节的空，从第16个字节开始放置成员e。此时长度为24，并可被8（成员e按8字节对齐）整除。这样，一共使用了24个字节。</p>
+<p>也就是说上面虽然指定了按 8 字节对齐，但并不是所有的成员都是以 8 字节对齐。其对齐的规则是：<strong>每个成员按 <code>其类型的对齐参数（通常是这个类型的大小）</code> 和 <code>指定对齐参数（这里是8字节）</code> 中较小的一个对齐，并且结构的长度必须为所用过的所有对齐参数的整数倍，不够就补空字节。</strong></p>
+<p>s1 中成员 a 是 1 字节，默认按 1 字节对齐，而指定对齐参数为 8，两值中取 1，即 a 按 1 字节对齐；成员 b 是 4 个字节，默认按 4 字节对齐，这时就按 4 字节对齐，所以<code>sizeof(s1)应该为8</code>；</p>
+<p>s2 中 c 和 s1 中 a 一样，按 1 字节对齐。而 d 是个 8 字节结构体，其默认对齐方式就是所有成员使用的对齐参数中最大的一个，s1 的就是 4。所以，成员 d 按 4 字节对齐。成员 e 是 8 个字节，默认按 8 字节对齐，和指定的一样，所以它对到 8 字节的边界上。这时，已经使用了 12 个字节，所以又添加 4 个字节的空，从第 16 个字节开始放置成员 e。此时长度为 24，并可被 8（成员 e 按 8 字节对齐）整除。这样，一共使用了 24 个字节。</p>
 </blockquote>
 <p>各个变量在内存中的布局为：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">c***aa**</span><br><span class="line">bbbb****</span><br><span class="line">dddddddd ——这种“矩阵写法”很方便看出结构体实际大小！</span><br></pre></td></tr></table></figure>
+
 <p>因此，<code>sizeof(S2)结果为24，a后面空了2个字节接着是b</code>。</p>
 <p>这里有三点很重要：</p>
 <ol>
@@ -570,22 +570,22 @@
 <li>复杂类型(如结构)的默认对齐方式是其最长的成员的对齐方式，这样在成员是复杂类型时可以最小化长度；</li>
 <li>对齐后的长度必须是成员中最大对齐参数的整数倍，这样在处理数组时可保证每一项都边界对齐。</li>
 </ol>
-<p>还要注意，“空结构体”(不含数据成员)的大小为1，而不是0。试想如果不占空间的话，一个空结构体变量如何取地址、两个不同的空结构体变量又如何得以区分呢？</p>
-<h3 id="6-8-2-上海网宿科技面试题"><a href="#6-8-2-上海网宿科技面试题" class="headerlink" title="6.8.2 上海网宿科技面试题"></a>6.8.2 上海网宿科技面试题</h3><p>假设硬件平台是intel x86(little endian)，以下程序输出什么：</p>
+<p>还要注意，“空结构体”(不含数据成员)的大小为 1，而不是 0。试想如果不占空间的话，一个空结构体变量如何取地址、两个不同的空结构体变量又如何得以区分呢？</p>
+<h3 id="6-8-2-上海网宿科技面试题"><a href="#6-8-2-上海网宿科技面试题" class="headerlink" title="6.8.2 上海网宿科技面试题"></a>6.8.2 上海网宿科技面试题</h3><p>假设硬件平台是 intel x86(little endian)，以下程序输出什么：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//假设硬件平台是intel x86(little endian)</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> <span class="keyword">uint32_t</span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">inet_ntoa</span><span class="params">(<span class="keyword">uint32_t</span> in)</span></span>&#123;</span><br><span class="line">    <span class="keyword">char</span>  b[<span class="number">18</span>];</span><br><span class="line">    <span class="keyword">register</span>  <span class="keyword">char</span>  *p;</span><br><span class="line">    p = (<span class="keyword">char</span> *)∈</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UC(b) (((int)b)&amp;0xff) <span class="comment">//byte转换为无符号int型</span></span></span><br><span class="line">    <span class="built_in">sprintf</span>(b, <span class="string">&quot;%d.%d.%d.%d\n&quot;</span>, <span class="built_in">UC</span>(p[<span class="number">0</span>]), <span class="built_in">UC</span>(p[<span class="number">1</span>]), <span class="built_in">UC</span>(p[<span class="number">2</span>]), <span class="built_in">UC</span>(p[<span class="number">3</span>]));</span><br><span class="line">    <span class="built_in">printf</span>(b);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span>&#123;</span><br><span class="line">    <span class="built_in">inet_ntoa</span>(<span class="number">0x12345678</span>);</span><br><span class="line">    <span class="built_in">inet_ntoa</span>(<span class="number">0x87654321</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>先看如下程序：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a = <span class="number">0x12345678</span>;</span><br><span class="line">    <span class="keyword">char</span> *p = (<span class="keyword">char</span> *)&amp;a;</span><br><span class="line">    <span class="keyword">char</span> str[<span class="number">20</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(str,<span class="string">&quot;%d.%d.%d.%d\n&quot;</span>, p[<span class="number">0</span>], p[<span class="number">1</span>], p[<span class="number">2</span>], p[<span class="number">3</span>]);</span><br><span class="line">    <span class="built_in">printf</span>(str);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><strong>按照小字节序的规则，变量a在计算机中存储方式为：</strong></p>
+<p><strong>按照小字节序的规则，变量 a 在计算机中存储方式为：</strong></p>
 <blockquote>
 <p>高地址方向 ————–&gt; 低地址方向<br>0x12 0x34 0x56 0x78<br>p[3] p[2] p[1] p[0]</p>
 </blockquote>
-<p>注意：<strong>p并不是指向0x12345678的开头0x12，而是指向0x78</strong>。p[0]到p[1]的操作是&amp;p[0]+1，因此p[1]地址比p[0]地址大。输出结果为<code>120.86.52.18</code>。</p>
+<p>注意：<strong>p 并不是指向 0x12345678 的开头 0x12，而是指向 0x78</strong>。p[0]到 p[1]的操作是&amp;p[0]+1，因此 p[1]地址比 p[0]地址大。输出结果为<code>120.86.52.18</code>。</p>
 <p>反过来的话，令<code>int a = 0x87654321</code>，则输出结果为<code>33.67.101.-121</code>。</p>
 <p>为什么有负值呢？</p>
 <blockquote>
-<p>因为系统默认的char是有符号的，本来是0x87也就是135，大于127因此就减去256得到-121。</p>
+<p>因为系统默认的 char 是有符号的，本来是 0x87 也就是 135，大于 127 因此就减去 256 得到-121。</p>
 </blockquote>
 <p>想要得到正值的话只需将<code>char *p = (char *)&amp;a</code>改为<code>unsigned char *p = (unsigned char *)&amp;a</code>即可。</p>
 <p>综上不难得出，网宿面试题的答案为<code>120.86.52.18</code>和<code>33.67.101.135</code>。</p>
@@ -620,8 +620,8 @@
 <td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
 </tr>
 <tr>
-<td>开源中国（oschina）</td>
-<td><a target="_blank" rel="noopener" href="https://my.oschina.net/dbkernel">https://my.oschina.net/dbkernel</a></td>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
 </tr>
 <tr>
 <td>博客园（cnblogs）</td>

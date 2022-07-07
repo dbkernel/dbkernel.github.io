@@ -2,10 +2,10 @@
 title: 特性介绍 | MySQL 自增列详解（1）：自增列概念及使用
 date: 2019-12-09 19:37:10
 categories:
-- MySQL
+  - MySQL
 tags:
-- MySQL
-- auto_increment
+  - MySQL
+  - auto_increment
 toc: true
 ---
 
@@ -13,7 +13,7 @@ toc: true
 
 <!-- more -->
 
->**本文首发于 2019-12-09 19:37:10**
+> **本文首发于 2019-12-09 19:37:10**
 
 ### 1. 概念
 
@@ -210,10 +210,10 @@ mysql> show create table t1;
 
 这里需要补充说明下 `int(11)` 中的数字的含义：
 
->- MySQL中整数数据类型后面的(N)指定**显示宽度**。
->- 显示宽度不影响查询出来的结果。
->- 显示宽度限制了小数点的位置(只要实际数字不超过显示宽度，这种情况下，数字显示为原样)。
->- 显示宽度也是一个有用的工具，可以让开发人员知道应该将值填充到哪个长度。
+> - MySQL 中整数数据类型后面的(N)指定**显示宽度**。
+> - 显示宽度不影响查询出来的结果。
+> - 显示宽度限制了小数点的位置(只要实际数字不超过显示宽度，这种情况下，数字显示为原样)。
+> - 显示宽度也是一个有用的工具，可以让开发人员知道应该将值填充到哪个长度。
 
 #### 3.2. 如何避免自增列超过最大值？
 
@@ -253,25 +253,25 @@ mysql> select * from t2;
 +----------------------+------+
 1 row in set (0.00 sec)
 ```
+
 **`UNSIGNED BIGINT` 类型的范围究竟有多大呢？**
 
-> 假如每秒自增100万次，想要消耗完需要 `18446744073709551613/1000000/3600/24/365`=584942年。
+> 假如每秒自增 100 万次，想要消耗完需要 `18446744073709551613/1000000/3600/24/365`=584942 年。
 
-**有的朋友会问如果自增列不是采用BIGINT类型，那么达到最大值后该表就无法写入，此时该怎么办呢？**
+**有的朋友会问如果自增列不是采用 BIGINT 类型，那么达到最大值后该表就无法写入，此时该怎么办呢？**
 
-> 一般达到最大值后再次插入数据会报错`ERROR 1467 (HY000): Failed to read auto-increment value from storage engine`，可以通过alter table 将自增列的类型设为数值范围更大的类型（比如BIGINT）。
-
+> 一般达到最大值后再次插入数据会报错`ERROR 1467 (HY000): Failed to read auto-increment value from storage engine`，可以通过 alter table 将自增列的类型设为数值范围更大的类型（比如 BIGINT）。
 
 ### 4. 总结
 
 1. AUTO_INCREMENT 列必定唯一，且仅用于整型类型。
 2. AUTO_INCREMENT 列会持续增长，不会因 delete 自增列最大的记录而变小。
 3. 当 AUTO_INCREMENT 列达到当前类型的最大值后将无法插入数据，会报错`ERROR 1467 (HY000): Failed to read auto-increment value from storage engine`，此时将自增列改为 BIGINT 类型可解决问题。
-4. 为了避免自增列达到最大值，可将其设为BIGINT类型。
-4. 使用 alter table 修改 AUTO_INCREMENT 列时，其值会取`自增列当前最大记录值+1`与`将要设置的值`的最大值。
-5. 在MySQL 5.7 中，将列设置成 AUTO_INCREMENT 之后，必须将其设置成主键/或者是主键的一部分，否则会报错`ERROR 1075 (42000): Incorrect table definition; there can be only one auto column and it must be defined as a key`。
+4. 为了避免自增列达到最大值，可将其设为 BIGINT 类型。
+5. 使用 alter table 修改 AUTO_INCREMENT 列时，其值会取`自增列当前最大记录值+1`与`将要设置的值`的最大值。
+6. 在 MySQL 5.7 中，将列设置成 AUTO_INCREMENT 之后，必须将其设置成主键/或者是主键的一部分，否则会报错`ERROR 1075 (42000): Incorrect table definition; there can be only one auto column and it must be defined as a key`。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -283,5 +283,5 @@ mysql> select * from t2;
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

@@ -2,18 +2,18 @@
 title: 程序人生 | UNIX环境高级编程技巧之 du 指令实现
 date: 2014-07-10 10:00:41
 categories:
-- C语言
+  - C语言
 tags:
-- APUE
-- C语言
-- UNIX
-- du
+  - APUE
+  - C语言
+  - UNIX
+  - du
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2014-07-10 10:00:41**
+> **本文首发于 2014-07-10 10:00:41**
 
 ## 代码
 
@@ -97,17 +97,20 @@ $ gcc -g -Wall testdu.c -o testdu
 ## 运行
 
 - `testdf`执行效果：
+
 ```bash
 $ ./testdu /usr/bin
 1766184 512B blocks
 ```
+
 - `原生df`执行效果：
+
 ```bash
 $ du -sh /usr/bin
 859M	/usr/bin
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -119,5 +122,5 @@ $ du -sh /usr/bin
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

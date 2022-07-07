@@ -2,20 +2,18 @@
 title: 最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备
 date: 2016-03-15 19:56:52
 categories:
-- Postgres-X2
+  - Postgres-X2
 tags:
-- Postgres-X2
-- Postgres-XC
-- PostgreSQL
-- Linux
+  - Postgres-X2
+  - Postgres-XC
+  - PostgreSQL
+  - Linux
 toc: true
 ---
 
 <!-- more -->
 
-
-
->**本文首发于 2016-03-15 19:56:52**
+> **本文首发于 2016-03-15 19:56:52**
 
 注意：本篇文章成文时 Postgres-XC 还未改名为 Postgres-X2 。
 
@@ -28,6 +26,7 @@ git clone git@github.com:postgres-x2/postgres-x2.git
 # 2. 安装依赖
 
 **对于 Ubuntu/Debian：**
+
 ```bash
 apt-get install -y git-core
 apt-get install -y gcc g++
@@ -60,6 +59,7 @@ Note: debian8 required pip install --pre psi
 ```
 
 **对于 CentOS：**
+
 ```bash
 yum install –y git.x86_64
 yum install –y gcc.x86_64 gcc-c++.x86_64
@@ -128,6 +128,7 @@ $ ./bin/initdb -U wslu -A trust --locale=C -D data/dn3
 ## 4.3. 编辑配置文件
 
 编辑 data/co1/postgresql.conf：
+
 ```ini
 # 默认值
 gtm_port = 6666
@@ -136,24 +137,28 @@ pgxc_node_name = co1
 ```
 
 编辑 data/co2/postgresql.conf：
+
 ```ini
 gtm_port = 6666
 pgxc_node_name = co2
 ```
 
 编辑 data/dn1/postgresql.conf：
+
 ```ini
 gtm_port = 6666
 pgxc_node_name = dn1
 ```
 
 编辑 data/dn2/postgresql.conf：
+
 ```ini
 gtm_port = 6666
 pgxc_node_name = dn2
 ```
 
 编辑 data/dn2/postgresql.conf：
+
 ```ini
 gtm_port = 6666
 pgxc_node_name = dn3
@@ -378,6 +383,7 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 ```
 
 相应的，停止所有备 DN 节点服务的指令为：
+
 ```bash
 ./bin/pg_ctl stop -D data/dn1s -m immediate
 ./bin/pg_ctl stop -D data/dn2s -m immediate
@@ -385,6 +391,7 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 ```
 
 # 8. Q&A
+
 ## 8.1. 如何提升备 DN 为主 DN
 
 我并未实现成功，但参照其他 PostgreSQL 的分布式数据库，步骤如下：
@@ -395,7 +402,6 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 4. 退出 psql，再重新连入 psql。
 5. 此时，备 DN 就作为主 DN 运行了，可执行 DDL、DML 等所有操作。
 
-
 ## 8.2. 当备 DN 挂掉时，如何关闭主备 DN 之间的数据同步
 
 也就是关闭 walsender 和 walreciever。
@@ -405,7 +411,6 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 1. 将主 DN 状态改为 `OutSync`（别的数据库的做法）。
 2. 在代码中将 `SyncRepStandbyNames` 设为 `""`。
 
-
 ## 补充
 
 本教程关于配置备 DN 的描述只能对各个 DN 的数据做备份，并未成功实现某个 DN 挂掉了自动切换到备 DN。
@@ -414,12 +419,11 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 
 不过，GreenPlum（以 PostgreSQL 为基础开发的分布式数据库）有此功能，可做参考。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -427,7 +431,5 @@ $ ./bin/psql -p 24076 postgres postgres    //进入co1创建节点，co1_port=24
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

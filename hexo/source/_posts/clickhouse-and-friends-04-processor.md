@@ -2,14 +2,14 @@
 title: 源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器
 date: 2020-06-12 20:57:10
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- DAG Scheduler
-- pipeline
-- processor
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - DAG Scheduler
+  - pipeline
+  - processor
+  - 源码分析
 toc: true
 ---
 
@@ -17,9 +17,9 @@ toc: true
 
 **本文首发于 2020-06-12 19:57:10**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/
+> 以下为正文。
 
 **最后更新: 2020-08-15**
 
@@ -27,9 +27,9 @@ toc: true
 
 这些概念并不是 ClickHouse 首创，感兴趣的同学可以关注下 [materialize](https://github.com/MaterializeInc/materialize) 的 [timely-dataflow](https://github.com/TimelyDataflow/timely-dataflow)，虎哥用 golang 也写过一个[原型](https://github.com/vectorengine/vectorsql/tree/master/src/processors)。
 
-拼的是实现细节，正是这些模块的精良设计，才有了 ClickHous e整体的高性能。
+拼的是实现细节，正是这些模块的精良设计，才有了 ClickHous e 整体的高性能。
 
-## Pipeline问题
+## Pipeline 问题
 
 在传统数据库系统中，一个 Query 处理流程大体是:
 
@@ -113,7 +113,7 @@ enum class Status
 };
 ```
 
-当 source 生成数据后，它的状态会设置为 PortFull，意思是等着流入其他 transformer 的 InPort，processor 会开始调度 FilterTransformer(NeedData) 的 Prepare，进行 PullData，然后它的状态设置为 Ready，等待 processor 调度 Work 方法进行数据Filter处理，大家就这样靠状态让 processor 去感知，来调度和做状态迁移，直到 Finished 状态。
+当 source 生成数据后，它的状态会设置为 PortFull，意思是等着流入其他 transformer 的 InPort，processor 会开始调度 FilterTransformer(NeedData) 的 Prepare，进行 PullData，然后它的状态设置为 Ready，等待 processor 调度 Work 方法进行数据 Filter 处理，大家就这样靠状态让 processor 去感知，来调度和做状态迁移，直到 Finished 状态。
 
 这里值得一提的是 ExpandPipeline 状态，它会根据 transformer 的实现，可以把一个 transformer 裂变出更多个 transformer 并行执行，达到一个爆炸效果。
 
@@ -126,7 +126,7 @@ SELECT number + 1 FROM t1;
 为了更加深入理解 ClickHouse 的 processor 和 scheduler 机制，我们来一个原生态的 example:
 
 1. 一个 Source:{0,1,2,3,4}
-2. AdderTransformer 对每个数字做加1操作
+2. AdderTransformer 对每个数字做加 1 操作
 3. 一个 Sinker，输出结果
 
 ### 1. Source
@@ -301,7 +301,7 @@ int main(int, char **)
 
 ## 总结
 
-从开发者角度看还是比较复杂，状态迁移还需要开发者自己控制，不过 upstream 已经做了大量的基础工作，比如对 source的封装 ISource，对 sink 的封装 ISink，还有一个基础的 ISimpleTransform，让开发者在上层使用 processor 时更加容易，可以积木式搭建出自己想要的 pipeline。
+从开发者角度看还是比较复杂，状态迁移还需要开发者自己控制，不过 upstream 已经做了大量的基础工作，比如对 source 的封装 ISource，对 sink 的封装 ISink，还有一个基础的 ISimpleTransform，让开发者在上层使用 processor 时更加容易，可以积木式搭建出自己想要的 pipeline。
 
 ClickHouse 的 transformer 数据单元是 Chunk，transformer 对上游 OutPort 流过来的 Chunk 进行加工，然后输出给下游的 InPort，图连通式的流水线并行工作，让 CPU 尽量满负荷工作。
 
@@ -309,13 +309,11 @@ ClickHouse 的 transformer 数据单元是 Chunk，transformer 对上游 OutPort
 
 目前，ClickHouse 新版本已经默认开启 QueryPipeline，同时这块代码也在不停的迭代。
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -323,6 +321,5 @@ ClickHouse 的 transformer 数据单元是 Chunk，transformer 对上游 OutPort
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

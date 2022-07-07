@@ -2,38 +2,39 @@
 title: 程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例
 date: 2014-01-10 19:48:48
 categories:
-- C语言
+  - C语言
 tags:
-- APUE
-- C语言
-- UNIX
-- getopt
+  - APUE
+  - C语言
+  - UNIX
+  - getopt
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2014-01-10 19:48:48**
+> **本文首发于 2014-01-10 19:48:48**
 
 # 1. getopt
 
 该函数用来解析命令行参数。
 
 ## 1.1. 函数定义
+
 ```cpp
 int getopt(int argc, char * const argv[], const char *optstring);
 #include <unistd.h>
 ```
 
+前两个参数设为 main 函数的两个参数。
 
-前两个参数设为main函数的两个参数。
+> optstring 设为由该命令要处理的各个选项组成的字符串。选项后面带有冒号'：'时，该选项是一个带参数的选项。
+>
+> 举例：`make -f filename -n`
+> -f 是一个带参数的选项，-n 是一个没有参数的选项。
+>
+> 可以像下面这样调用 `函数getopt` 来解析上面的例子。
 
->optstring设为由该命令要处理的各个选项组成的字符串。选项后面带有冒号'：'时，该选项是一个带参数的选项。
->
->举例：`make -f filename -n`
->-f 是一个带参数的选项，-n 是一个没有参数的选项。
->
->可以像下面这样调用 `函数getopt` 来解析上面的例子。
 ```cpp
 c = getopt(argc, argv, "f:n");
 ```
@@ -56,6 +57,7 @@ opterr: 将此变量设置为0，可以抑制getopt()输出错误信息。
 ```
 
 ## 1.2. 实例
+
 ```cpp
 #include <unistd.h>
 #include <string.h>
@@ -120,11 +122,11 @@ int getopt_long(int argc, char * const argv[],
 #include <getopt.h>
 ```
 
-前三个参数与函数getopt的参数是一样的。
+前三个参数与函数 getopt 的参数是一样的。
 
-只支持长选项时，参数optstring设置为NULL或者空字符串""。
+只支持长选项时，参数 optstring 设置为 NULL 或者空字符串""。
 
-第四个参数是一个构造体struct option的数组。此构造体定义在头文件getopt.h中。此数组的最后一个须将成员都置为0。
+第四个参数是一个构造体 struct option 的数组。此构造体定义在头文件 getopt.h 中。此数组的最后一个须将成员都置为 0。
 
 ```cpp
 struct option {
@@ -137,19 +139,19 @@ int val;
 
 **构造体各个成员的解释如下：**
 
->- name : 长选项的名字。
->- has_arg : no_argument或0表示此选项不带参数，required_argument或1表示此选项带参数，optional_argument或2表示是一个可选选项。
->- flag : 设置为NULL时，getopt_long()返回val,设置为NULL以外时，>getopt_long()返回0，且将*flag设为val。
->- val : 返回值或者*flag的设定值。有些命令既支持长选项也支持短选项，可以通过设定此值为短选项实现。
+> - name : 长选项的名字。
+> - has_arg : no_argument 或 0 表示此选项不带参数，required_argument 或 1 表示此选项带参数，optional_argument 或 2 表示是一个可选选项。
+> - flag : 设置为 NULL 时，getopt_long()返回 val,设置为 NULL 以外时，>getopt_long()返回 0，且将\*flag 设为 val。
+> - val : 返回值或者\*flag 的设定值。有些命令既支持长选项也支持短选项，可以通过设定此值为短选项实现。
 
-第五个参数是一个输出参数，函数getopt_long()返回时，longindex的值是struct option数组的索引。
+第五个参数是一个输出参数，函数 getopt_long()返回时，longindex 的值是 struct option 数组的索引。
 
 **关于返回值有以下几种情况：**
 
->- 识别为短选项时，返回值为该短选项。
->- 识别为长选项时，如果flag是NULL的情况下，返回val,如果flag非NULL的情况下，返回0。
->- 所有选项解析结束时返回-1。
->- 存在不能识别的选项或者带参数选项的参数不存在时返回'?' 。
+> - 识别为短选项时，返回值为该短选项。
+> - 识别为长选项时，如果 flag 是 NULL 的情况下，返回 val,如果 flag 非 NULL 的情况下，返回 0。
+> - 所有选项解析结束时返回-1。
+> - 存在不能识别的选项或者带参数选项的参数不存在时返回'?' 。
 
 ## 2.2. 实例
 
@@ -231,8 +233,7 @@ int main(int argc, char **argv)
 }
 ```
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -244,6 +245,5 @@ int main(int argc, char **argv)
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-

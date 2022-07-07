@@ -2,26 +2,24 @@
 title: 源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现
 date: 2020-09-21 22:01:12
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- 存储计算分离
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - 存储计算分离
+  - 源码分析
 toc: true
 ---
 
 <!-- more -->
 
-
 **本文首发于 2020-09-21 22:01:12**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/09/18/clickhouse-and-friends-compute-storage/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/09/18/clickhouse-and-friends-compute-storage/
+> 以下为正文。
 
 ![clickhouse-map-2020-replicatedmergetree.png](clickhouse-map-2020-replicatedmergetree.png)
-
 
 如果多个 ClickHouse server 可以挂载同一份数据(分布式存储等)，并且每个 server 都可写，这样会有什么好处呢？
 
@@ -59,8 +57,8 @@ r3. 返回给上层数据
 
 ## 2. 内存数据同步
 
-在上篇 [<ReplicatedMergeTree表引擎及同步机制>](https://bohutang.me/2020/09/13/clickhouse-and-friends-replicated-merge-tree/) 中，我们知道副本间的数据同步机制：
-首先同步元数据，再通过元数据获取相应part数据。
+在上篇 [<ReplicatedMergeTree 表引擎及同步机制>](https://bohutang.me/2020/09/13/clickhouse-and-friends-replicated-merge-tree/) 中，我们知道副本间的数据同步机制：
+首先同步元数据，再通过元数据获取相应 part 数据。
 
 这里，我们借用 ReplicatedMergeTree 同步通道，然后再做减法，同步完元数据后跳过 part 数据的同步，因为磁盘数据只需一个 server 做更新(需要 fsync 语义)即可。
 
@@ -72,7 +70,7 @@ if (!share_storage)
     part->renameTo(part_name, true);
 ```
 
-## 3. 演示demo
+## 3. 演示 demo
 
 <iframe src="https://bohutang-1253727613.cos.ap-beijing.myqcloud.com/video/clickhouse-storage-compute.mp4" frameborder="0" allowfullscreen="true" style="box-sizing: border-box;"></iframe>
 
@@ -98,7 +96,7 @@ script：
 
 **ClickHouse 暂时还不支持 Distributed Query 功能，如果这个能力支持，ClickHouse 存储计算分离就是一个威力无比的小氢弹。**
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -106,11 +104,9 @@ script：
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

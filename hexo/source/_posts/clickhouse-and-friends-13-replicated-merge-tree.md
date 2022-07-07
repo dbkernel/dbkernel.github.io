@@ -2,26 +2,24 @@
 title: 源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制
 date: 2020-09-15 20:15:14
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- ReplicatedMergeTree
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - ReplicatedMergeTree
+  - 源码分析
 toc: true
 ---
 
 <!-- more -->
 
-
 **本文首发于 2020-09-15 20:15:14**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/09/13/clickhouse-and-friends-replicated-merge-tree/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/09/13/clickhouse-and-friends-replicated-merge-tree/
+> 以下为正文。
 
 ![clickhouse-map-2020-replicatedmergetree.png](clickhouse-map-2020-replicatedmergetree.png)
-
 
 在 MySQL 里，为了保证高可用以及数据安全性会采取主从模式，数据通过 binlog 来进行同步。
 
@@ -31,7 +29,7 @@ toc: true
 
 ## 1. 集群搭建
 
-搭建一个 2 replica 测试集群，由于条件有限，这里在同一台物理机上起 clickhouse-server(2个 replica) + zookeeper(1个)，为了避免端口冲突，两个 replica 端口会有所不同。
+搭建一个 2 replica 测试集群，由于条件有限，这里在同一台物理机上起 clickhouse-server(2 个 replica) + zookeeper(1 个)，为了避免端口冲突，两个 replica 端口会有所不同。
 
 ### 1.1 zookeeper
 
@@ -39,7 +37,7 @@ toc: true
 docker run  -p 2181:2181 --name some-zookeeper --restart always -d zookeeper
 ```
 
-### 1.2 replica集群
+### 1.2 replica 集群
 
 replica-1 config.xml:
 
@@ -193,19 +191,18 @@ get
 
 本文以写入为例，从底层分析了 ClickHouse ReplicatedMergeTree 的工作原理，逻辑并不复杂。
 
-不同 replica 的数据同步需要 zookeeper(目前社区有人在做etcd的集成 [pr#10376](https://github.com/ClickHouse/ClickHouse/pull/10376))做元数据协调，是一个订阅/消费模型，涉及具体数据目录还需要去相应的 replica 通过 interserver_http_port 端口进行下载。
+不同 replica 的数据同步需要 zookeeper(目前社区有人在做 etcd 的集成 [pr#10376](https://github.com/ClickHouse/ClickHouse/pull/10376))做元数据协调，是一个订阅/消费模型，涉及具体数据目录还需要去相应的 replica 通过 interserver_http_port 端口进行下载。
 
 replica 的同步都是以文件目录为单位，这样就带来一个好处：我们**可以轻松实现 ClickHouse 的存储计算分离**，多个 clickhouse-server 可以同时挂载同一份数据进行计算，而且这些 server 每个节点都是可写，虎哥已经实现了一个可以 work 的原型，详情请参考下篇 [<存储计算分离方案与实现>](https://bohutang.me/2020/09/18/clickhouse-and-friends-compute-storage/)。
 
 ## 4. 参考
 
-* [1][StorageReplicatedMergeTree.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/StorageReplicatedMergeTree.cpp)
-* [2][ReplicatedMergeTreeBlockOutputStream.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeBlockOutputStream.cpp)
-* [3][ReplicatedMergeTreeLogEntry.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeLogEntry.cpp)
-* [4][ReplicatedMergeTreeQueue.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeQueue.cpp)
+- [1][storagereplicatedmergetree.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/StorageReplicatedMergeTree.cpp)
+- [2][replicatedmergetreeblockoutputstream.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeBlockOutputStream.cpp)
+- [3][replicatedmergetreelogentry.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeLogEntry.cpp)
+- [4][replicatedmergetreequeue.cpp](https://github.com/ClickHouse/ClickHouse/blob/f37814b36754bf11b52bd9c77d0e15f4d1825033/src/Storages/MergeTree/ReplicatedMergeTreeQueue.cpp)
 
-
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
@@ -213,11 +210,9 @@ replica 的同步都是以文件目录为单位，这样就带来一个好处：
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
-| GitHub                 | https://dbkernel.github.io           |
+| GitHub               | https://dbkernel.github.io                            |
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

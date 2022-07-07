@@ -2,19 +2,17 @@
 title: 最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包
 date: 2016-01-14 19:55:08
 categories:
-- GreenPlum
+  - GreenPlum
 tags:
-- PostgreSQL
-- GreenPlum
-- Linux
+  - PostgreSQL
+  - GreenPlum
+  - Linux
 toc: true
 ---
 
 <!-- more -->
 
-
-
->**本文首发于 2016-01-14 19:55:08**
+> **本文首发于 2016-01-14 19:55:08**
 
 本文介绍如何在 CentOS/RedHat、Ubuntu/Debian 下通过安装包方式和源码方式安装配置 GreenPlum 集群。
 
@@ -22,20 +20,20 @@ toc: true
 
 ## 1.1. 规划
 
->192.168.4.93（h93）   1个主master  2个主segment、2个镜像segment
+> 192.168.4.93（h93） 1 个主 master 2 个主 segment、2 个镜像 segment
 >
->192.168.4.94（h94）   1个备master  2个主segment、2个镜像segment
+> 192.168.4.94（h94） 1 个备 master 2 个主 segment、2 个镜像 segment
 
 安装在`/home/wslu/gp/gpsql`目录下。
 
->**注意：** 如无特殊说明，本文后续步骤需要在 h93 和 h94 都执行。
-
+> **注意：** 如无特殊说明，本文后续步骤需要在 h93 和 h94 都执行。
 
 ## 1.2. 安装依赖
 
 按如下方式在在 h93 和 h94 安装依赖。
 
 **对于 Ubuntu/Debian：**
+
 ```bash
 apt-get install -y git-core
 apt-get install -y gcc g++
@@ -68,6 +66,7 @@ Note: debian8 required pip install --pre psi
 ```
 
 **对于 CentOS：**
+
 ```bash
 yum install –y git.x86_64
 yum install –y gcc.x86_64 gcc-c++.x86_64
@@ -102,16 +101,20 @@ yum install epydoc.noarch
 
 1. 从官网下载`greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.zip`。
 2. 解压：
+
 ```bash
 unzip greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.zip
 ```
+
 3. 以普通用户安装：
+
 ```bash
 $ ./greenplum-db-4.3.6.1-build-2-RHEL5-x86_64.bin
 安装路径选择 /home/wslu/gp/gpsql
 ```
 
 ## 1.4. 源码安装
+
 ### 1.4.1. 克隆源码
 
 ```bash
@@ -129,21 +132,24 @@ $ make
 $ make install
 ```
 
-安装时如果遇到某些 python 包（lockfile、 paramiko、PSI等）找不到，可以参考 [HAWQ](https://github.com/apache/incubator-hawq) 项目，将 `<hawq_src>/tools/bin/pythonSrc/` 下所有的压缩包拷贝到`/home/wslu/gp/greenplum/gpMgmt/bin/pythonSrc/ext/` 中，然后再 `make install` 即可。
+安装时如果遇到某些 python 包（lockfile、 paramiko、PSI 等）找不到，可以参考 [HAWQ](https://github.com/apache/incubator-hawq) 项目，将 `<hawq_src>/tools/bin/pythonSrc/` 下所有的压缩包拷贝到`/home/wslu/gp/greenplum/gpMgmt/bin/pythonSrc/ext/` 中，然后再 `make install` 即可。
 
 至此集群源码编译完成。
 
 ## 1.5. 设置参数
+
 ### 1.5.1. 设置操作系统参数
 
 1. 关闭防火墙。
-2. 加速SSH连接：
+2. 加速 SSH 连接：
+
 ```bash
 sudo sed -i 's/^GSS/#&/g' /etc/ssh/sshd_config # 用来加速SSH连接的
 service sshd restart
 ```
 
 3. 设置内核和内存方面的参数：
+
 ```bash
 # 设置内核参数, 并在启动时生效
 sysctl -p - >>/etc/sysctl.conf <<EOF
@@ -168,7 +174,9 @@ net.core.wmem_max=2097152
 vm.overcommit_memory=1
 EOF
 ```
+
 4. 可以参考官方推荐设置共享内存相关参数：
+
 ```ini
 # vi /etc/sysctl.conf
 kernel.shmmax = 500000000
@@ -194,6 +202,7 @@ vm.overcommit_memory = 2
 ```
 
 5. 设置文件读写相关参数：
+
 ```bash
 # 设置limits
 cat >>/etc/security/limits.d/greenplum.conf <<EOF
@@ -207,7 +216,7 @@ EOF
 
 ### 1.5.2. 设置数据库相关参数
 
-GUC参数设置示例（需要根据机器配置调整）：
+GUC 参数设置示例（需要根据机器配置调整）：
 
 ```ini
 work_mem=1GB
@@ -223,9 +232,10 @@ interconnect_setup_timeout=1200
 
 ## 1.6. demo 集群
 
->**提示：** 如果不想用demo集群，可以直接跳过本小节。
+> **提示：** 如果不想用 demo 集群，可以直接跳过本小节。
 
-安装完成后，可以使用如下指令创建 demo 集群（在本机创建包含3个segment，3个segment-mirror，1个master的集群）：
+安装完成后，可以使用如下指令创建 demo 集群（在本机创建包含 3 个 segment，3 个 segment-mirror，1 个 master 的集群）：
+
 ```bash
 $ cd /home/wslu/gp/gpsql
 $ source greenplum_path.sh
@@ -252,11 +262,13 @@ gpssh-exkeys –h h94
 ## 1.9. 初始化集群
 
 1. 在 h93 和 h94 执行下述指令，以创建数据目录：
+
 ```bash
 $ mkdir gpsql/data/primary gpsql/data/mirror gpsql/data/master –p
 ```
 
 2. 在 h93 创建配置文件 `configs/gpinitsystem_config`，内容如下：
+
 ```bash
 ARRAY_NAME="EMC Greenplum DW"
 SEG_PREFIX=gpseg
@@ -273,16 +285,20 @@ REPLICATION_PORT_BASE=41000
 MIRROR_REPLICATION_PORT_BASE=51000
 declare -a MIRROR_DATA_DIRECTORY=(/home/wslu/gp/gpsql/data/mirror /home/wslu/gp/gpsql/data/mirror)
 ```
->**注意**：configs目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。
+
+> **注意**：configs 目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。
 
 3. 在 h93 创建配置文件 `configs/hostfile_gpinitsystem`，内容如下：
+
 ```bash
 h93
 h94
 ```
->**注意**：configs 目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。
+
+> **注意**：configs 目录是我自己创建的、便于保存自定义配置文件的目录。该步骤的目的是创建一个初始化时要用的配置文件，并没有路径的要求。
 
 4. 在 h93 执行下述指令初始化集群：
+
 ```verilog
 [wslu@h93 gpsql]$ gpinitsystem -c configs/gpinitsystem_config -h configs/hostfile_gpinitsystem –a
 20160114:14:30:03:005980 gpinitsystem:h93:wslu-[INFO]:-Checking configuration parameters, please wait...
@@ -451,6 +467,7 @@ y
 ```
 
 5. 查看目录结构：
+
 ```bash
 [wslu@h93 gpsql]$ ls data
 master  mirror  primary
@@ -472,7 +489,8 @@ gpseg0  gpseg1
 [wslu@h94 gpsql]$
 ```
 
-6. 在 h94 初始化备 master（主备 master 必须在不同主机，如果要配置单机多节点，则不能配置备 master。这是因为目前主备 master 必须在相同目录，所以必然不同主机。如果端口不是5432，那么需要指定PGPORT）：
+6. 在 h94 初始化备 master（主备 master 必须在不同主机，如果要配置单机多节点，则不能配置备 master。这是因为目前主备 master 必须在相同目录，所以必然不同主机。如果端口不是 5432，那么需要指定 PGPORT）：
+
 ```verilog
 [wslu@h93 gpsql]$ PGPORT=5432 PGDATABASE=postgres gpinitstandby -s h94
 20160114:14:40:47:003933 gpinitstandby:h93:wslu-[INFO]:-Validating environment and parameters for standby initialization...
@@ -508,7 +526,8 @@ Do you want to continue with standby master initialization? Yy|Nn (default=N):
 20160114:14:41:17:003933 gpinitstandby:h93:wslu-[INFO]:-Successfully created standby master on h94
 ```
 
-7. 此时，h94的data/master目录就不为空了：
+7. 此时，h94 的 data/master 目录就不为空了：
+
 ```bash
 $ [wslu@h94 gpsql]$ ls data/master/
 gpseg-1
@@ -536,7 +555,7 @@ postgres=# \db
 
 ## 1.11. 补充：如何将所有节点部署在一台主机？
 
-如果要将所有节点配置在一台主机，比如：在 h93 配置2个主 segment、2个镜像 segment、1个 master，只需要把`hostfile_config`中的 h94 删掉，然后在 h93 删除 `data/primary，data/mirror，data/master` 目录下的内容，重新初始化即可。
+如果要将所有节点配置在一台主机，比如：在 h93 配置 2 个主 segment、2 个镜像 segment、1 个 master，只需要把`hostfile_config`中的 h94 删掉，然后在 h93 删除 `data/primary，data/mirror，data/master` 目录下的内容，重新初始化即可。
 
 # 2. GreenPlum 常用指令
 
@@ -577,7 +596,8 @@ $ gpstate –m | -e
 
 ## 2.5. reload 配置文件
 
-在不停止集群情况下，若配置文件发生变更，reload配置文件：
+在不停止集群情况下，若配置文件发生变更，reload 配置文件：
+
 ```bash
 $ gpstop –u
 ```
@@ -587,16 +607,19 @@ $ gpstop –u
 仅仅启动 master 来执行维护管理任务，不会影响 segment 中的数据。例如，在维护模式下你可以仅连接 master 实例的数据库并且编辑系统表设置。
 
 1. 以维护模式启动 master：
+
 ```bash
 $ gpstart –m
 ```
 
 2. 维护模式下连接 master 来维护系统表。例如：
+
 ```bash
 $ PGOPTIONS='-c gp_session_role=utility' psql template1
 ```
 
 3. 完成管理任务后，使 master 关闭工具模式。然后，重启进入正常模式：
+
 ```bash
 $ gpstop -m
 ```
@@ -623,19 +646,18 @@ $ gpconfig -c gp_vmem_protect_limit -v4096MB
 
 gpconfig 可以设置 master 和所有 segment 的 guc 参数，也可以使用 `--masteronly` 参数只设置 master 的参数。设置完 guc 参数后需要根据 guc 参数类型决定重启集群或 reload 配置文件。
 
-**显示guc参数：**
+**显示 guc 参数：**
 
 ```bash
 $ psql –c ‘showstatement_mem;’ 或 gpconfig –show statement_mem
 $ psql –c ‘show all;’ 或 gpconfig –l
 ```
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -643,9 +665,5 @@ $ psql –c ‘show all;’ 或 gpconfig –l
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-
-
-

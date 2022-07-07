@@ -2,12 +2,12 @@
 title: 源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构
 date: 2020-06-30 21:41:12
 categories:
-- ClickHouse
+  - ClickHouse
 tags:
-- ClickHouse和他的朋友们
-- ClickHouse
-- MergeTree
-- 源码分析
+  - ClickHouse和他的朋友们
+  - ClickHouse
+  - MergeTree
+  - 源码分析
 toc: true
 ---
 
@@ -15,11 +15,11 @@ toc: true
 
 **本文首发于 2020-06-30 21:41:12**
 
->《ClickHouse和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
->https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/
->以下为正文。
+> 《ClickHouse 和他的朋友们》系列文章转载自圈内好友 [BohuTANG](https://bohutang.me/) 的博客，原文链接：
+> https://bohutang.me/2020/06/26/clickhouse-and-friends-merge-tree-disk-layout/
+> 以下为正文。
 
-上篇的 [存储引擎技术进化与MergeTree](https://bohutang.me/2020/06/20/clickhouse-and-friends-merge-tree-algo/) 介绍了存储算法的演进。
+上篇的 [存储引擎技术进化与 MergeTree](https://bohutang.me/2020/06/20/clickhouse-and-friends-merge-tree-algo/) 介绍了存储算法的演进。
 
 存储引擎是一个数据库的底盘，一定要稳和动力澎湃。
 
@@ -99,9 +99,8 @@ MergeTree 引擎概括起来很简单：
 
 a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c 的数据，也就是大家熟悉的列存储。
 
-各个 bin 文件以 b.bin排序对齐（b 是排序键），如图：
+各个 bin 文件以 b.bin 排序对齐（b 是排序键），如图：
 ![merge-tree-bin-without-granule.png](merge-tree-bin-without-granule.png)
-
 
 这样会有一个比较严重的问题：
 如果 `*.bin` 文件较大，即使读取一行数据，也要加载整个 bin 文件，浪费了大量的 IO，没法忍。
@@ -113,12 +112,10 @@ a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c �
 `SETTINGS index_granularity=3` 表示每 ３ 行数据为一个 granule，分区目前只有 ７ 条数据，所以被划分成 3 个 granule(三个色块)：
 ![merge-tree-bin-granule.png](merge-tree-bin-granule.png)
 
-
 为方便读取某个 granule，使用 `*.mrk` 文件记录每个 granule 的 offset，每个 granule 的 header 里会记录一些元信息，用于读取解析:
 ![merge-tree-bin-marker.png](merge-tree-bin-marker.png)
 
-
-这样，我们就可以根据 ｍark 文件，直接定位到想要的 granule，然后对这个单独的 granule 进行读取、校验。
+这样，我们就可以根据 ｍ ark 文件，直接定位到想要的 granule，然后对这个单独的 granule 进行读取、校验。
 
 目前，我们还有缺少一种映射：每个 mark 与字段值之间的对应，哪些值区间落在 mark0，哪些落在 mark1 …？
 
@@ -133,12 +130,11 @@ a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c �
 
 1. 只有一份全量数据，存储在 `*.bin` 文件
 2. `*.bin` 按照 ORDER BY 字段降序存储
-![merge-tree-bin-orderby-sort.png](merge-tree-bin-orderby-sort.png)
-
+   ![merge-tree-bin-orderby-sort.png](merge-tree-bin-orderby-sort.png)
 
 ### 稀疏索引
 
-因为数据只有一份且只有一种物理排序，MergeTree在索引设计上选择了简单、高效的稀疏索引模式。
+因为数据只有一份且只有一种物理排序，MergeTree 在索引设计上选择了简单、高效的稀疏索引模式。
 
 什么是稀疏索引呢？就是从已经排序的全量数据里，间隔性的选取一些点，并记录这些点属于哪个 mark。
 
@@ -152,7 +148,6 @@ a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c �
 
 ![merge-tree-primary-key.png](merge-tree-primary-key.png)
 
-
 #### 2. skipping index
 
 普通索引。
@@ -162,10 +157,8 @@ a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c �
 `GRANULARITY` 是稀疏点选择上的 granule 颗粒度，`GRANULARITY 1` 表示每 1 个 granule 选取一个：
 ![merge-tree-skipping-index-g1.png](merge-tree-skipping-index-g1.png)
 
-
 如果定义为`GRANULARITY 2` ，则 2 个 granule 选取一个：
 ![merge-tree-skipping-index-g2.png](merge-tree-skipping-index-g2.png)
-
 
 #### 3. partition minmax index
 
@@ -173,11 +166,9 @@ a.bin 是字段 a 的数据，b.bin 是字段 b 的数据，c.bin 是字段 c �
 
 ![merge-tree-minmax-idx.png](merge-tree-minmax-idx.png)
 
-
-####  4. 全景图
+#### 4. 全景图
 
 ![merge-tree-layout.png](merge-tree-layout.png)
-
 
 ## 查询优化
 
@@ -259,23 +250,21 @@ select * from default.mt where c=5
 
 ClickHouse MergeTree 设计简单、高效，它首要解决的问题是：在一种物理排序上，如何实现快速查找。
 
-针对这个问题，ClickHouse使用稀疏索引来解决。
+针对这个问题，ClickHouse 使用稀疏索引来解决。
 
 在官方 roadmap 上，列举了一个有意思的索引方向：Z-Order Indexing，目的是把多个维度编码到一维存储，当我们给出多维度条件的时候，可以快速定位到这个条件点集的空间位置，目前 ClickHouse 针对这个索引设计暂无进展。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
 
-
-| 标题 | 网址 |
-| -------------------- | --------------------------------- |
-| GitHub | https://dbkernel.github.io |
-| 知乎 | https://www.zhihu.com/people/dbkernel/posts |
-| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel |
-| 掘金 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina） | https://my.oschina.net/dbkernel |
-| 博客园（cnblogs） | https://www.cnblogs.com/dbkernel |
-
+| 标题                 | 网址                                                  |
+| -------------------- | ----------------------------------------------------- |
+| GitHub               | https://dbkernel.github.io                            |
+| 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
+| 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
+| 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
+| 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |

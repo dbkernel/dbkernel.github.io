@@ -2,18 +2,18 @@
 title: 源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率
 date: 2016-03-30 15:34:34
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- PostgreSQL
-- gcov
-- lcov
-- 测试
+  - PostgreSQL
+  - gcov
+  - lcov
+  - 测试
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2016-03-30 15:34:34**
+> **本文首发于 2016-03-30 15:34:34**
 
 # 引言
 
@@ -29,12 +29,11 @@ C 代码覆盖率测试，需要用到 gcc 的配套工具`gcov`，还有一个�
 
 首先需要安装依赖 gcov 和 lcov 。
 
-gcov 在 gcc 包中已经包含了，lcov 是 ltp 的一个 gcov 扩展插件，用来产生HTML报告。
+gcov 在 gcc 包中已经包含了，lcov 是 ltp 的一个 gcov 扩展插件，用来产生 HTML 报告。
 
 ```bash
 sudo apt install lcov
 ```
-
 
 # 2. 编译、安装 PG
 
@@ -46,7 +45,7 @@ sudo apt install lcov
 --enable-coverage       build with coverage testing instrumentation
 ```
 
-这个编译项对应gcc的两个参数：`-fprofile-arcs` 和 `-ftest-coverage`。
+这个编译项对应 gcc 的两个参数：`-fprofile-arcs` 和 `-ftest-coverage`。
 
 ```bash
 # enable code coverage if --enable-coverage
@@ -95,16 +94,15 @@ fi
 
 **-fprofile-arcs**：
 
->`-fprofile-arcs` 用于产生 .c 文件对应的 .gcda 文件，.gcda 文件可以被用于 profile 驱动的优化，或者结合 gcov 来做代码覆盖分析。
+> `-fprofile-arcs` 用于产生 .c 文件对应的 .gcda 文件，.gcda 文件可以被用于 profile 驱动的优化，或者结合 gcov 来做代码覆盖分析。
 >
->编译时尽量不要使用 -O 优化，这样代码覆盖数据 .gcda 才能尽可能和代码接近。
+> 编译时尽量不要使用 -O 优化，这样代码覆盖数据 .gcda 才能尽可能和代码接近。
 >
->当代码被调用时，.gcda 文件中对应的计数器会被修改，记录代码被调用的次数。
+> 当代码被调用时，.gcda 文件中对应的计数器会被修改，记录代码被调用的次数。
 
 **-ftest-coverage**：
 
->`-ftest-coverage` 这个选项用于产生 .c 文件的 .gcno 文件。这个文件生成后不会被修改。结合 .gcda，可以分析测试代码覆盖率。
-
+> `-ftest-coverage` 这个选项用于产生 .c 文件的 .gcno 文件。这个文件生成后不会被修改。结合 .gcda，可以分析测试代码覆盖率。
 
 ## 2.2. 编译安装
 
@@ -114,7 +112,7 @@ fi
 gmake world && gmake install-world
 ```
 
-安装好后，我们会发现在源码目录中多了一些.gcda和.gcno的文件，每个.c文件都会对应这两个文件：
+安装好后，我们会发现在源码目录中多了一些.gcda 和.gcno 的文件，每个.c 文件都会对应这两个文件：
 
 ```bash
 postgres@wslu-> ll
@@ -214,7 +212,7 @@ postgres@wslu-> ls -la|grep dbsize
 -rw-r--r--  1 postgres postgres  89624 Sep  7 14:38 dbsize.o
 ```
 
-dbsize.gcda 文件的修改时间发送了变化，说明刚才我们调用pg_database_size(oid) 时，调用了 dbsize.c 中的代码。对应的行计数器会发生变化。
+dbsize.gcda 文件的修改时间发送了变化，说明刚才我们调用 pg_database_size(oid) 时，调用了 dbsize.c 中的代码。对应的行计数器会发生变化。
 
 # 3. 生成 HTML 报告
 
@@ -272,11 +270,12 @@ drwxrwxr-x 14 postgres postgres 4.0K Sep  7 15:02 utils
 # 后记
 
 PostgreSQL 其实已经在 Makefile 提供了生成代码覆盖 HTML 的 target 。
+
 ```bash
 [root@wslu postgresql-9.4.4]# make coverage-html
 ```
 
-产生的html目录如下：
+产生的 html 目录如下：
 
 ```bash
 [root@wslu postgresql-9.4.4]# cd coverage
@@ -308,12 +307,11 @@ drwxr-xr-x  3 root root  4096 Sep  7 19:18 usr
 6. [CodeCoverage - PostgreSQL wiki](https://wiki.postgresql.org/wiki/CodeCoverage)
 7. [PostgreSQL: Documentation: devel: 33.5. Test Coverage Examination](http://www.postgresql.org/docs/devel/static/regress-coverage.html)
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -321,7 +319,5 @@ drwxr-xr-x  3 root root  4096 Sep  7 19:18 usr
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
-

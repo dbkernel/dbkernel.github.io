@@ -2,17 +2,17 @@
 title: 特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint
 date: 2015-11-04 15:28:08
 categories:
-- PostgreSQL
+  - PostgreSQL
 tags:
-- PostgreSQL
-- pg_depend
-- pg_constraint
+  - PostgreSQL
+  - pg_depend
+  - pg_constraint
 toc: true
 ---
 
 <!-- more -->
 
->**本文首发于 2015-11-04 15:28:08**
+> **本文首发于 2015-11-04 15:28:08**
 
 # 前言
 
@@ -41,16 +41,16 @@ Indexes:
     "pg_depend_reference_index" btree (refclassid, refobjid, refobjsubid)
 Has OIDs: no
 ```
->OID 是 Object Identifier 的缩写，是对象 ID 的意思，因为是无符号的4字节类型，表示范围不够大，所以一般不用做主键使用，仅用在系统内部，比如系统表等应用。可以与一些整型数字进行转换。与之相关的系统参数是 `default_with_oids` ，默认是 off 。
+
+> OID 是 Object Identifier 的缩写，是对象 ID 的意思，因为是无符号的 4 字节类型，表示范围不够大，所以一般不用做主键使用，仅用在系统内部，比如系统表等应用。可以与一些整型数字进行转换。与之相关的系统参数是 `default_with_oids` ，默认是 off 。
 
 `pg_depend.deptype` 字段自 9.1 版本之后多了一个 extension 的类型，目前类型有：
 
->- `DEPENDENCY_NORMAL (n)` ：普通的依赖对象，如表与schema的关系。
->- `DEPENDENCY_AUTO (a)` ：自动的依赖对象，如主键约束。
->- `DEPENDENCY_INTERNAL (i)` ：内部的依赖对象，通常是对象本身。
->- `DEPENDENCY_EXTENSION (e)` ：9.1新增的的扩展依赖。
->- `DEPENDENCY_PIN (p)` ：系统内置的依赖。
-
+> - `DEPENDENCY_NORMAL (n)` ：普通的依赖对象，如表与 schema 的关系。
+> - `DEPENDENCY_AUTO (a)` ：自动的依赖对象，如主键约束。
+> - `DEPENDENCY_INTERNAL (i)` ：内部的依赖对象，通常是对象本身。
+> - `DEPENDENCY_EXTENSION (e)` ：9.1 新增的的扩展依赖。
+> - `DEPENDENCY_PIN (p)` ：系统内置的依赖。
 
 ## pg_constraint
 
@@ -119,27 +119,31 @@ SELECT classid::regclass AS "depender object class",
     END AS "dependency type"
 FROM pg_catalog.pg_depend WHERE (objid >= 16384 OR refobjid >= 16384);
 ```
->我通常喜欢在 where 后面加个条件 `and deptype <>'i'` ，以排除 internal 依赖。
 
+> 我通常喜欢在 where 后面加个条件 `and deptype <>'i'` ，以排除 internal 依赖。
 
 # 示例
 
 **创建一张表：**
+
 ```sql
 postgres=# create table tbl_parent(id int);
 CREATE TABLE
 ```
 
 **执行查询依赖关系的 SQL：**
+
 ```sql
 postgres=# 执行上面的SQL;
  depender object class | depender object identity | objsubid | referenced object class | referenced object identity | refobjsubid | dependency type
 -----------------------+--------------------------+----------+-------------------------+------------- pg_class              | tbl_parent               |        0 | pg_namespace            | 2200                       |           0 | normal
 (1 row)
 ```
->看起来只是建了个表，没有约束，实际上该表是建立在 schema 下面的，因此只依赖于 schema 。
+
+> 看起来只是建了个表，没有约束，实际上该表是建立在 schema 下面的，因此只依赖于 schema 。
 
 添加主键约束：
+
 ```sql
 postgres=# alter table tbl_parent add primary key(id);
 ALTER TABLE
@@ -148,9 +152,11 @@ ALTER TABLE
  pg_constraint         | 16469                    |        0 | pg_class                | tbl_parent                 |           1 | automatic
 (2 rows)
 ```
->约束类型变为了`automatic`，表明这个主键约束是依赖于表上的，是自动模式，详细信息可以在系统表 `pg_constrant` 里面查询。
+
+> 约束类型变为了`automatic`，表明这个主键约束是依赖于表上的，是自动模式，详细信息可以在系统表 `pg_constrant` 里面查询。
 
 正常情况下用户删除有依赖关系的对象时，会提示需要先删除依赖的对象。但是如果通过系统表删除有依赖关系的对象时，若操作有误，就会导致异常。例如：下面的操作就会导致报错`cache lookup failed for constraint`：
+
 ```sql
 postgres=# select oid,conname,connamespace,contype from pg_constraint where conname like 'tbl_parent%';
   oid  |     conname     | connamespace | contype
@@ -172,12 +178,11 @@ postgres=#
 
 之所以出现该报错，是因为手动把约束对象删除了，但在 pg_depend 里却仍然存在依赖关系，因此，删除该表时，由于找不到最里层的依赖对象而报错。
 
-----
+---
 
 欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。
 
 <img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
-
 
 | 标题                 | 网址                                                  |
 | -------------------- | ----------------------------------------------------- |
@@ -185,6 +190,5 @@ postgres=#
 | 知乎                 | https://www.zhihu.com/people/dbkernel/posts           |
 | 思否（SegmentFault） | https://segmentfault.com/u/dbkernel                   |
 | 掘金                 | https://juejin.im/user/5e9d3ed251882538083fed1f/posts |
-| 开源中国（oschina）  | https://my.oschina.net/dbkernel                       |
+| CSDN                 | https://blog.csdn.net/dbkernel                        |
 | 博客园（cnblogs）    | https://www.cnblogs.com/dbkernel                      |
-
