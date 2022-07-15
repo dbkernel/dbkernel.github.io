@@ -57,11 +57,8 @@ PostmasterMain()->StartupDataBase()->AuxiliaryProcessMain()->StartupProcessMain(
 startup 进程进入 standby 模式和 apply 日志主要过程：
 
 1. 读取 `pg_control` 文件，找到 redo 位点；读取 `recovery.conf`，如果配置 `standby_mode=on` 则进入 standby 模式。
-
 2. 如果是 Hot Standby 需要初始化 clog、subtrans、事务环境等。初始化 redo 资源管理器，比如 `Heap、Heap2、Database、XLOG` 等。
-
 3. 读取 WAL record，如果 record 不存在需要调用 `XLogPageRead->WaitForWALToBecomeAvailable->RequestXLogStreaming` 唤醒 `walreceiver从walsender` 获取 WAL record。
-
 4. 对读取的 WAL record 进行 redo，通过 `record->xl_rmid` 信息，调用相应的 redo 资源管理器进行 redo 操作。比如 `heap_redo` 的 `XLOG_HEAP_INSERT` 操作，就是通过 record 的信息在 buffer page 中增加一个 record：
 
 ```cpp
@@ -95,7 +92,6 @@ MemSet((char *) htup, 0, sizeof(HeapTupleHeaderData));
 还有部分 redo 操作(vacuum 产生的 record)需要检查在 Hot Standby 模式下的查询冲突，比如某些 tuples 需要 remove，而存在正在执行的 query 可能读到这些 tuples，这样就会破坏事务隔离级别。通过函数 `ResolveRecoveryConflictWithSnapshot` 检测冲突，如果发生冲突，那么就把这个 query 所在的进程 kill 掉。
 
 5. 检查一致性，如果一致了，Hot Standby 模式可以接受用户只读查询；更新共享内存中 `XLogCtlData` 的 apply 位点和时间线；如果恢复到时间点，时间线或者事务 id 需要检查是否恢复到当前目标；
-
 6. 回到步骤 3，读取 next WAL record 。
 
 ![PostgreSQL standby 模式和 apply 日志过程](postgresql-standby-mode-and-apply-log.jpg)
