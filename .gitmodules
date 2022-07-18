@@ -1,6 +1,3 @@
-[submodule "hugo/themes/hugo-theme-yelee"]
-	path = hugo/themes/hugo-theme-yelee
-	url = https://github.com/lu-front-end/hugo-theme-yelee.git
 [submodule "hexo/themes/yelee"]
 	path = hexo/themes/yelee
 	url = https://github.com/lu-front-end/hexo-theme-yelee.git
@@ -8,9 +5,11 @@
 	path = hexo/themes/pure
 	url = https://github.com/lu-front-end/hexo-theme-pure.git
 	branch = master
+[submodule "hexo/themes/yilia-plus"]
+	path = hexo/themes/yilia-plus
+	url = https://github.com/lu-front-end/hexo-theme-yilia-plus.git
 [submodule "hugo/themes/hugo-theme-stack"]
 	path = hugo/themes/hugo-theme-stack
-	url = https://github.com/CaiJimmy/hugo-theme-stack/
-[submodule "hugo/themes/meme"]
-	path = hugo/themes/meme
-	url = https://github.com/reuixiy/hugo-theme-meme.git
+	url = https://github.com/lu-front-end/hugo-theme-stack.git
+[submodule "hugo/themes/hugo-theme-yelee"]
+	url = https://github.com/lu-front-end/hugo-theme-yelee.git
