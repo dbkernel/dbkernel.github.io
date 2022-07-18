@@ -104,6 +104,7 @@ ignore:
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
 #theme: yelee
+#theme: yilia-plus
 theme: pure
 
 # Deployment
