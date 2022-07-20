@@ -780,9 +780,9 @@ a {
 }
 #header .header-nav .social .GitHub {
   background: url("/img/GitHub.png") center no-repeat #fff;
-  -webkit-background-size: 90%;
-  -moz-background-size: 90%;
-  background-size: 90%;
+  -webkit-background-size: 100%;
+  -moz-background-size: 100%;
+  background-size: 100%;
 }
 #header .header-nav .social .新浪微博 {
   background: url("/img/新浪微博.png") center no-repeat #ecc260;
@@ -897,13 +897,6 @@ a {
   -webkit-background-size: 103%;
   -moz-background-size: 103%;
   background-size: 103%;
-}
-#header .header-nav .social .GitHub {
-  background: url("//cdn.bootcss.com/logos/0.2.0/github-octocat.svg") no-repeat #fff;
-  -webkit-background-size: 90%;
-  -moz-background-size: 90%;
-  background-size: 90%;
-  background-position: 50% 100%;
 }
 #header .header-nav .social .CodePen {
   background: url("//cdn.bootcss.com/logos/0.2.0/codepen-icon.svg") no-repeat #000;
