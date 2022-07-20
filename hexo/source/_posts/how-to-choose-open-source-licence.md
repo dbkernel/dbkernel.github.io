@@ -9,6 +9,7 @@ tags:
   - LICENCE
   - github
 toc: true
+top: true
 ---
 
 近期公司全面拥抱开源，在选择开源协议方面遇到了一些问题，查阅了很多资料，特此总结~~

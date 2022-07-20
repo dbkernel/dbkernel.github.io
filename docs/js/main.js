@@ -86,13 +86,18 @@ require([], function (){
     // Animate on Homepage
     if(!!yiliaConfig.animate) {
         if(!!yiliaConfig.isHome) {
+          // 滚动条监听使用scrollreveal.js
+          // https://github.com/jlmakes/scrollreveal.js
             require([yiliaConfig.scrollreveal], function (ScrollReveal) {
+          // 更多animation:
+          // http://daneden.github.io/animate.css/
                 var animationNames = [
                 "pulse", "fadeIn","fadeInRight", "flipInX", "lightSpeedIn","rotateInUpLeft", "slideInUp","zoomIn",
                 ],
                 len = animationNames.length,
                 randomAnimationName = animationNames[Math.ceil(Math.random() * len) - 1];
 
+                // ie9 不支持css3 keyframe动画, safari不支持requestAnimationFrame, 不使用随机动画，切回原来的动画
                 // Fallback (CSS3 keyframe, requestAnimationFrame)
                 if (!window.requestAnimationFrame) {
                     $('.body-wrap > article').css({opacity: 1});
@@ -123,9 +128,12 @@ require([], function (){
                     var animateScope = ".body-wrap > article:not(:first-child)";
                     $firstArticle.css({opacity: 1});
                 }
+          // document.body有些浏览器不支持监听scroll，所以使用默认的document.documentElement
                 ScrollReveal({
                     duration: 0,
                     afterReveal: function (domEl) {
+              // safari不支持requestAnimationFrame不支持document.documentElement的onscroll所以这里不会执行
+              // 初始状态设为opacity: 0, 动画效果更平滑一些(由于脚本加载是异步，页面元素渲染后在执行动画，感觉像是延时)
                         $(domEl).addClass('animated ' + randomAnimationName).css({opacity: 1})
                     }
                 }).reveal(animateScope);

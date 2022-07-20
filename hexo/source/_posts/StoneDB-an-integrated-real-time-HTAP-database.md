@@ -9,8 +9,6 @@ tags:
 toc: true
 ---
 
-<!-- more -->
-
 > **本文首发于 2022-07-06 09:10:34**
 
 # 推荐语
@@ -20,6 +18,8 @@ toc: true
 最近几年基于 PostgreSQL 开发的国产数据库如雨后春笋般涌现，而受限于 MySQL 的 GPL Licence（感兴趣的可移步我的博文[《技术分享 | 如何为你的代码选择一个合适的开源协议？》](https://dbkernel.github.io/2021/08/19/how-to-choose-open-source-licence/)），二次开发必须开源，这导致基于 MySQL 开发的国产数据库相对较少（比如：万里开源的 [GreatSQL](https://github.com/GreatSQL/GreatSQL)），因此，当听说 StoneDB 开源的消息时，我个人还是很兴奋的。
 
 废话不多说，以下为正文。
+
+<!-- more -->
 
 # 前言
 
