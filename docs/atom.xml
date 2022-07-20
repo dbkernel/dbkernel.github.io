@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>DBKernel</title>
   
-  
+  <subtitle>资深数据库内核研发</subtitle>
   <link href="http://dbkernel.github.io/atom.xml" rel="self"/>
   
   <link href="http://dbkernel.github.io/"/>

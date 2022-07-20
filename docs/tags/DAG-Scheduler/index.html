@@ -1,26 +1,21 @@
 <!DOCTYPE html>
-<html lang=zh>
+<html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
-  <meta name="renderer" content="webkit">
-  <meta http-equiv="Cache-Control" content="no-transform" />
-  <meta http-equiv="Cache-Control" content="no-siteapp" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="format-detection" content="telephone=no,email=no,adress=no">
-  <!-- Color theme for statusbar -->
-  <meta name="theme-color" content="#000000" />
-  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
-  <meta http-equiv="window-target" content="_top" />
-  
-  <meta name="google-site-verification" content="XKEVBvaS3n3qpVoP-hQqQ2XJ9t43pt4B7J1sLZgRJG4" />
-  
-  
-  <title>标签: DAG Scheduler | DBKernel - 专注于分享数据库技术</title>
-  <meta name="description" content="专注于数据库技术分享">
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="专注于数据库技术分享">
 <meta property="og:type" content="website">
 <meta property="og:title" content="DBKernel">
 <meta property="og:url" content="http://dbkernel.github.io/tags/DAG-Scheduler/index.html">
@@ -29,562 +24,447 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="DBKernel">
 <meta name="twitter:card" content="summary">
-  <!-- Canonical links -->
-  <link rel="canonical" href="http://dbkernel.github.io/tags/DAG-Scheduler/index.html">
-  
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
     <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/favicon.png" type="image/x-icon">
-  
-  
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
 <link rel="stylesheet" href="../../css/style.css">
 
-  
-  
-  
-  
-<meta name="generator" content="Hexo 5.4.2"></head>
 
 
-<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
-  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-  <div class="slimContent">
-    <div class="navbar-header">
-      
-      
-      <div class="profile-block text-center">
-        <a id="avatar" href="https://github.com/dbkernel" target="_blank">
-          <img class="img-circle img-rotate" src="../../images/avatar.png" width="200" height="200">
-        </a>
-        <h2 id="name" class="hidden-xs hidden-sm">DBKernel</h2>
-        <h3 id="title" class="hidden-xs hidden-sm hidden-md">资深数据库内核研发</h3>
-        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
-      </div>
-      
-      <div class="search" id="search-form-wrap">
 
-    <form class="search-form sidebar-form">
-        <div class="input-group">
-            <input type="text" class="search-form-input form-control" placeholder="搜索" />
-            <span class="input-group-btn">
-                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
-            </span>
-        </div>
-    </form>
-    <div class="ins-search">
-  <div class="ins-search-mask"></div>
-  <div class="ins-search-container">
-    <div class="ins-input-wrapper">
-      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
-      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
-    </div>
-    <div class="ins-section-wrapper">
-      <div class="ins-section-container"></div>
-    </div>
-  </div>
-</div>
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
 
 
-</div>
-      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-    </div>
-    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
-      <ul class="nav navbar-nav main-nav ">
-        
-        
-        <li class="menu-item menu-item-home">
-          <a href="../../.">
-            
-            <i class="icon icon-home-fill"></i>
-            
-            <span class="menu-title">首页</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-archives">
-          <a href="../../archives">
-            
-            <i class="icon icon-archives-fill"></i>
-            
-            <span class="menu-title">归档</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-categories">
-          <a href="../../categories">
-            
-            <i class="icon icon-folder"></i>
-            
-            <span class="menu-title">分类</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-tags">
-          <a href="..">
-            
-            <i class="icon icon-tags"></i>
-            
-            <span class="menu-title">标签</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-repository">
-          <a href="../../repository">
-            
-            <i class="icon icon-project"></i>
-            
-            <span class="menu-title">项目</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-links">
-          <a href="../../links">
-            
-            <i class="icon icon-friendship"></i>
-            
-            <span class="menu-title">友链</span>
-          </a>
-        </li>
-        
-        
-        <li class="menu-item menu-item-about">
-          <a href="../../about">
-            
-            <i class="icon icon-cup-fill"></i>
-            
-            <span class="menu-title">关于</span>
-          </a>
-        </li>
-        
-      </ul>
-      
-	
-    <ul class="social-links">
-    	
-        <li><a href="../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
-        
-        <li><a href="../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
-        
-    </ul>
+<title>Tag: DAG Scheduler | DBKernel</title>
 
-    </nav>
-  </div>
-</header>
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
 
-  
-    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
-  <div class="slimContent">
-    
-      <div class="widget">
-    <h3 class="widget-title">公告</h3>
-    <div class="widget-body">
-        <div id="board">
-            <div class="content">
-                <p>本站专注于分享关系型数据库及分布式数据库相关技术！如需深入交流，可添加我的微信或关注我的公众号数据库内核：</br><img src="/images/wechat-me.jpeg" width="130" height="130"/> <img src="/images/wechat-gzh.jpeg" width="130" height="130"/></p>
-            </div>
-        </div>
-    </div>
-</div>
-
-    
-      
-  <div class="widget">
-    <h3 class="widget-title">分类</h3>
-    <div class="widget-body">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../categories/ClickHouse/">ClickHouse</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/C%E8%AF%AD%E8%A8%80/">C语言</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/GreenPlum/">GreenPlum</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/Linux/">Linux</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/MySQL/">MySQL</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/PostgreSQL/">PostgreSQL</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/Postgres-X2/">Postgres-X2</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/StoneDB/">StoneDB</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95/">编译调试</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/%E9%80%9A%E7%94%A8/">通用</a><span class="category-list-count">1</span></li></ul>
-    </div>
-  </div>
-
-
-    
-      
-  <div class="widget">
-    <h3 class="widget-title">标签</h3>
-    <div class="widget-body">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../APUE/" rel="tag">APUE</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="../B-Tree/" rel="tag">B-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../ClickHouse/" rel="tag">ClickHouse</a><span class="tag-list-count">14</span></li><li class="tag-list-item"><a class="tag-list-link" href="../ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a><span class="tag-list-count">14</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Count/" rel="tag">Count</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="" rel="tag">DAG Scheduler</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../GreenPlum/" rel="tag">GreenPlum</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../LICENCE/" rel="tag">LICENCE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../LSM-Tree/" rel="tag">LSM-Tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Linux/" rel="tag">Linux</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="../MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Makefile/" rel="tag">Makefile</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Materialized-View/" rel="tag">Materialized View</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../MergeTree/" rel="tag">MergeTree</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../MySQL/" rel="tag">MySQL</a><span class="tag-list-count">9</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Parser/" rel="tag">Parser</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Percona/" rel="tag">Percona</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../PostgreSQL/" rel="tag">PostgreSQL</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Postgres-X2/" rel="tag">Postgres-X2</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Postgres-XC/" rel="tag">Postgres-XC</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../RadonDB/" rel="tag">RadonDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Select/" rel="tag">Select</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../StoneDB/" rel="tag">StoneDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../UNIX/" rel="tag">UNIX</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="../WAL/" rel="tag">WAL</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Xenon/" rel="tag">Xenon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../Xtrabackup/" rel="tag">Xtrabackup</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../auto-increment/" rel="tag">auto_increment</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../crontab/" rel="tag">crontab</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../daemon/" rel="tag">daemon</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../df/" rel="tag">df</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../du/" rel="tag">du</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../gcc/" rel="tag">gcc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../gcov/" rel="tag">gcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../getopt/" rel="tag">getopt</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../github/" rel="tag">github</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../group-by/" rel="tag">group by</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../lcov/" rel="tag">lcov</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../libpq/" rel="tag">libpq</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../pg-constraint/" rel="tag">pg_constraint</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../pg-depend/" rel="tag">pg_depend</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../pgbench/" rel="tag">pgbench</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../pipeline/" rel="tag">pipeline</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../processor/" rel="tag">processor</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../shell/" rel="tag">shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%B5%8B%E8%AF%95/" rel="tag">测试</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a><span class="tag-list-count">15</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="../%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a><span class="tag-list-count">2</span></li></ul>
-    </div>
-  </div>
-
-
-    
-      
-  <div class="widget">
-    <h3 class="widget-title">标签云</h3>
-    <div class="widget-body tagcloud">
-      <a href="../APUE/" style="font-size: 13.33px;">APUE</a> <a href="../B-Tree/" style="font-size: 13px;">B-Tree</a> <a href="../ClickHouse/" style="font-size: 13.89px;">ClickHouse</a> <a href="../ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" style="font-size: 13.89px;">ClickHouse和他的朋友们</a> <a href="../Count/" style="font-size: 13px;">Count</a> <a href="../C%E8%AF%AD%E8%A8%80/" style="font-size: 13.67px;">C语言</a> <a href="" style="font-size: 13px;">DAG Scheduler</a> <a href="../GreenPlum/" style="font-size: 13.22px;">GreenPlum</a> <a href="../HEAP%E5%BC%95%E6%93%8E/" style="font-size: 13px;">HEAP引擎</a> <a href="../LICENCE/" style="font-size: 13px;">LICENCE</a> <a href="../LSM-Tree/" style="font-size: 13px;">LSM-Tree</a> <a href="../Linux/" style="font-size: 13.44px;">Linux</a> <a href="../MEMORY%E5%BC%95%E6%93%8E/" style="font-size: 13px;">MEMORY引擎</a> <a href="../Makefile/" style="font-size: 13px;">Makefile</a> <a href="../Materialized-View/" style="font-size: 13px;">Materialized View</a> <a href="../MergeTree/" style="font-size: 13.11px;">MergeTree</a> <a href="../MySQL/" style="font-size: 13.56px;">MySQL</a> <a href="../Parser/" style="font-size: 13px;">Parser</a> <a href="../Percona/" style="font-size: 13px;">Percona</a> <a href="../PostgreSQL/" style="font-size: 13.78px;">PostgreSQL</a> <a href="../Postgres-X2/" style="font-size: 13px;">Postgres-X2</a> <a href="../Postgres-XC/" style="font-size: 13px;">Postgres-XC</a> <a href="../RadonDB/" style="font-size: 13px;">RadonDB</a> <a href="../ReplicatedMergeTree/" style="font-size: 13px;">ReplicatedMergeTree</a> <a href="../Select/" style="font-size: 13px;">Select</a> <a href="../StoneDB/" style="font-size: 13px;">StoneDB</a> <a href="../UNIX/" style="font-size: 13.22px;">UNIX</a> <a href="../WAL/" style="font-size: 13.11px;">WAL</a> <a href="../Xenon/" style="font-size: 13px;">Xenon</a> <a href="../Xtrabackup/" style="font-size: 13px;">Xtrabackup</a> <a href="../auto-increment/" style="font-size: 13px;">auto_increment</a> <a href="../crontab/" style="font-size: 13px;">crontab</a> <a href="../daemon/" style="font-size: 13px;">daemon</a> <a href="../df/" style="font-size: 13px;">df</a> <a href="../du/" style="font-size: 13px;">du</a> <a href="../gcc/" style="font-size: 13px;">gcc</a> <a href="../gcov/" style="font-size: 13px;">gcov</a> <a href="../getopt/" style="font-size: 13px;">getopt</a> <a href="../github/" style="font-size: 13px;">github</a> <a href="../group-by/" style="font-size: 13px;">group by</a> <a href="../lcov/" style="font-size: 13px;">lcov</a> <a href="../libpq/" style="font-size: 13px;">libpq</a> <a href="../pg-constraint/" style="font-size: 13px;">pg_constraint</a> <a href="../pg-depend/" style="font-size: 13px;">pg_depend</a> <a href="../pgbench/" style="font-size: 13px;">pgbench</a> <a href="../pipeline/" style="font-size: 13px;">pipeline</a> <a href="../processor/" style="font-size: 13px;">processor</a> <a href="../shell/" style="font-size: 13px;">shell</a> <a href="../%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" style="font-size: 13.11px;">主从同步</a> <a href="../%E4%BC%98%E5%8C%96%E5%99%A8/" style="font-size: 13px;">优化器</a> <a href="../%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" style="font-size: 13px;">内存分配</a> <a href="../%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" style="font-size: 13px;">内存管理</a> <a href="../%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">回归测试</a> <a href="../%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" style="font-size: 13.11px;">字节对齐</a> <a href="../%E5%AD%97%E8%8A%82%E5%BA%8F/" style="font-size: 13.11px;">字节序</a> <a href="../%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" style="font-size: 13px;">存储计算分离</a> <a href="../%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" style="font-size: 13px;">并行查询</a> <a href="../%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" style="font-size: 13px;">开源协议</a> <a href="../%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" style="font-size: 13px;">开源许可证</a> <a href="../%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" style="font-size: 13px;">本地事务</a> <a href="../%E6%B5%8B%E8%AF%95/" style="font-size: 13px;">测试</a> <a href="../%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" style="font-size: 14px;">源码分析</a> <a href="../%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" style="font-size: 13px;">系统运维</a> <a href="../%E7%BC%96%E8%AF%91%E5%99%A8/" style="font-size: 13px;">编译器</a> <a href="../%E7%BD%91%E7%BB%9C%E5%BA%8F/" style="font-size: 13.11px;">网络序</a> <a href="../%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" style="font-size: 13px;">网络编程</a> <a href="../%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" style="font-size: 13.11px;">问题定位</a>
-    </div>
-  </div>
-
-    
-      
-  <div class="widget">
-    <h3 class="widget-title">归档</h3>
-    <div class="widget-body">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/07/">七月 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/08/">八月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/01/">一月 2021</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/09/">九月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/05/">五月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2019/12/">十二月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2018/09/">九月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2016/11/">十一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2016/04/">四月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2016/03/">三月 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2016/01/">一月 2016</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2015/12/">十二月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2015/11/">十一月 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2015/05/">五月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2015/01/">一月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2014/08/">八月 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2014/07/">七月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2014/03/">三月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2014/01/">一月 2014</a><span class="archive-list-count">1</span></li></ul>
-    </div>
-  </div>
-
-
-    
-      
-  <div class="widget">
-    <h3 class="widget-title">最新文章</h3>
-    <div class="widget-body">
-      <ul class="recent-post-list list-unstyled no-thumbnail">
-        
-          <li>
-            
-            <div class="item-inner">
-              <p class="item-category">
-                <a class="category-link" href="../../categories/StoneDB/">StoneDB</a>
-              </p>
-              <p class="item-title">
-                <a href="../../2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/" class="title">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a>
-              </p>
-              <p class="item-date">
-                <time datetime="2022-07-06T01:10:34.000Z" itemprop="datePublished">2022-07-06</time>
-              </p>
-            </div>
-          </li>
-          
-          <li>
-            
-            <div class="item-inner">
-              <p class="item-category">
-                <a class="category-link" href="../../categories/%E9%80%9A%E7%94%A8/">通用</a>
-              </p>
-              <p class="item-title">
-                <a href="../../2021/08/19/how-to-choose-open-source-licence/" class="title">技术分享 | 如何为你的代码选择一个合适的开源协议？</a>
-              </p>
-              <p class="item-date">
-                <time datetime="2021-08-18T16:37:15.000Z" itemprop="datePublished">2021-08-19</time>
-              </p>
-            </div>
-          </li>
-          
-          <li>
-            
-            <div class="item-inner">
-              <p class="item-category">
-                <a class="category-link" href="../../categories/ClickHouse/">ClickHouse</a>
-              </p>
-              <p class="item-title">
-                <a href="../../2021/01/26/clickhouse-and-friends-15-groupby/" class="title">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a>
-              </p>
-              <p class="item-date">
-                <time datetime="2021-01-26T13:31:12.000Z" itemprop="datePublished">2021-01-26</time>
-              </p>
-            </div>
-          </li>
-          
-          <li>
-            
-            <div class="item-inner">
-              <p class="item-category">
-                <a class="category-link" href="../../categories/ClickHouse/">ClickHouse</a>
-              </p>
-              <p class="item-title">
-                <a href="../../2020/09/21/clickhouse-and-friends-14-compute-storage/" class="title">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a>
-              </p>
-              <p class="item-date">
-                <time datetime="2020-09-21T14:01:12.000Z" itemprop="datePublished">2020-09-21</time>
-              </p>
-            </div>
-          </li>
-          
-          <li>
-            
-            <div class="item-inner">
-              <p class="item-category">
-                <a class="category-link" href="../../categories/ClickHouse/">ClickHouse</a>
-              </p>
-              <p class="item-title">
-                <a href="../../2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/" class="title">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a>
-              </p>
-              <p class="item-date">
-                <time datetime="2020-09-15T12:15:14.000Z" itemprop="datePublished">2020-09-15</time>
-              </p>
-            </div>
-          </li>
-          
-      </ul>
-    </div>
-  </div>
-  
-
-    
-  </div>
-</aside>
-
-  
-  <main class="main" role="main">
-  <article class="content article article-tags post-type-list" itemscope="">
-    <header class="article-header">
-      <h1 itemprop="name" class="hidden-xs">标签: DAG Scheduler</h1>
-      <p class="text-muted hidden-xs">共 1 篇文章</p>
-      <nav role="navigation" id="nav-main" class="okayNav">
-        <ul>
-          <li><a href="/tags">All</a></li>
-          
-          <li><a href="/tags/MySQL/">MySQL</a></li>
-          
-          <li><a href="/tags/Select/">Select</a></li>
-          
-          <li><a href="/tags/Count/">Count</a></li>
-          
-          <li><a href="/tags/auto-increment/">auto_increment</a></li>
-          
-          <li><a href="/tags/ClickHouse和他的朋友们/">ClickHouse和他的朋友们</a></li>
-          
-          <li><a href="/tags/ClickHouse/">ClickHouse</a></li>
-          
-          <li><a href="/tags/开源协议/">开源协议</a></li>
-          
-          <li><a href="/tags/开源许可证/">开源许可证</a></li>
-          
-          <li><a href="/tags/LICENCE/">LICENCE</a></li>
-          
-          <li><a href="/tags/github/">github</a></li>
-          
-          <li><a href="/tags/源码分析/">源码分析</a></li>
-          
-          <li><a href="/tags/APUE/">APUE</a></li>
-          
-          <li><a href="/tags/UNIX/">UNIX</a></li>
-          
-          <li><a href="/tags/df/">df</a></li>
-          
-          <li><a href="/tags/du/">du</a></li>
-          
-          <li><a href="/tags/Linux/">Linux</a></li>
-          
-          <li><a href="/tags/crontab/">crontab</a></li>
-          
-          <li><a href="/tags/Makefile/">Makefile</a></li>
-          
-          <li><a href="/tags/C语言/">C语言</a></li>
-          
-          <li><a href="/tags/字节对齐/">字节对齐</a></li>
-          
-          <li><a href="/tags/字节序/">字节序</a></li>
-          
-          <li><a href="/tags/网络序/">网络序</a></li>
-          
-          <li><a href="/tags/系统运维/">系统运维</a></li>
-          
-          <li><a href="/tags/shell/">shell</a></li>
-          
-          <li><a href="/tags/daemon/">daemon</a></li>
-          
-          <li><a href="/tags/PostgreSQL/">PostgreSQL</a></li>
-          
-          <li><a href="/tags/libpq/">libpq</a></li>
-          
-          <li><a href="/tags/pg-depend/">pg_depend</a></li>
-          
-          <li><a href="/tags/pg-constraint/">pg_constraint</a></li>
-          
-          <li><a href="/tags/内存管理/">内存管理</a></li>
-          
-          <li><a href="/tags/gcc/">gcc</a></li>
-          
-          <li><a href="/tags/编译器/">编译器</a></li>
-          
-          <li><a href="/tags/内存分配/">内存分配</a></li>
-          
-          <li><a href="/tags/网络编程/">网络编程</a></li>
-          
-          <li><a href="/tags/pgbench/">pgbench</a></li>
-          
-          <li><a href="/tags/GreenPlum/">GreenPlum</a></li>
-          
-          <li><a href="/tags/并行查询/">并行查询</a></li>
-          
-          <li><a href="/tags/优化器/">优化器</a></li>
-          
-          <li><a href="/tags/主从同步/">主从同步</a></li>
-          
-          <li><a href="/tags/gcov/">gcov</a></li>
-          
-          <li><a href="/tags/lcov/">lcov</a></li>
-          
-          <li><a href="/tags/测试/">测试</a></li>
-          
-          <li><a href="/tags/回归测试/">回归测试</a></li>
-          
-          <li><a href="/tags/问题定位/">问题定位</a></li>
-          
-          <li><a href="/tags/WAL/">WAL</a></li>
-          
-          <li><a href="/tags/Percona/">Percona</a></li>
-          
-          <li><a href="/tags/Xtrabackup/">Xtrabackup</a></li>
-          
-          <li><a href="/tags/RadonDB/">RadonDB</a></li>
-          
-          <li><a href="/tags/Xenon/">Xenon</a></li>
-          
-          <li><a href="/tags/getopt/">getopt</a></li>
-          
-          <li><a href="/tags/Postgres-X2/">Postgres-X2</a></li>
-          
-          <li><a href="/tags/Postgres-XC/">Postgres-XC</a></li>
-          
-          <li><a href="/tags/MEMORY引擎/">MEMORY引擎</a></li>
-          
-          <li><a href="/tags/HEAP引擎/">HEAP引擎</a></li>
-          
-          <li><a href="/tags/本地事务/">本地事务</a></li>
-          
-          <li><a href="/tags/DAG-Scheduler/">DAG Scheduler</a></li>
-          
-          <li><a href="/tags/pipeline/">pipeline</a></li>
-          
-          <li><a href="/tags/processor/">processor</a></li>
-          
-          <li><a href="/tags/B-Tree/">B-Tree</a></li>
-          
-          <li><a href="/tags/LSM-Tree/">LSM-Tree</a></li>
-          
-          <li><a href="/tags/MergeTree/">MergeTree</a></li>
-          
-          <li><a href="/tags/Parser/">Parser</a></li>
-          
-          <li><a href="/tags/Materialized-View/">Materialized View</a></li>
-          
-          <li><a href="/tags/ReplicatedMergeTree/">ReplicatedMergeTree</a></li>
-          
-          <li><a href="/tags/存储计算分离/">存储计算分离</a></li>
-          
-          <li><a href="/tags/group-by/">group by</a></li>
-          
-          <li><a href="/tags/StoneDB/">StoneDB</a></li>
-          
-        </ul>
-      </nav>
-    </header>
-    <!-- /header -->
-    <div class="article-body">
-      <div class="row">
-        
-<div class="col-md-6">
-    
-<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="panel-body">
-     <div class="article-meta">
-       <time datetime="2020-06-12T12:57:10.000Z" itemprop="datePublished">2020-06-12</time>
-     </div>
-     <h3 class="article-title" itemprop="name">
-       <a class="article-link" href="../../2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a>
-     </h3>
-   </div>
-   
-   <div class="panel-footer">
-     
-      <a href="../ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" class="label label-default mb">ClickHouse和他的朋友们</a>
-     
-      <a href="../ClickHouse/" class="label label-default mb">ClickHouse</a>
-     
-      <a href="../%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="label label-default mb">源码分析</a>
-     
-     
-      <span class="label label-default mb">···</span>
-     
-   </div>
-   
-</article>
-
-
-</div>
-
-      </div>
-    </div>
-  </article>
-   
-</main>
-
-  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
-	
-	
-    <ul class="social-links">
-    	
-        <li><a href="../../https:/github.com/dbkernel" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
-        
-        <li><a href="../../atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
-        
-    </ul>
-
-    <div class="copyright">
-    	
-        &copy; 2022 DBKernel
-        
-        <div class="publishby">
-        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
-        </div>
-    </div>
-</footer>
-  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script>
-window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: false,
+        isArchive: false,
+        isTag: true,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
 </script>
-
-<script src="../../js/plugin.min.js"></script>
-
-
-<script src="../../js/application.js"></script>
 
 
     <script>
-(function (window) {
-    var INSIGHT_CONFIG = {
-        TRANSLATION: {
-            POSTS: '文章',
-            PAGES: '页面',
-            CATEGORIES: '分类',
-            TAGS: '标签',
-            UNTITLED: '(未命名)',
-        },
-        ROOT_URL: '/',
-        CONTENT_URL: '../../content.json',
-    };
-    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-})(window);
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="../../index.html">主页</a></li>
+                        
+                            <li><a href="../../archives/">所有文章</a></li>
+                        
+                            <li><a href="../../tags/">标签云</a></li>
+                        
+                            <li><a href="../../about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="../../mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" href="../../https:/github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="../../atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" href="../../https:/www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" href="../../https:/segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" href="../../https:/www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" href="../../https:/blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" href="../../https:/juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" href="../../https:/music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" href="../../https:/dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="../../https:/dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="../B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="../ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="../ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="../C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="../GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="../HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="../LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="../LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="../MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="../MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="../PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="../ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="../StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="../UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="../WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="../Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="../crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="../daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="../df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="../du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="../gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="../gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="../getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="../github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="../lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="../libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="../pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="../pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="../pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="../pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="../processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="../shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="../../https:/dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="../../index.html">主页</a></li>
+                
+                    <li><a href="../../archives/">所有文章</a></li>
+                
+                    <li><a href="../../tags/">标签云</a></li>
+                
+                    <li><a href="../../about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="../../mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="../../https:/github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="../../atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="../../https:/www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="../../https:/segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="../../https:/www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="../../https:/blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="../../https:/juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="../../https:/music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="../../https:/dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="../../https:/dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap">
+  
+  
+    
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="../../archives/2020" class="archive-year">2020</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+          <div class="article-meta">
+              <a href="../../2020/06/12/clickhouse-and-friends-04-processor/" class="archive-article-date">
+      <time datetime="2020-06-12T12:57:10.000Z" itemprop="datePublished">06-12</time>
+</a>
+
+
+        </div>
+         
+  
+    <h1 itemprop="name">
+      <a class="archive-article-title" href="../../2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a>
+    </h1>
+  
+
+        <div class="article-info info-on-archive">
+          
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="../../categories/ClickHouse/">ClickHouse</a>
+    </div>
+
+
+          
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../ClickHouse/" rel="tag">ClickHouse</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="" rel="tag">DAG Scheduler</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../pipeline/" rel="tag">pipeline</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../processor/" rel="tag">processor</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li></ul>
+    </div>
+
+          
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 1.7k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 7(分)
+		</span>
+	
+
+        </div>
+        <div class="clearfix"></div>
+    </header>
+  </div>
+</article>
+  
+  
+    </div></section>
+  
+
+    
+
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2022 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="../../js/busuanzi.js"></script>
+            
+            
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        本站访问量
+                        <span id="site-visit" title="本站访问量"><i class="fa fa-eye" aria-hidden="true"></i><span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        本站访客数
+                        <span id="site-visit" title="本站访客数"><i class="fa fa-user" aria-hidden="true"></i><span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        本页阅读量
+                        <span id="page-visit"  title="本页阅读量"><i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i><span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_page_uv">
+                        本页访客数
+                        <span id="page-visit"  title="本页访客数"><i class="fa fa-user animated infinite pulse" aria-hidden="true"></i><span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="../../js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
 </script>
 
-<script src="../../js/insight.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-    <script defer>
-var _hmt = _hmt || [];
-(function() {
-    var hm = document.createElement("script");
-    hm.src = "//hm.baidu.com/hm.js?bf7f972e25b6a36ff4b828ba0214e515";
-    var s = document.getElementsByTagName("script")[0];
-    s.parentNode.insertBefore(hm, s);
-})();
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
 </script>
-
-
-
+  </div>
 </body>
 </html>

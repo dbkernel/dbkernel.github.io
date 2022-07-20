@@ -11,5 +11,3 @@
 [submodule "hugo/themes/hugo-theme-stack"]
 	path = hugo/themes/hugo-theme-stack
 	url = https://github.com/lu-front-end/hugo-theme-stack.git
-[submodule "hugo/themes/hugo-theme-yelee"]
-	url = https://github.com/lu-front-end/hugo-theme-yelee.git
