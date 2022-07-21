@@ -8,6 +8,18 @@
 [submodule "hexo/themes/yilia-plus"]
 	path = hexo/themes/yilia-plus
 	url = https://github.com/lu-front-end/hexo-theme-yilia-plus.git
-[submodule "hugo/themes/hugo-theme-stack"]
-	path = hugo/themes/hugo-theme-stack
+[submodule "hugo/themes/stack"]
+	path = hugo/themes/stack
 	url = https://github.com/lu-front-end/hugo-theme-stack.git
+[submodule "hugo/themes/toha"]
+	path = hugo/themes/toha
+	url = https://github.com/lu-front-end/toha.git
+[submodule "hugo/themes/LoveIt"]
+	path = hugo/themes/LoveIt
+	url = https://github.com/lu-front-end/LoveIt.git
+[submodule "hugo/themes/FeelIt"]
+	path = hugo/themes/FeelIt
+	url = https://github.com/lu-front-end/FeelIt.git
+[submodule "hugo/themes/bootstrap"]
+	path = hugo/themes/bootstrap
+	url = https://github.com/lu-front-end/hugo-theme-bootstrap.git
