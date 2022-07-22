@@ -1,6 +1,7 @@
-*.js linguist-language=JavaScript
-*.ejs linguist-language=JavaScript
-*.css linguist-language=CSS
-*.md linguist-language=Markdown
-*.html linguist-language=HTML
-*.styl linguist-language=Stylus
+*.js linguist-language=javascript
+*.ejs linguist-language=javascript
+*.css linguist-language=javascript
+*.md linguist-language=markdown
+*.html linguist-language=html
+*.styl linguist-language=javascript
+#*.styl linguist-language=stylus
