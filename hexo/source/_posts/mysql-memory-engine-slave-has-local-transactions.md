@@ -15,13 +15,15 @@ toc: true
 
 > **本文首发于 2019-04-22 20:56:52**
 
+**作者：卢文双 资深数据库内核研发**
+
 ## 1. MEMORY 引擎简介
 
 可能有的朋友对 MEMORY 存储引擎不太了解，首先介绍一下（以下描述来自[官方](https://dev.mysql.com/doc/refman/5.7/en/memory-storage-engine.html)）：
 
 1. MEMROY 存储引擎（以前称为 HEAP）的表**把表结构存放到磁盘上，而把数据放在内存中**。
-2. 每个 Memory 表只实际对应一个磁盘文件，在磁盘中表现为.frm 文件。因为它的数据是放在内存中的，并且默认使用`hash索引`（也支持 B-Tree 索引），因此 Memory 类型的表访问速度非常快（比使用 B-Tree 索引的 MyISAM 表快），但是`一旦服务关闭，表中的数据就会丢失`。
-3. 由于 MEMRORY 表在 mysqld 重启后数据会丢失，为了获得稳定的数据源，可以在启动 mysqld 时添加`--init-file`选项，把类似`insert into ... select`或`load data`的语句放进去。
+2. 每个 Memory 表只实际对应一个磁盘文件，在磁盘中表现为.frm 文件。因为它的数据是放在内存中的，并且默认使用 `hash索引`（也支持 B-Tree 索引），因此 Memory 类型的表访问速度非常快（比使用 B-Tree 索引的 MyISAM 表快），但是 `一旦服务关闭，表中的数据就会丢失`。
+3. 由于 MEMRORY 表在 mysqld 重启后数据会丢失，为了获得稳定的数据源，可以在启动 mysqld 时添加 `--init-file`选项，把类似 `insert into ... select`或 `load data`的语句放进去。
 4. MEMROY 存储引擎的典型适用场景包含如下特征：
    1. 涉及瞬态非关键数据的操作，如会话管理或缓存。
    2. 数据可以完全放入内存而不会导致操作系统交换虚拟内存页，并且要求快速访问。
@@ -35,12 +37,12 @@ toc: true
    3. MEMORY 表使用固定长度的行存储数据。（即使是 VARCHAR 也不例外）
    4. MEMORY 表不支持 BLOB、TEXT 列。
    5. MEMORY 表支持 AUTO_INCREMENT 列。
-7. MEMORY 表是有大小限制的，主要受限于两个参数：` max_heap_table_size` 和 `MAX_ROWS`（默认情况下`MAX_ROWS`依赖于`max_heap_table_size`，可执行`ALTER TABLE tbl_name MAX_ROWS= MAX_ROWS`修改`MAX_ROWS`）。
+7. MEMORY 表是有大小限制的，主要受限于两个参数：` max_heap_table_size` 和 `MAX_ROWS`（默认情况下 `MAX_ROWS`依赖于 `max_heap_table_size`，可执行 `ALTER TABLE tbl_name MAX_ROWS= MAX_ROWS`修改 `MAX_ROWS`）。
 
 **问：MEMORY 表和临时表有什么区别？**
 
-> 1.  临时表默认使用的存储引擎是服务器指定的存储引擎（对于 5.7 是 InnoDB），由于临时表定义和数据都放在内存中，未放到磁盘，因此用`show tables`招不到临时表。
-> 2.  如果临时表占用空间太大，MySQL 会将其转为磁盘存储。而对于用户创建的 MEMORY 表，则不会转为磁盘存储。
+> 1. 临时表默认使用的存储引擎是服务器指定的存储引擎（对于 5.7 是 InnoDB），由于临时表定义和数据都放在内存中，未放到磁盘，因此用 `show tables`招不到临时表。
+> 2. 如果临时表占用空间太大，MySQL 会将其转为磁盘存储。而对于用户创建的 MEMORY 表，则不会转为磁盘存储。
 
 ```sql
 mysql> create temporary table temp_t1(a int primary key, b int);
@@ -63,7 +65,7 @@ mysql> show tables;
 
 **分析：**
 
-1. 检查日志，确认没有发生过主从切换，也就排除了`主节点有 prepare 的事务然后故障（从节点变为主）、重启导致 local commit`的情况。
+1. 检查日志，确认没有发生过主从切换，也就排除了 `主节点有 prepare 的事务然后故障（从节点变为主）、重启导致 local commit`的情况。
 2. 在从节点 binlog 中找到那条本地事务，发现是 MEMORY 表的 `DELETE FROM` 。
 3. 该从节点发生过重启，根据 MEMORY 引擎的特性，确认是 MEMORY 表生成的。
 
@@ -77,8 +79,8 @@ mysql> show tables;
 
 这段描述的含义是：
 
-> 1.  服务器的 MEMORY 表在关闭和重新启动时会变为空。
-> 2.  为了防止主服务器重启、从服务器未重启导致从服务器上有过期的 MEMORY 表数据，会在重启服务器时向 binlog 写入一条 `DELETE FROM` 语句，这条语句会复制到从节点，以达到主从数据一致的目的。
+> 1. 服务器的 MEMORY 表在关闭和重新启动时会变为空。
+> 2. 为了防止主服务器重启、从服务器未重启导致从服务器上有过期的 MEMORY 表数据，会在重启服务器时向 binlog 写入一条 `DELETE FROM` 语句，这条语句会复制到从节点，以达到主从数据一致的目的。
 
 ### 3.2. 对于主从复制的 MySQL 集群，主或从故障重启有什么问题？
 
@@ -122,8 +124,8 @@ mysql> select * from mdb.t1;
 
 **情形三：MEMORY 表无数据的情况下，重启从节点：**
 
-1.  将节点 A 切换为主节点，节点 B、C 同步了 `uuid_a:1-12` 这条事务
-2.  重启节点 A 的 MySQL，节点 A 生成一条本地 `DELETE FROM` 事务 `uuid_a:1-13`。
+1. 将节点 A 切换为主节点，节点 B、C 同步了 `uuid_a:1-12` 这条事务
+2. 重启节点 A 的 MySQL，节点 A 生成一条本地 `DELETE FROM` 事务 `uuid_a:1-13`。
 
 **情形四：MEMORY 表有数据的情况下，重启从节点：**
 

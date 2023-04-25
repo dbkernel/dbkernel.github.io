@@ -99,10 +99,10 @@ mtr 采用`t/r`模式（`t`目录中存储具体的测试 case，文件以`.test
 - 主线程与 worker 是一问一答模式，主线程向 worker 发送运行用例的文件路径、配置文件参数等各种参数信息，worker 向主线程返回运行结果，直到所有在 collection 中的用例都运行完毕，主线程 close 各 worker，进行收尾工作。
 - 主线程先读取各 worker 返回值，对上一个用例进行收尾工作。之后，读取 collection 中的用例，通过本地 socket 发送到 worker 线程，worker 线程接收到主线程命令，运行本次用例测试的核心逻辑，主要包括 3 件事：**启动 mysqld、启动并监控 mysqltest，处理执行结果**。
   - **启动 mysqld**： **根据参数启动一个或者多个 mysqld server 进程**，大多数情况下会拷贝主线程初始化后的目录到 worker 的数据目录，作为新实例的启动目录，用 shell 命令启动数据库。
-  - **启动并监控 mysqltest**：用例在 mysqltest 中执行，worker 线程会监控 mysqltest 的运行状态，监测其是否运行超时或者运行结束。
+  - **启动并监控 mysqltest**：用例在 mysqltest 中执行（**会逐行扫描 `*.test` 文件中的 SQL 或指令并于 MySQL 中执行**），worker 线程会监控 mysqltest 的运行状态，监测其是否运行超时或者运行结束。
   - **处理执行结果**：mysqltest 执行结束会留下执行日志，框架根据执行日志判断执行是否通过，如果没通过是否需要重试等。
 
-以 `rpl.rpl_multi_source_basic` 测试 case 为例来说明执行过程。
+以 `rpl.rpl_multi_source_basic`（对应于文件 `mysql-test/suite/rpl/t/rpl_multi_source_basic.test`）测试 case 为例来说明执行过程，用例内容如下（开头注释部分为测试过程）：
 
 ```bash
 # This is the basic test required in for multisource replication
@@ -121,6 +121,28 @@ mtr 采用`t/r`模式（`t`目录中存储具体的测试 case，文件以`.test
 #
 #
 # Note: Out of convention, server 2 is always made a slave for multisource testing.
+#
+
+#Skip on group replication runs
+--source include/not_group_replication_plugin.inc
+# Test requires master-info-repository=TABLE, relay-log-info-repository=TABLE
+--source include/have_slave_repository_type_table.inc
+
+--echo #
+--echo # set up masters server_1 and server_3 with server_2 being a slave.
+--echo #.
+--let $rpl_topology= 1->2,3->2
+--let $rpl_multi_source= 1
+--source include/rpl_init.inc
+
+--echo #
+--echo # Test case 1: 1.a) create a database and table db1.t1 on server_1
+--echo #                   and insert values in the table.
+--let $rpl_connection_name= server_1
+--source include/rpl_connection.inc
+CREATE DATABASE db1;
+CREATE TABLE db1.t1 ( a int);
+......
 ```
 
 启动测试指令 `perl mysql-test-run.pl --do-test=rpl_multi_source` 后，会启动 3 个 mysqld 进程，其中 2 个 master 节点，1 个 slave 节点：

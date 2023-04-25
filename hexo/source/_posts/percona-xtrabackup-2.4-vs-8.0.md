@@ -17,6 +17,8 @@ toc: true
 
 > **本文首发于 2020-08-27 13:46:15**
 
+**作者：卢文双 资深数据库内核研发**
+
 ### 前言
 
 近期在给 `radondb/xenon` 适配 percona xtrabackup 8.0 时，遇到了一些问题，经过多日调研、尝试终于解决，特此分享。
@@ -54,25 +56,25 @@ Last_Error: Could not execute Write_rows event on table db1.t1; Duplicate entry 
 
 **google 查到 xtrabackup 8.0 与 2.4 版本行为有所不同：**
 
-> 1.  Xtrabackup 2.4 备份后生成的 `xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，但是备份恢复后 `show master status` 显示的 GTID 是不准确的。
-> 2.  Xtrabackup 8.0 在备份只有 InnoDB 表的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息不一定是准确的，但是备份恢复后 `show master status` 显示的 GTID 是准确的。
-> 3.  Xtrabackup 8.0 在备份有非 InnoDB 表格的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，备份恢复后 `show master status` 显示的 GTID 也是准确的。
+> 1. Xtrabackup 2.4 备份后生成的 `xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，但是备份恢复后 `show master status` 显示的 GTID 是不准确的。
+> 2. Xtrabackup 8.0 在备份只有 InnoDB 表的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息不一定是准确的，但是备份恢复后 `show master status` 显示的 GTID 是准确的。
+> 3. Xtrabackup 8.0 在备份有非 InnoDB 表格的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，备份恢复后 `show master status` 显示的 GTID 也是准确的。
 
 **之前研究过 xtrabackup 2.4 ，其过程大致如下：**
 
-> 1.  start backup
-> 2.  copy ibdata1 / copy .ibd file
-> 3.  excuted FTWRL
-> 4.  backup non-InnoDB tables and files
-> 5.  writing xtrabackup_binlog_info
-> 6.  executed FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS
-> 7.  executed UNLOCK TABLES
-> 8.  copying ib_buffer_pool
-> 9.  completed OK!
+> 1. start backup
+> 2. copy ibdata1 / copy .ibd file
+> 3. excuted FTWRL
+> 4. backup non-InnoDB tables and files
+> 5. writing xtrabackup_binlog_info
+> 6. executed FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS
+> 7. executed UNLOCK TABLES
+> 8. copying ib_buffer_pool
+> 9. completed OK!
 
 **问题 1：xtrabackup 8.0 的执行过程是什么样？**
 
-首先，查看重建期间的`general log`：
+首先，查看重建期间的 `general log`：
 
 ```verilog
 2020-08-26T16:20:18.136376+08:00	  170 Query	SET SESSION wait_timeout=2147483
@@ -100,15 +102,15 @@ Last_Error: Could not execute Write_rows event on table db1.t1; Duplicate entry 
 
 可见，**xtrabackup 8.0 默认情况下大致过程如下：**
 
-> 1.  start backup
-> 2.  copy .ibd file
-> 3.  backup non-InnoDB tables and files
-> 4.  executed FLUSH NO_WRITE_TO_BINLOG BINARY LOGS
-> 5.  selecting LSN and binary log position from p_s.log_status
-> 6.  copy last binlog file
-> 7.  writing /mysql/backup/backup/binlog.index
-> 8.  writing xtrabackup_binlog_info
-> 9.  executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS
+> 1. start backup
+> 2. copy .ibd file
+> 3. backup non-InnoDB tables and files
+> 4. executed FLUSH NO_WRITE_TO_BINLOG BINARY LOGS
+> 5. selecting LSN and binary log position from p_s.log_status
+> 6. copy last binlog file
+> 7. writing /mysql/backup/backup/binlog.index
+> 8. writing xtrabackup_binlog_info
+> 9. executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS
 > 10. copy ib_buffer_pool
 > 11. completed OK!
 >
@@ -173,7 +175,7 @@ STORAGE_ENGINES: {"InnoDB": {"LSN": 33797305275, "LSN_checkpoint": 33433316246}}
 
 **问题 3：既然 log_status 中的 binlog position 不准确，为什么备份恢复后 GTID 并没有缺失，数据也没问题？**
 
-原因是 xtrabackup 8.0 在第 4 步`FLUSH NO_WRITE_TO_BINLOG BINARY LOGS`之后，在第 6 步`copy last binlog file`，这样备份恢复出的新实例在启动后不仅会读取 `gtid_executed` 表，还会读取拷贝的那个 binlog 文件来更新 GTID。
+原因是 xtrabackup 8.0 在第 4 步 `FLUSH NO_WRITE_TO_BINLOG BINARY LOGS`之后，在第 6 步 `copy last binlog file`，这样备份恢复出的新实例在启动后不仅会读取 `gtid_executed` 表，还会读取拷贝的那个 binlog 文件来更新 GTID。
 
 ```verilog
 $ mysqlbinlog -vv /data/mysql/mysql-bin.000096
@@ -204,21 +206,21 @@ DELIMITER ;
 
 xenon 原有的重建逻辑是适配于 MySQL 5.6、5.7 的（重建过程中 xenon 进程存活），一直无问题：
 
-> 1.  禁用 raft，将 xenon 状态设为 LEARNER ；
-> 2.  如 mysql 进程存在，则 stop mysql；
-> 3.  清空 MySQL 数据目录；
-> 4.  执行`xtrabackup --backup`以`xbstream`方式获取对端数据；
-> 5.  执行`xtrabackup --prepare`应用 redo log；
-> 6.  启动 mysql；
-> 7.  执行`stop slave; reset slave all`；
-> 8.  执行`reset master`，以`xtrabackup_binlog_info`文件中的 GTID 为准设置`gtid_purged`；
-> 9.  启用 raft，将 xenon 状态设为 FOLLOWER 或 IDLE；
-> 10. 等待 xenon 自动`change master to`到主节点。
-> 11. 执行`start slave`。
+> 1. 禁用 raft，将 xenon 状态设为 LEARNER ；
+> 2. 如 mysql 进程存在，则 stop mysql；
+> 3. 清空 MySQL 数据目录；
+> 4. 执行 `xtrabackup --backup`以 `xbstream`方式获取对端数据；
+> 5. 执行 `xtrabackup --prepare`应用 redo log；
+> 6. 启动 mysql；
+> 7. 执行 `stop slave; reset slave all`；
+> 8. 执行 `reset master`，以 `xtrabackup_binlog_info`文件中的 GTID 为准设置 `gtid_purged`；
+> 9. 启用 raft，将 xenon 状态设为 FOLLOWER 或 IDLE；
+> 10. 等待 xenon 自动 `change master to`到主节点。
+> 11. 执行 `start slave`。
 
 **问题 1：为什么在 MySQL 8.0 + Semi-Sync 组合下会出现 Duplicate entry ？**
 
-跟踪重建过程中的 general log，发现在第 6 和第 7 步中间，也就是设置`gtid_purged`之前凭空多出了 `change master to` 和 `start slave` 操作：
+跟踪重建过程中的 general log，发现在第 6 和第 7 步中间，也就是设置 `gtid_purged`之前凭空多出了 `change master to` 和 `start slave` 操作：
 
 ```verilog
 2020-08-24T21:55:22.817859+08:00            8 Query     SET GLOBAL rpl_semi_sync_master_enabled=OFF
@@ -269,7 +271,7 @@ xenon 原有的重建逻辑是适配于 MySQL 5.6、5.7 的（重建过程中 xe
 
 **问题 2：为什么之前 MySQL 5.6、5.7 从没遇到过这个问题呢？**
 
-测试了很多次，发现在 MySQL 5.6 & 5.7 在`set gtid_purged` 前执行 `change master to & start slave` 后会报复制错误 `Slave failed to initialize relay log info structure from the repository` ，而在`reset slave all; reset master、set gtid_purged`后再执行 `change master to & start slave` 就可以正常复制，数据无误。
+测试了很多次，发现在 MySQL 5.6 & 5.7 在 `set gtid_purged` 前执行 `change master to & start slave` 后会报复制错误 `Slave failed to initialize relay log info structure from the repository` ，而在 `reset slave all; reset master、set gtid_purged`后再执行 `change master to & start slave` 就可以正常复制，数据无误。
 
 **问题 3：xenon 中哪块逻辑引起的额外的 change master to 和 start slave ？**
 
@@ -277,15 +279,15 @@ xenon 原有的重建逻辑是适配于 MySQL 5.6、5.7 的（重建过程中 xe
 
 #### 坑二：MySQL 8.0 + Group-Replication 重建后无法启动 MGR
 
-根据报错信息`Slave failed to initialize relay log info structure from the repository`看，应该是 xtrabackup 重建后的数据目录保留了 slave 复制信息导致的，尝试在启动组复制前执行`reset slave或reset slave all`即可解决。
+根据报错信息 `Slave failed to initialize relay log info structure from the repository`看，应该是 xtrabackup 重建后的数据目录保留了 slave 复制信息导致的，尝试在启动组复制前执行 `reset slave或reset slave all`即可解决。
 
 ### 总结
 
-> 1.  Xtrabackup 2.4 备份后生成的 `xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，但是备份恢复后 `show master status` 显示的 GTID 是不准确的。
-> 2.  Xtrabackup 8.0 在备份只有 InnoDB 表的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息不一定是准确的，但是备份恢复后 `show master status` 显示的 GTID 是准确的。
-> 3.  Xtrabackup 8.0 在备份有非 InnoDB 表格的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，备份恢复后 `show master status` 显示的 GTID 也是准确的。
-> 4.  使用 Xtrabackup 8.0 重建集群节点后，无需执行 `reset master & set gtid_purged` 操作。
-> 5.  使用 Xtrabackup 8.0 重建 Group-Replication 集群节点后，启动组复制前需要先执行`reset slave或reset slave all`清除 slave 信息，否则 `start group_replication` 会失败。
+> 1. Xtrabackup 2.4 备份后生成的 `xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，但是备份恢复后 `show master status` 显示的 GTID 是不准确的。
+> 2. Xtrabackup 8.0 在备份只有 InnoDB 表的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息不一定是准确的，但是备份恢复后 `show master status` 显示的 GTID 是准确的。
+> 3. Xtrabackup 8.0 在备份有非 InnoDB 表格的实例时，`xtrabackup_binlog_info` 文件记录的 GTID 信息是准确的，备份恢复后 `show master status` 显示的 GTID 也是准确的。
+> 4. 使用 Xtrabackup 8.0 重建集群节点后，无需执行 `reset master & set gtid_purged` 操作。
+> 5. 使用 Xtrabackup 8.0 重建 Group-Replication 集群节点后，启动组复制前需要先执行 `reset slave或reset slave all`清除 slave 信息，否则 `start group_replication` 会失败。
 
 ---
 

@@ -15,16 +15,16 @@
 
 
 
-<meta name="description" content="本文首发于 2021-03-07 21:13:15  背景近期线上 MySQL 5.7.20 集群不定期（多则三周，短则一两天）出现主库 mysql crash、触发主从切换问题，堆栈信息如下；  从堆栈信息可以明显看出，在调用 try_acquire_lock_impl 时触发的 crash。 分析在官方 Bug 库未搜到类似问题，转而从代码库入手，搜到对应的 BUG —— 8bc828b98">
+<meta name="description" content="本文首发于 2021-03-07 21:13:15  作者：卢文双 资深数据库内核研发 背景近期线上 MySQL 5.7.20 集群不定期（多则三周，短则一两天）出现主库 mysql crash、触发主从切换问题，堆栈信息如下；  从堆栈信息可以明显看出，在调用 try_acquire_lock_impl 时触发的 crash。 分析在官方 Bug 库未搜到类似问题，转而从代码库入手，搜到对应的">
 <meta property="og:type" content="article">
 <meta property="og:title" content="捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash">
 <meta property="og:url" content="http://dbkernel.github.io/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/index.html">
 <meta property="og:site_name" content="DBKernel">
-<meta property="og:description" content="本文首发于 2021-03-07 21:13:15  背景近期线上 MySQL 5.7.20 集群不定期（多则三周，短则一两天）出现主库 mysql crash、触发主从切换问题，堆栈信息如下；  从堆栈信息可以明显看出，在调用 try_acquire_lock_impl 时触发的 crash。 分析在官方 Bug 库未搜到类似问题，转而从代码库入手，搜到对应的 BUG —— 8bc828b98">
+<meta property="og:description" content="本文首发于 2021-03-07 21:13:15  作者：卢文双 资深数据库内核研发 背景近期线上 MySQL 5.7.20 集群不定期（多则三周，短则一两天）出现主库 mysql crash、触发主从切换问题，堆栈信息如下；  从堆栈信息可以明显看出，在调用 try_acquire_lock_impl 时触发的 crash。 分析在官方 Bug 库未搜到类似问题，转而从代码库入手，搜到对应的">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://dbkernel.github.io/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/try_acquire_lock_impl.jpeg">
 <meta property="article:published_time" content="2020-05-06T07:55:15.000Z">
-<meta property="article:modified_time" content="2022-07-31T04:15:17.563Z">
+<meta property="article:modified_time" content="2023-04-25T02:22:21.757Z">
 <meta property="article:author" content="DBKernel">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="LF_HASH">
@@ -342,7 +342,7 @@
         
 	
 		<span class="post-wordcount" itemprop="wordCount">
-			字数统计: 777(字) </a>
+			字数统计: 791(字) </a>
 		</span>
 	
 	
@@ -361,6 +361,7 @@
         <blockquote>
 <p><strong>本文首发于 2021-03-07 21:13:15</strong></p>
 </blockquote>
+<p><strong>作者：卢文双 资深数据库内核研发</strong></p>
 <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>近期线上 MySQL 5.7.20 集群不定期（多则三周，短则一两天）出现主库 mysql crash、触发主从切换问题，堆栈信息如下；</p>
 <p><img src="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/try_acquire_lock_impl.jpeg" alt="try_acquire_lock_impl crash 堆栈"></p>
 <p>从堆栈信息可以明显看出，在调用 <code>try_acquire_lock_impl</code> 时触发的 crash。</p>
@@ -399,7 +400,7 @@
         <p><span>本文标题:</span><a href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></p>
         <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
         <p><span>发布时间:</span>2020-05-06, 15:55:15</p>
-        <p><span>最后更新:</span>2022-07-31, 12:15:17</p>
+        <p><span>最后更新:</span>2023-04-25, 10:22:21</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/" title="捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash">http://dbkernel.github.io/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/</a>
             <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
