@@ -25,3 +25,5 @@ cp google557be7742b81daa1.html docs/
 cp robots.txt docs/
 # 非常简单，很好用
 cp BingSiteAuth.xml docs
+# domain
+cp CNAME docs

@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发 序言： 以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。 主要内容如下：  入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇">
+<meta property="og:url" content="http://dbkernel.github.io/2023/05/01/mysql-mtr-02-advanced/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发 序言： 以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。 主要内容如下：  入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2023-05-01T13:03:44.000Z">
+<meta property="article:modified_time" content="2023-05-05T14:43:11.657Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="测试框架">
+<meta property="article:tag" content="MTR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-mtr-02-advanced" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/05/01/mysql-mtr-02-advanced/" class="article-date">
+      <time datetime="2023-05-01T13:03:44.000Z" itemprop="datePublished">2023-05-01</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 10k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 48(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<p><strong>序言：</strong></p>
+<p>以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。</p>
+<p>主要内容如下：</p>
+<ul>
+<li>入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加 case、常见问题、异常调试</li>
+<li>进阶篇：高阶用法，包括单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁</li>
+<li>源码篇：分析 MTR 的源码</li>
+<li>语法篇：单元测试、压力测试、mysqltest 语法、异常调试</li>
+</ul>
+<p>由于个人水平有限，所述难免有错误之处，望雅正。</p>
+<p><strong>本文是第二篇进阶篇</strong>。</p>
+<span id="more"></span>
+
+<blockquote>
+<p><strong>本文首发于 2023-05-01 21:03:44</strong></p>
+</blockquote>
+<hr>
+<p>MTR 系列基于 MySQL 8.0.29 版本（编译情况也在 8.0.32 版本验证过），且主要在 Ubuntu 22.04 X86_64 验证（部分指令也在 Ubuntu 20.04 X86_64、Ubuntu 22.04 ARM64、MacOS M1 做了验证），如有例外，会特别说明。</p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>上一篇文章《MySQL 测试框架 MTR 系列教程（一）：入门篇》介绍了 mtr 的原理、目录结构、参数及常见用法，侧重于<strong>最常见的 SQL 正确性验证</strong>，但 mtr 能做更多的事情，比如 <strong>内存错误、线程竞争、代码覆盖率、压力测试等</strong>，本文主要介绍这些内容，涉及的相关工具如下：</p>
+<ul>
+<li>valgrind ：用于内存调试、内存泄漏检测以及性能分析。</li>
+<li>Sanitizier ：谷歌发起的开源工具集。<ul>
+<li>ASAN/AddressSanitizier ：检查内存地址相关问题，包括内存泄漏、释放后使用、重复释放、堆溢出、栈溢出等等问题。</li>
+<li>LSAN/LeakSanitizer ：检查内存泄漏问题。它是集成在 Address Sanitizer 中的一个相对独立的工具，它工作在检查过程的最后阶段。</li>
+<li>MSAN/MemorySanitizer ： 检查使用未初始化内存的问题。</li>
+<li>TSAN/ThreadSanitizer ： 检查线程数据竞争和死锁问题。</li>
+<li>UBSAN/UndefinedBehaviorSanitizer ： 检测未定义行为（使用空指针、有符号整数溢出等）。</li>
+</ul>
+</li>
+<li>gcov ： 代码覆盖率测试。</li>
+<li>gprof ： 性能分析工具。</li>
+<li>单元测试</li>
+<li>压力测试</li>
+</ul>
+<p>本文将逐一介绍对各个工具的支持情况。</p>
+<p><strong>补充：</strong></p>
+<p>MariaDB 已经很好的支持了以上工具集：</p>
+<p><a target="_blank" rel="noopener" href="https://mariadb.com/kb/en/compile-and-using-mariadb-with-sanitizers-asan-ubsan-tsan-msan/" title="Compile and Using MariaDB with Sanitizers (ASAN, UBSAN, TSAN, MSAN) - MariaDB Knowledge Base">Compile and Using MariaDB with Sanitizers (ASAN, UBSAN, TSAN, MSAN) - MariaDB Knowledge Base</a></p>
+<p><a target="_blank" rel="noopener" href="https://mariadb.com/kb/en/compiling-mariadb-for-debugging/" title="Compiling MariaDB for Debugging - MariaDB Knowledge Base">Compiling MariaDB for Debugging - MariaDB Knowledge Base</a> （支持 valgrind）</p>
+<h1 id="MySQL-编译选项"><a href="#MySQL-编译选项" class="headerlink" title="MySQL 编译选项"></a>MySQL 编译选项</h1><p>首先说明一下与本文相关的 MySQL 编译选项：</p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_cmake_build_type" title="-DCMAKE_BUILD_TYPE=type">-DCMAKE_BUILD_TYPE=type</a></p>
+<p>The type of build to produce:</p>
+<ul>
+<li><code>RelWithDebInfo</code>: <strong>default value</strong>。<strong>Enable optimizations and generate debugging information</strong>. This is the default MySQL build type.</li>
+<li><code>Release</code>: Enable optimizations but omit debugging information to reduce the build size. <strong>This build type was added in MySQL 8.0.13</strong> (MySQL 5.7 is not supported).</li>
+<li><code>Debug</code>: Disable optimizations and generate debugging information. This build type is also used if the <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_debug" title="WITH_DEBUG">WITH_DEBUG</a> option is enabled. That is, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_debug" title="-DWITH_DEBUG=1">-DWITH_DEBUG=1</a> has the same effect as <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_cmake_build_type" title="-DCMAKE_BUILD_TYPE=Debug">-DCMAKE_BUILD_TYPE=Debug</a>.</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_debug" title="-DWITH_DEBUG=bool">-DWITH_DEBUG=bool</a></p>
+<p>Whether to include debugging support. <strong>The default is<code>OFF</code></strong>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_asan" title="-DWITH_ASAN=bool">-DWITH_ASAN=bool</a></p>
+<p>Whether to enable the AddressSanitizer, for compilers that support it. <strong>The default is off</strong>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_asan_scope" title="-DWITH_ASAN_SCOPE=bool">-DWITH_ASAN_SCOPE=bool</a></p>
+<p>Whether to enable the AddressSanitizer <code>-fsanitize-address-use-after-scope</code> Clang flag for <strong>use-after-scope</strong> detection. <strong>The default is off</strong>. To use this option, <code>-DWITH_ASAN</code> must also be enabled.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_lsan" title="-DWITH_LSAN=bool">-DWITH_LSAN=bool</a></p>
+<p>Whether to run LeakSanitizer, without AddressSanitizer. <strong>The default is<code>OFF</code></strong>.</p>
+<p>This option was added in MySQL 8.0.16.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_msan" title="-DWITH_MSAN=bool">-DWITH_MSAN=bool</a></p>
+<p>Whether to enable MemorySanitizer, for compilers that support it. <strong>The default is off</strong>.</p>
+<p>For this option to have an effect if enabled, all libraries linked to MySQL must also have been compiled with the option enabled.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_tsan" title="-DWITH_TSAN=bool">-DWITH_TSAN=bool</a></p>
+<p>Whether to enable the ThreadSanitizer, for compilers that support it. <strong>The default is off</strong>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_ubsan" title="-DWITH_UBSAN=bool">-DWITH_UBSAN=bool</a></p>
+<p>Whether to enable the Undefined Behavior Sanitizer, for compilers that support it. <strong>The default is off</strong>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_unit_tests" title="-DWITH_UNIT_TESTS={ON|OFF}">-DWITH_UNIT_TESTS={ON|OFF}</a></p>
+<p>If enabled, compile MySQL with unit tests. <strong>The default is ON</strong> unless the server is not being compiled.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_valgrind" title="-DWITH_VALGRIND=bool">-DWITH_VALGRIND=bool</a></p>
+<p>Whether to compile in the Valgrind header files, which exposes the Valgrind API to MySQL code. <strong>The default is<code>OFF</code></strong>.</p>
+<p>To generate a Valgrind-aware debug build, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_valgrind" title="-DWITH_VALGRIND=1">-DWITH_VALGRIND=1</a> normally is combined with <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_debug" title="-DWITH_DEBUG=1">-DWITH_DEBUG=1</a>. See <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/internals/en/debug-configurations.html" title="Building Debug Configurations">Building Debug Configurations</a>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_enable_gcov" title="-DENABLE_GCOV=bool">-DENABLE_GCOV=bool</a></p>
+<p>Whether to include <code>gcov</code> support (<strong>Linux only</strong>).</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_enable_gprof" title="-DENABLE_GPROF=bool">-DENABLE_GPROF=bool</a></p>
+<p>Whether to enable <code>gprof</code> (<strong>optimized Linux builds only</strong>). <strong>The default is<code>OFF</code></strong>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_test_trace_plugin" title="-DWITH_TEST_TRACE_PLUGIN=bool">-DWITH_TEST_TRACE_PLUGIN=bool</a></p>
+<p>Whether to build the test protocol trace client plugin (see <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/extending-mysql/8.0/en/test-protocol-trace-plugin.html" title="Using the Test Protocol Trace Plugin">Using the Test Protocol Trace Plugin</a>). <strong>By default, this option is disabled</strong>. Enabling this option has no effect unless the <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_client_protocol_tracing" title="WITH_CLIENT_PROTOCOL_TRACING">WITH_CLIENT_PROTOCOL_TRACING</a> option is enabled. If MySQL is configured with both options enabled, the <code>libmysqlclient</code> client library is built with the test protocol trace plugin built in, and all the standard MySQL clients load the plugin. However, even when the test plugin is enabled, it has no effect by default. Control over the plugin is afforded using environment variables; see <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/extending-mysql/8.0/en/test-protocol-trace-plugin.html" title="Using the Test Protocol Trace Plugin">Using the Test Protocol Trace Plugin</a>.</p>
+<p><strong>Note</strong></p>
+<p>Do <em>not</em> enable the <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_test_trace_plugin" title="WITH_TEST_TRACE_PLUGIN">WITH_TEST_TRACE_PLUGIN</a> option if you want to use your own protocol trace plugins because only one such plugin can be loaded at a time and an error occurs for attempts to load a second one. If you have already built MySQL with the test protocol trace plugin enabled to see how it works, you must rebuild MySQL without it before you can use your own plugins.</p>
+<p>For information about writing trace plugins, see <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/extending-mysql/8.0/en/writing-protocol-trace-plugins.html" title="Writing Protocol Trace Plugins">Writing Protocol Trace Plugins</a>.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_client_protocol_tracing" title="-DWITH_CLIENT_PROTOCOL_TRACING=bool">-DWITH_CLIENT_PROTOCOL_TRACING=bool</a></p>
+<p>Whether to build the client-side protocol tracing framework into the client library. <strong>By default, this option is enabled</strong>.</p>
+<p>For information about writing protocol trace client plugins, see <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/extending-mysql/8.0/en/writing-protocol-trace-plugins.html" title="Writing Protocol Trace Plugins">Writing Protocol Trace Plugins</a>.</p>
+<p>See also the <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_test_trace_plugin" title="WITH_TEST_TRACE_PLUGIN">WITH_TEST_TRACE_PLUGIN</a> option.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_keyring_test" title="-DWITH_KEYRING_TEST=bool">-DWITH_KEYRING_TEST=bool</a></p>
+<p>Whether to build the test program that accompanies the <code>keyring_file</code> plugin. <strong>The default is<code>OFF</code></strong>. Test file source code is located in the <code>plugin/keyring/keyring-test</code> directory.</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html#option_cmake_with_ndb_test" title="-DWITH_NDB_TEST={ON|OFF}">-DWITH_NDB_TEST={ON|OFF}</a></p>
+<p>If enabled, include a set of NDB API test programs. <strong>The default is OFF</strong>.</p>
+</li>
+</ul>
+<p>详见：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html" title="MySQL :: MySQL 8.0 Reference Manual :: 2.8.7 MySQL Source-Configuration Options">MySQL :: MySQL 8.0 Reference Manual :: 2.8.7 MySQL Source-Configuration Options</a></p>
+<hr>
+<p>以下是各组件或测试类型的详细介绍。</p>
+<h1 id="valgrind"><a href="#valgrind" class="headerlink" title="valgrind"></a>valgrind</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>valgrind 是一个工具集，主要集成了：</p>
+<ul>
+<li>memcheck ：内存错误检测器。</li>
+<li>cachegrind ：缓存和分支预测分析器。</li>
+<li>callgrind ：可生成缓存分析器的调用图。</li>
+<li>helgrind ：线程错误检测器。</li>
+<li>DRD ：也是线程错误检测器。</li>
+<li>massif ：堆分析器，它可以帮助程序使用更少的内存。</li>
+<li>DHAT ：一种不同类型的堆分析器。使用它可以了解块寿命，块利用率和布局效率低下的问题。</li>
+</ul>
+<h2 id="选项"><a href="#选项" class="headerlink" title="选项"></a>选项</h2><p>mtr 提供的 valgrind 选项如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Options <span class="keyword">for</span> valgrind</span><br><span class="line"></span><br><span class="line">  callgrind             Instruct valgrind to use callgrind.</span><br><span class="line">  helgrind              Instruct valgrind to use helgrind.</span><br><span class="line">  valgrind              Run the <span class="string">&quot;mysqltest&quot;</span> and <span class="string">&quot;mysqld&quot;</span> executables using</span><br><span class="line">                        valgrind with default options.</span><br><span class="line">  valgrind-all          Synonym <span class="keyword">for</span> --valgrind.</span><br><span class="line">  valgrind-clients      Run clients started by .<span class="built_in">test</span> files with valgrind.</span><br><span class="line">  valgrind-mysqld       Run the <span class="string">&quot;mysqld&quot;</span> executable with valgrind.</span><br><span class="line">  valgrind-mysqltest    Run the <span class="string">&quot;mysqltest&quot;</span> and <span class="string">&quot;mysql_client_test&quot;</span> executable</span><br><span class="line">                        with valgrind.</span><br><span class="line">  valgrind-option=ARGS  Option to give valgrind, replaces default option(s), can</span><br><span class="line">                        be specified more <span class="keyword">then</span> once.</span><br><span class="line">  valgrind-options=ARGS Deprecated, use --valgrind-option.</span><br><span class="line">  valgrind-path=&lt;EXE&gt;   Path to the valgrind executable.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>从代码看：</strong></p>
+<ol>
+<li> <strong>支持的工具不仅限于 callgrind、helgrind，还支持 memcheck、massif</strong> 。</li>
+<li> 只有启用<code>--valgrind</code> 或 <code>--valgrind-mysqltest</code> 选项，才会用到 <code>mysql_client_test</code> 。</li>
+</ol>
+<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><p><strong>编译选项</strong>： <code>-DWITH_DEBUG=1 -DWITH_VALGRIND=1</code>&#x20;</p>
+<p><strong>使用建议</strong>：</p>
+<p>1、推荐指令可参考 <code>mysql-test/collections/</code> 目录下的文件 <code>default.daily-valgrind</code>、<code>default.push-valgrind</code>、<code>default.weekly-valgrind</code> 。</p>
+<p>2、据我实测，<strong>如需测试 valgrind 所有功能，需在原有指令基础上添加<code>--valgrind</code>选项</strong>。比如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 官方 collections 中的示例指令：</span></span><br><span class="line">perl mysql-test-run.pl --timer  --force --skip-rpl --comment=all_default_valgrind --vardir=var-all_default_valgrind --skip-ndb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加 --valgrind</span></span><br><span class="line">perl mysql-test-run.pl --timer  --force --skip-rpl --comment=all_default_valgrind --vardir=var-all_default_valgrind --skip-ndb --valgrind</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>3、在同时启用 ASAN 和 valgrind 的情况下，并在运行 mtr 时添加<code>--valgrind</code>选项，mtr 会因 valgrind memcheck 与 asan 冲突而 crash，因此，valgrind 与 asan 不建议同时启用</strong>。</p>
+<h1 id="Sanitizier"><a href="#Sanitizier" class="headerlink" title="Sanitizier"></a>Sanitizier</h1><p><a target="_blank" rel="noopener" href="https://github.com/google/sanitizers" title="Sanitizers">Sanitizers</a> 是谷歌发起的开源工具集，已经成为静态和动态代码分析的利器，可以检查<strong>内存错误、未初始化的读取、线程安全和未定义的行为等</strong>相关的问题。</p>
+<p><strong>优点</strong>：与同类型分析工具相比，Sanitizers 带来的性能损失通常要小得多，而且往往提供的信息更详细。</p>
+<p><strong>缺点</strong>：代码（可能还有工具链的一部分）需要使用附加的标志重新编译。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/google/sanitizers" title="Sanitizers">Sanitizers</a> 包括如下组件：</p>
+<ul>
+<li><p><strong>AddressSanitizer/ASAN</strong></p>
+<p>检查内存地址相关问题，包括内存泄漏、释放后使用、重复释放、堆溢出、栈溢出等问题。</p>
+<p>通过<strong>编译插桩(CTI)</strong> ，能够发现此堆/栈/全局变量读写溢出，内存泄露等问题，并将信息直接打印到日志中。</p>
+<p><strong>ASAN 是一个快速的内存错误检测工具。它非常快，只拖慢程序两倍左右（比起 Valgrind 快多了）</strong>。</p>
+<p>它包括一个编译器 instrumentation 模块和一个提供<code>malloc()/free()</code> 替代项的运行时库。</p>
+</li>
+<li><p><strong>LeakSanitizer/LSAN</strong></p>
+<p>检查内存泄漏问题。它是<strong>集成在 Address Sanitizer 中</strong>的一个相对独立的工具，它工作在检查过程的最后阶段。</p>
+</li>
+<li><p><strong>UndefinedBehaviorSanitizer/UBSAN</strong></p>
+<p>检测未定义行为（使用空指针、有符号整数溢出等）。</p>
+</li>
+<li><p><strong>ThreadSanitizer/TSAN</strong></p>
+<p>检查线程数据竞争和死锁问题。</p>
+</li>
+<li><p><strong>MemorySanitizer/MSAN</strong></p>
+<p>检查使用未初始化内存问题。</p>
+</li>
+<li><p><strong>内核 Sanitizer</strong>包括<strong>KASAN</strong>和<strong>KMSAN</strong></p>
+</li>
+</ul>
+<p>Sanitizers 项目本是 LLVM 项目的一部分，但 GNU 也将该系列工具加入到了自家的 GCC 编译器中（clang 当然也支持）。 &#x20;</p>
+<ul>
+<li>GCC 4.8 版本开始支持 <strong>Address Sanitizer</strong>和 <strong>Thread Sanitizer</strong>。</li>
+<li>GCC 4.9 版本开始支持 <strong>Leak Sanitizer</strong> 和 <strong>UndefinedBehaviorSanitizer</strong>。</li>
+</ul>
+<h2 id="ASAN"><a href="#ASAN" class="headerlink" title="ASAN"></a>ASAN</h2><h3 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h3><p>ASAN/AddressSanitizer 能检测很多种内存错误，主要包含如下类别：</p>
+<ul>
+<li><strong>Out-of-bounds accesses to heap, stack and globals</strong></li>
+<li><strong>Use-after-free</strong></li>
+<li><strong>Use-after-return</strong> (clang flag <code>-fsanitize-address-use-after-return=(never|runtime|always)</code> default: <code>runtime</code>)<ul>
+<li>Enable with: <code>ASAN_OPTIONS=detect_stack_use_after_return=1</code> (already enabled on Linux).</li>
+<li>Disable with: <code>ASAN_OPTIONS=detect_stack_use_after_return=0</code>.</li>
+</ul>
+</li>
+<li><strong>Use-after-scope</strong> (clang flag <code>-fsanitize-address-use-after-scope</code>)</li>
+<li><strong>Double-free, invalid free</strong></li>
+<li><strong>Memory leaks</strong> (experimental)</li>
+</ul>
+<p>更详细的示例 case：参考 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/asan-error-examples?view=msvc-170" title="https://learn.microsoft.com/zh-cn/cpp/sanitizers/asan-error-examples?view=msvc-170">https://learn.microsoft.com/zh-cn/cpp/sanitizers/asan-error-examples?view=msvc-170</a></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-alloc-dealloc-mismatch?view=msvc-170" title="alloc-dealloc-mismatch">alloc-dealloc-mismatch</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-allocation-size-too-big?view=msvc-170" title="allocation-size-too-big">allocation-size-too-big</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-calloc-overflow?view=msvc-170" title="calloc-overflow">calloc-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-container-overflow?view=msvc-170" title="container-overflow">container-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-double-free?view=msvc-170" title="double-free">double-free</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-dynamic-stack-buffer-overflow?view=msvc-170" title="dynamic-stack-buffer-overflow">dynamic-stack-buffer-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-global-buffer-overflow?view=msvc-170" title="global-buffer-overflow">global-buffer-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-heap-buffer-overflow?view=msvc-170" title="heap-buffer-overflow">heap-buffer-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-heap-use-after-free?view=msvc-170" title="heap-use-after-free">heap-use-after-free</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-invalid-allocation-alignment?view=msvc-170" title="invalid-allocation-alignment">invalid-allocation-alignment</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-memcpy-param-overlap?view=msvc-170" title="memcpy-param-overlap">memcpy-param-overlap</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-new-delete-type-mismatch?view=msvc-170" title="new-delete-type-mismatch">new-delete-type-mismatch</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-stack-buffer-overflow?view=msvc-170" title="stack-buffer-overflow">stack-buffer-overflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-stack-buffer-underflow?view=msvc-170" title="stack-buffer-underflow">stack-buffer-underflow</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-stack-use-after-return?view=msvc-170" title="stack-use-after-return">stack-use-after-return</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-stack-use-after-scope?view=msvc-170" title="stack-use-after-scope">stack-use-after-scope</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-strncat-param-overlap?view=msvc-170" title="strncat-param-overlap">strncat-param-overlap</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/error-use-after-poison?view=msvc-170" title="use-after-poison">use-after-poison</a></li>
+</ul>
+<p><strong>性能影响</strong>：使用 ASAN 后，性能会降低 2 倍。</p>
+<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><p><strong>安装</strong>：有一个单独的动态库<code>libasan6.so</code>，会随 gcc 安装。</p>
+<p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_ASAN=1</code>，可选择启用<code>-DWITH_ASAN_SCOPE=1</code></p>
+<p><strong>验证版本</strong>：8.0.29</p>
+<p><strong>MTR 选项</strong>：<code>--sanitize</code></p>
+<p><strong>使用建议</strong>：</p>
+<p><strong>1、ASAN 功能强大，相较于 valgrind，对性能影响小很多，建议作为主要的内存检测工具</strong>。</p>
+<p>2、由于 mtr 需要用到<code>/usr/bin/perl</code>，因此，有可能出现 perl 自身某些函数的内存泄漏问题被 Leak Sanitizer 检测到，导致 mtr 测试失败，此时，将问题函数添加到<code>lsan.supp</code>文件即可解决。比如 Ubuntu 22.04 perl v5.34.0 会遇到内存泄漏，同样的，Ubuntu 20.04 perl v5.30.0 就无该问题。</p>
+<h4 id="mysql-test-asan-supp-示例"><a href="#mysql-test-asan-supp-示例" class="headerlink" title="mysql-test/asan.supp 示例"></a>mysql-test/asan.supp 示例</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 语法</span></span><br><span class="line">interceptor_via_fun:NameOfCFunctionToSuppress</span><br><span class="line">interceptor_via_fun:-[ClassName objCMethodToSuppress:]</span><br><span class="line">interceptor_via_lib:NameOfTheLibraryToSuppress</span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例</span></span><br><span class="line">interceptor_via_fun:Perl_safesyscalloc</span><br><span class="line">interceptor_via_fun:Perl_safesysmalloc</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/AddressSanitizer.html#id10" title="asan文档">asan 文档</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/gcc-mirror/gcc/blob/master/libsanitizer/asan/asan_suppressions.cpp" title="gcc/asan_suppressions.cpp at master · gcc-mirror/gcc · GitHub">gcc/asan_suppressions.cpp at master · gcc-mirror/gcc · GitHub</a></li>
+</ul>
+<h4 id="mysql-test-lsan-supp-示例"><a href="#mysql-test-lsan-supp-示例" class="headerlink" title="mysql-test/lsan.supp 示例"></a>mysql-test/lsan.supp 示例</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># LSAN suppressions for gcc/clang</span></span><br><span class="line">leak:Perl_safesyscalloc</span><br><span class="line">leak:Perl_safesysmalloc</span><br><span class="line">leak:Perl_safesysrealloc</span><br><span class="line">leak:Perl_savesharedpv</span><br><span class="line">leak:Perl_Slab_Alloc</span><br><span class="line">leak:Perl_newUNOP_AUX</span><br><span class="line">leak:Perl_newSTATEOP</span><br><span class="line">leak:Perl_pmruntime</span><br><span class="line">leak:/usr/bin/perl</span><br><span class="line">leak:/lib64/libperl.so.*</span><br><span class="line">leak:/bin/bash</span><br><span class="line">leak:/usr/bin/zip</span><br><span class="line"><span class="comment"># OpenLDAP bug 9081</span></span><br><span class="line"><span class="comment"># Fixed in 2.4.49, we build with 2.4.48</span></span><br><span class="line">leak:ldap_initialize</span><br><span class="line"></span><br><span class="line"><span class="comment"># sasl_client_init will load all available plugins with _sasl_load_plugins().</span></span><br><span class="line"><span class="comment"># It seems some of the SASL plugin have leaks.</span></span><br><span class="line"><span class="comment"># Both LSAN and Valgrind report leaks.</span></span><br><span class="line">leak:sasl_client_add_plugin</span><br></pre></td></tr></table></figure>
+
+<p>该内容来源于源码文件，可见官方知晓 Perl 高版本的内存泄漏问题，以此方式来忽略。</p>
+<h3 id="指令示例"><a href="#指令示例" class="headerlink" title="指令示例"></a>指令示例</h3><p>在<code>Ubuntu 22.04 X86_64</code> 运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --vardir=var-rpl --suite=rpl --sanitize</span><br><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --sanitize</span><br></pre></td></tr></table></figure>
+
+<h2 id="LSAN"><a href="#LSAN" class="headerlink" title="LSAN"></a>LSAN</h2><h3 id="简介-2"><a href="#简介-2" class="headerlink" title="简介"></a>简介</h3><p>LSAN/LeakSanitizer 用于内存泄漏检测。</p>
+<p><strong>性能影响</strong>：使用 LSAN 后，除了执行的最后阶段会有一个内存泄漏检测之外，几乎没有性能开销。</p>
+<h3 id="使用方法-2"><a href="#使用方法-2" class="headerlink" title="使用方法"></a>使用方法</h3><p><strong>安装</strong>：有一个单独的动态库<code>liblsan0.so</code>，会随 gcc 安装。</p>
+<p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_LSAN=1</code>&#x20;</p>
+<p><strong>验证版本</strong>：8.0.29</p>
+<p><strong>MTR 选项</strong>：<code>--sanitize</code>&#x20;</p>
+<p><strong>使用建议</strong>：</p>
+<ol>
+<li> 由于 ASAN 集成了 LSAN，因此，只有不使用 ASAN、仅使用 LSAN 的情况下才需要设置该选项。</li>
+<li> <code>lsan.supp</code> 格式见 「ASAN」小节。</li>
+</ol>
+<h3 id="指令示例-1"><a href="#指令示例-1" class="headerlink" title="指令示例"></a>指令示例</h3><p>只要编译时启用 ASAN 或 LSAN，在运行时添加<code>--sanitize</code> 选项即可。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --sanitize</span><br></pre></td></tr></table></figure>
+
+<h2 id="UBSAN"><a href="#UBSAN" class="headerlink" title="UBSAN"></a>UBSAN</h2><h3 id="简介-3"><a href="#简介-3" class="headerlink" title="简介"></a>简介</h3><p>UBSAN/UndefinedBehaviorSanitizer 是针对未定义行为的检测器，速度很快。</p>
+<p>UBSAN 需要在编译时修改程序，以捕获程序执行期间的各种未定义行为。比如：</p>
+<ul>
+<li>数组下标越界：Array subscript out of bounds, where the bounds can be statically determined</li>
+<li>位移位超过数据类型边界：Bitwise shifts that are out of bounds for their data type</li>
+<li>解除对未对齐指针或空指针的关联：Dereferencing misaligned or null pointers</li>
+<li>有符号整数溢出：Signed integer overflow</li>
+<li>浮点数类型转换导致的溢出：Conversion to, from, or between floating-point types which would overflow the destination</li>
+</ul>
+<p>更多行为详见 ：</p>
+<p><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#ubsan-checks" title="UndefinedBehaviorSanitizer — Clang 17.0.0git documentation (llvm.org)">UndefinedBehaviorSanitizer — Clang 17.0.0git documentation (llvm.org)</a></p>
+<p><strong>性能影响</strong>：UBSAN 的运行时成本很小，对地址空间布局或 ABI 没有影响。</p>
+<h3 id="使用方法-3"><a href="#使用方法-3" class="headerlink" title="使用方法"></a>使用方法</h3><p><strong>安装</strong>：有一个单独的动态库<code>libubsan1.so</code>，会随 gcc 安装。</p>
+<p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_UBSAN=1</code>&#x20;</p>
+<p><strong>验证版本</strong>：8.0.29</p>
+<p><strong>MTR 选项</strong>：<code>--sanitize</code></p>
+<p><strong>使用建议</strong>：</p>
+<ol>
+<li> <strong>与 ASAN、TSAN、gcov、gprof 都兼容，可一起启用</strong>。</li>
+<li> 若想要某些 case 跳过 UBSAN 的检查，可引用<code>include/not_ubsan.inc</code>。目前只有如下 case 会跳过 UBSAN：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">./t/innodb_tmp_table_heap_to_disk.test</span><br><span class="line">./t/ssl-big.test</span><br><span class="line">./t/count_distinct3.test</span><br><span class="line">./t/multi_update2.test</span><br><span class="line">./t/ds_mrr-big.test</span><br><span class="line"></span><br><span class="line">./suite/gis/t/gis_not_ubsan.test</span><br><span class="line">./suite/binlog_gtid/t/binlog_warning_same_server_id.test</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="指令示例-2"><a href="#指令示例-2" class="headerlink" title="指令示例"></a>指令示例</h3><p>只要编译时启用 UBSAN，在运行时添加<code>--sanitize</code> 选项即可。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --sanitize</span><br></pre></td></tr></table></figure>
+
+<h2 id="TSAN"><a href="#TSAN" class="headerlink" title="TSAN"></a>TSAN</h2><h3 id="简介-4"><a href="#简介-4" class="headerlink" title="简介"></a>简介</h3><p>TSAN/ThreadSanitizer 是用于检测数据竞争和线程死锁的工具。</p>
+<p><strong>性能影响</strong>：引入 TSAN 后，会降低 5-15 倍性能，同时，内存占用率会提升 5-10 倍。</p>
+<h3 id="使用方法-4"><a href="#使用方法-4" class="headerlink" title="使用方法"></a>使用方法</h3><p><strong>安装</strong>：有一个单独的动态库<code>libtsan0.so</code>，会随 gcc 安装。</p>
+<p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_TSAN=1</code>&#x20;</p>
+<p><strong>验证版本</strong>：8.0.29、8.0.32</p>
+<p><strong>MTR 选项</strong>：<code>--sanitize</code></p>
+<p><strong>使用建议</strong>：</p>
+<p>1、<strong>TSAN 与 ASAN 不兼容</strong>（一起使用 cmake 会报错<code>&quot;No mysys timer support detected&quot;</code>），但<strong>TSAN 与 UBSAN、VALGRIND 兼容</strong>。</p>
+<p>2、<strong>对 TSAN 的支持是实验性的，尚不成熟，不建议使用</strong>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">-- Performing Test HAVE_SANITIZE_SCOPE</span><br><span class="line">-- Performing Test HAVE_SANITIZE_SCOPE - Success</span><br><span class="line">CMake Warning at CMakeLists.txt:1101 (MESSAGE):</span><br><span class="line">  Thread sanitizer support is currently experimental.</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-- Performing Test C_LD_LLD_RESULT</span><br><span class="line">-- Performing Test C_LD_LLD_RESULT - Failed</span><br><span class="line">-- Performing Test CXX_LD_LLD_RESULT</span><br><span class="line">-- Performing Test CXX_LD_LLD_RESULT - Failed</span><br><span class="line">-- Performing Test C_LD_GOLD_RESULT</span><br><span class="line">-- Performing Test C_LD_GOLD_RESULT - Failed</span><br><span class="line">-- Performing Test CXX_LD_GOLD_RESULT</span><br><span class="line">-- Performing Test CXX_LD_GOLD_RESULT - Failed</span><br><span class="line">-- Local boost dir /data/work/mysql/boost_1_77_0</span><br><span class="line">-- Found /data/work/mysql/boost_1_77_0/boost/version.hpp</span><br><span class="line">-- BOOST_VERSION_NUMBER is <span class="comment">#define BOOST_VERSION 107700</span></span><br><span class="line">-- BOOST_INCLUDE_DIR /data/work/mysql/boost_1_77_0</span><br><span class="line">-- Looking <span class="keyword">for</span> pthread.h</span><br><span class="line">-- Looking <span class="keyword">for</span> pthread.h - not found</span><br><span class="line">-- Could NOT find Threads (missing: Threads_FOUND)</span><br><span class="line">......</span><br><span class="line">-- Looking <span class="keyword">for</span> timer_create <span class="comment"># 由于 timer_create/timer_settime 函数确实存在，尝试调整过 cmake，后续会报一系列错误，该问题不太好调。</span></span><br><span class="line">-- Looking <span class="keyword">for</span> timer_create - not found</span><br><span class="line">-- Looking <span class="keyword">for</span> timer_settime</span><br><span class="line">-- Looking <span class="keyword">for</span> timer_settime - not found</span><br><span class="line">-- Looking <span class="keyword">for</span> kqueue</span><br><span class="line">-- Looking <span class="keyword">for</span> kqueue - not found</span><br><span class="line">-- Performing Test HAVE_SETNS</span><br><span class="line">-- Performing Test HAVE_SETNS - Failed</span><br><span class="line">-- Looking <span class="keyword">for</span> EVFILT_TIMER</span><br><span class="line">-- Looking <span class="keyword">for</span> EVFILT_TIMER - not found</span><br><span class="line">CMake Error at configure.cmake:334 (MESSAGE):</span><br><span class="line">  No mysys timer support detected!</span><br><span class="line">Call Stack (most recent call first):</span><br><span class="line">  CMakeLists.txt:1487 (INCLUDE)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>3、如果某些数据竞争或死锁情况是符合预期的，可以通过 <code>mysql-test/tsan.supp</code> 跳过。</p>
+<h4 id="mysql-test-tsan-supp-示例"><a href="#mysql-test-tsan-supp-示例" class="headerlink" title="mysql-test/tsan.supp 示例"></a>mysql-test/tsan.supp 示例</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Blacklist for Thread Sanitizer.</span></span><br><span class="line"><span class="comment"># Thread Sanitizer can be enabled with -DWITH_TSAN=1</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Suppression syntax is documented here:</span></span><br><span class="line"><span class="comment"># https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"></span><br><span class="line">race:innobase</span><br><span class="line"></span><br><span class="line">race:client/dump/</span><br><span class="line">deadlock:client/dump/</span><br><span class="line"></span><br><span class="line">race:perfschema</span><br><span class="line"></span><br><span class="line">race:plugin_vars_free_values</span><br><span class="line">race:log_builtins_filter_run</span><br><span class="line">race:MY_LOCALE_ERRMSGS::destroy</span><br><span class="line">race:get_one_variable_ext</span><br><span class="line">race:mysql_set_character_set_with_default_collation</span><br><span class="line"></span><br><span class="line">race:ngs::Scheduler_dynamic::wait_if_idle_then_delete_worker</span><br><span class="line">race:ngs::Socket_events::break_loop</span><br><span class="line"></span><br><span class="line">deadlock:find_sys_var_ex</span><br><span class="line">deadlock:Persisted_variables_cache::lock</span><br><span class="line"></span><br><span class="line">signal:my_print_stacktrace</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="指令示例-3"><a href="#指令示例-3" class="headerlink" title="指令示例"></a>指令示例</h3><p>只要编译时启用 TSAN，在运行时添加<code>--sanitize</code> 选项即可。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --sanitize</span><br></pre></td></tr></table></figure>
+
+<h3 id="存在问题"><a href="#存在问题" class="headerlink" title="存在问题"></a><strong>存在问题</strong></h3><p>测试时，在 install database 阶段，线程之间就会有大量 data race，报错示例如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 报错信息位于 mysql-test/var-main-tsan/log/bootstrap.log</span></span><br><span class="line">==================</span><br><span class="line">WARNING: ThreadSanitizer: data <span class="built_in">race</span> (pid=<span class="number">65314</span>)</span><br><span class="line">  Read of size <span class="number">4</span> at <span class="number">0x555ae20c13b0</span> by thread T4:</span><br><span class="line">    #<span class="number">0</span> fil_validate_skip /data/work/mysql/mysql-server/storage/innobase/fil/fil0fil.cc:<span class="number">1953</span> (mysqld+<span class="number">0x541018e</span>)</span><br><span class="line">    #<span class="number">1</span> <span class="built_in">fil_aio_wait</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) /data/work/mysql/mysql-server/storage/innobase/fil/fil0fil.cc:<span class="number">8234</span> (mysqld+<span class="number">0x54109ca</span>)</span><br><span class="line">    #<span class="number">2</span> io_handler_thread /data/work/mysql/mysql-server/storage/innobase/srv/srv0start.cc:<span class="number">279</span> (mysqld+<span class="number">0x5143b04</span>)</span><br><span class="line">    ......</span><br><span class="line">    #<span class="number">12</span> std::thread::_State_impl&lt;std::thread::_Invoker&lt;std::tuple&lt;Detached_thread, <span class="built_in"><span class="keyword">void</span></span> (*)(<span class="keyword">unsigned</span> <span class="keyword">long</span>), <span class="keyword">unsigned</span> <span class="keyword">long</span>&gt; &gt; &gt;::_M_run() /usr/include/c++/<span class="number">11</span>/bits/std_thread.h:<span class="number">211</span> (mysqld+<span class="number">0x5159b59</span>)</span><br><span class="line">    #<span class="number">13</span> &lt;null&gt; &lt;null&gt; (libstdc++.so<span class="number">.6</span>+<span class="number">0xdc2b2</span>)</span><br><span class="line"></span><br><span class="line">  Previous write of size <span class="number">4</span> at <span class="number">0x555ae20c13b0</span> by thread T3:</span><br><span class="line">    #<span class="number">0</span> fil_validate_skip /data/work/mysql/mysql-server/storage/innobase/fil/fil0fil.cc:<span class="number">1953</span> (mysqld+<span class="number">0x54101a7</span>)</span><br><span class="line">    #<span class="number">1</span> <span class="built_in">fil_aio_wait</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>) /data/work/mysql/mysql-server/storage/innobase/fil/fil0fil.cc:<span class="number">8234</span> (mysqld+<span class="number">0x54109ca</span>)</span><br><span class="line">    #<span class="number">2</span> io_handler_thread /data/work/mysql/mysql-server/storage/innobase/srv/srv0start.cc:<span class="number">279</span> (mysqld+<span class="number">0x5143b04</span>)</span><br><span class="line">    ......</span><br><span class="line">    #<span class="number">12</span> std::thread::_State_impl&lt;std::thread::_Invoker&lt;std::tuple&lt;Detached_thread, <span class="built_in"><span class="keyword">void</span></span> (*)(<span class="keyword">unsigned</span> <span class="keyword">long</span>), <span class="keyword">unsigned</span> <span class="keyword">long</span>&gt; &gt; &gt;::_M_run() /usr/include/c++/<span class="number">11</span>/bits/std_thread.h:<span class="number">211</span> (mysqld+<span class="number">0x5159b59</span>)</span><br><span class="line">    #<span class="number">13</span> &lt;null&gt; &lt;null&gt; (libstdc++.so<span class="number">.6</span>+<span class="number">0xdc2b2</span>)</span><br><span class="line"></span><br><span class="line">  Location is global <span class="string">&#x27;fil_validate_skip()::fil_validate_count&#x27;</span> of size <span class="number">4</span> at <span class="number">0x555ae20c13b0</span> (mysqld+<span class="number">0x000007a5c3b0</span>)</span><br><span class="line"></span><br><span class="line">  Thread <span class="built_in">T4</span> (tid=<span class="number">65320</span>, running) created by thread T1 at:</span><br><span class="line">    #<span class="number">0</span> pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:<span class="number">969</span> (libtsan.so<span class="number">.0</span>+<span class="number">0x605b8</span>)</span><br><span class="line">    #<span class="number">1</span> std::thread::_M_start_thread(std::unique_ptr&lt;std::thread::_State, std::default_delete&lt;std::thread::_State&gt; &gt;, <span class="built_in"><span class="keyword">void</span></span> (*)()) &lt;null&gt; (libstdc++.so<span class="number">.6</span>+<span class="number">0xdc388</span>)</span><br><span class="line">    ......</span><br><span class="line">    #<span class="number">8</span> handle_bootstrap /data/work/mysql/mysql-server/sql/bootstrap.cc:<span class="number">327</span> (mysqld+<span class="number">0x387778f</span>)</span><br><span class="line">    #<span class="number">9</span> pfs_spawn_thread /data/work/mysql/mysql-server/storage/perfschema/pfs.cc:<span class="number">2942</span> (mysqld+<span class="number">0x56751fb</span>)</span><br><span class="line"></span><br><span class="line">  Thread <span class="built_in">T3</span> (tid=<span class="number">65319</span>, running) created by thread T1 at:</span><br><span class="line">    #<span class="number">0</span> pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:<span class="number">969</span> (libtsan.so<span class="number">.0</span>+<span class="number">0x605b8</span>)</span><br><span class="line">    #<span class="number">1</span> std::thread::_M_start_thread(std::unique_ptr&lt;std::thread::_State, std::default_delete&lt;std::thread::_State&gt; &gt;, <span class="built_in"><span class="keyword">void</span></span> (*)()) &lt;null&gt; (libstdc++.so<span class="number">.6</span>+<span class="number">0xdc388</span>)</span><br><span class="line">    ......</span><br><span class="line">    #<span class="number">8</span> handle_bootstrap /data/work/mysql/mysql-server/sql/bootstrap.cc:<span class="number">327</span> (mysqld+<span class="number">0x387778f</span>)</span><br><span class="line">    #<span class="number">9</span> pfs_spawn_thread /data/work/mysql/mysql-server/storage/perfschema/pfs.cc:<span class="number">2942</span> (mysqld+<span class="number">0x56751fb</span>)</span><br><span class="line"></span><br><span class="line">SUMMARY: ThreadSanitizer: data race /data/work/mysql/mysql-server/storage/innobase/fil/fil0fil.cc:<span class="number">1953</span> in fil_validate_skip</span><br><span class="line">==================</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>install database 阶段，类似的报错有 200 多个。虽然可以通过<code>tsan.supp</code> 文件跳过，但毕竟报错涉及较多函数，若全部跳过，可能会影响对正常情况下数据竞争的判断。因此，<strong>个人暂不建议使用</strong>。</p>
+<h2 id="MSAN"><a href="#MSAN" class="headerlink" title="MSAN"></a>MSAN</h2><h3 id="简介-5"><a href="#简介-5" class="headerlink" title="简介"></a>简介</h3><p>MSAN/MemorySanitizer 用于检测对未初始化内存的读取（uninitialized reads）问题。</p>
+<p><strong>性能影响</strong>：引入 MSAN 后，性能会降低 3 倍。</p>
+<h3 id="使用方法-5"><a href="#使用方法-5" class="headerlink" title="使用方法"></a>使用方法</h3><p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_MSAN=1</code>&#x20;</p>
+<p>验证版本：8.0.29</p>
+<p><strong>MTR 选项</strong>：<code>--sanitize</code></p>
+<p><strong>使用建议</strong>：</p>
+<ol>
+<li> 对 MSAN 的支持是实验性的，尚不成熟，且与 ASAN 不兼容，考虑到 ASAN 的强大，因此，<strong>建议使用 ASAN，不建议使用 MSAN</strong>。</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CMake Warning at CMakeLists.txt:1080 (MESSAGE):</span><br><span class="line">  Memory sanitizer support is currently experimental.</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">CMake Error at CMakeLists.txt:1107 (MESSAGE):</span><br><span class="line">  Cannot use AddressSanitizer and MemorySanitizer together</span><br></pre></td></tr></table></figure>
+
+<h3 id="指令示例-4"><a href="#指令示例-4" class="headerlink" title="指令示例"></a>指令示例</h3><p>只要编译时启用 MSAN，在运行时添加<code>--sanitize</code> 选项即可。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --sanitize</span><br></pre></td></tr></table></figure>
+
+<h1 id="代码覆盖率测试"><a href="#代码覆盖率测试" class="headerlink" title="代码覆盖率测试"></a>代码覆盖率测试</h1><h2 id="简介-6"><a href="#简介-6" class="headerlink" title="简介"></a>简介</h2><p>gcov 用于分析代码覆盖率，gprof 用于分析 gcov 生成的统计数据，二者一般一起使用。</p>
+<p><strong>gprof 只支持 linux 操作系统，不支持 MacOS</strong>。</p>
+<p>官方手册：</p>
+<p><a target="_blank" rel="noopener" href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html" title="Gcov (Using the GNU Compiler Collection (GCC))">Gcov (Using the GNU Compiler Collection (GCC))</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.man7.org/linux/man-pages/man1/gprof.1.html" title="gprof(1) - Linux manual page (man7.org)">gprof(1) - Linux manual page (man7.org)</a></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/385842627" title="超级方便的Linux自带性能分析工具！gprof介绍、安装、使用及实践 - 知乎 (zhihu.com)">超级方便的 Linux 自带性能分析工具！gprof 介绍、安装、使用及实践 - 知乎 (zhihu.com)</a></p>
+<h2 id="使用方法-6"><a href="#使用方法-6" class="headerlink" title="使用方法"></a>使用方法</h2><p>编译选项：<code>-DWITH_DEBUG=1 -DENABLE_GCOV=1 -DENABLE_GPROF=1</code></p>
+<p><strong>使用建议</strong>：</p>
+<ol>
+<li> 与 ASAN、UBSAN 兼容，建议与 ASAN、UBSAN 同时启用（未验证与 valgrind、MSAN、TSAN 的兼容性）。</li>
+<li>不能在<code>make install</code>的安装目录测试，必须在 <strong>执行编译的源码目录</strong>测试。<ol>
+<li> <code>源码根目录/build-debug/mysql-test/mysql-test-run.pl </code>（本人的编译目录是 build-debug）只是封装了一层对 <code>源码根目录/mysql-test/mysql-test-run.pl</code> 的调用：</li>
+</ol>
+</li>
+</ol>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[apps@node6 mysql-test]$ pwd</span><br><span class="line">/home/apps/mtr/mysql-oracle/mysql-<span class="number">8.0</span>.<span class="number">26</span>/build-debug/mysql-test</span><br><span class="line"></span><br><span class="line">[apps@node6 mysql-test]$ cat mysql-test-run.pl</span><br><span class="line"><span class="comment">#!/usr/bin/perl</span></span><br><span class="line"><span class="comment"># Call mtr in out-of-source build</span></span><br><span class="line">$ENV<span class="string">&#123;MTR_BINDIR&#125;</span> = <span class="string">&#x27;/home/apps/mtr/mysql-oracle/mysql-8.0.26/build-debug&#x27;</span>;</span><br><span class="line"><span class="keyword">chdir</span>(<span class="string">&#x27;/home/apps/mtr/mysql-oracle/mysql-8.0.26/mysql-test&#x27;</span>);</span><br><span class="line"><span class="keyword">exit</span>(<span class="keyword">system</span>($^X, <span class="string">&#x27;/home/apps/mtr/mysql-oracle/mysql-8.0.26/mysql-test/mysql-test-run.pl&#x27;</span>, @ARGV) &gt;&gt; <span class="number">8</span>);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<ol>
+<li> gcov、gprof 运行需要较大内存，尤其是开启<code>-big-test</code>的情况下。</li>
+<li> 官方 <code>collections/</code> 中没有 gcov 的推荐用法。</li>
+<li> <code>mysql-test/README.gcov</code> 文件的最后修改日期是 2006 年，已过时，没有参考价值。</li>
+</ol>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p>直接在安装目录（<code>make install</code>）执行测试，报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql80-install.bak_asan_ubsan_gcov_gprof/mysql-test$ ./mtr --gcov</span><br><span class="line">Logging: ./mtr  --gcov</span><br><span class="line"></span><br><span class="line">MySQL Version 8.0.29</span><br><span class="line">mysql-test-run: *** ERROR: Coverage <span class="built_in">test</span> needs the <span class="built_in">source</span> - please use <span class="built_in">source</span> dist</span><br></pre></td></tr></table></figure>
+
+<p>在<strong>执行编译的目录</strong>（比如 <code>console-build-debug/mysql-test</code>） 执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql-server/console-build-debug/mysql-test$ ./mtr --gcov -big-test</span><br><span class="line">Logging: /data/work/mysql/mysql-server/mysql-test/mysql-test-run.pl  --gcov -big-test</span><br><span class="line">MySQL Version 8.0.29</span><br><span class="line">Checking supported features</span><br><span class="line"> - Binaries are debug compiled</span><br><span class="line">Purging gcov information from <span class="string">&#x27;/data/work/mysql/mysql-server&#x27;</span>...</span><br><span class="line">Using suite(s): auth_sec,binlog,binlog_gtid,binlog_nogtid,<span class="built_in">clone</span>,collations,component_keyring_file,connection_control,encryption,federated,funcs_2,gcol,gis,information_schema,innodb,innodb_fts,innodb_gis,innodb_undo,innodb_zip,interactive_utilities,json,main,opt_trace,parts,perfschema,query_rewrite_plugins,rpl,rpl_gtid,rpl_nogtid,secondary_engine,service_status_var_registration,service_sys_var_registration,service_udf_registration,sys_vars,sysschema,test_service_sql_api,test_services,x</span><br><span class="line">Collecting tests</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> binlog</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> binlog_gtid</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> binlog_nogtid</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> rpl</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> rpl_gtid</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> rpl_nogtid</span><br><span class="line">Checking leftover processes</span><br><span class="line">Removing old var directory</span><br><span class="line">Creating var directory <span class="string">&#x27;/data/work/mysql/mysql-server/console-build-debug/mysql-test/var&#x27;</span></span><br><span class="line">Installing system database</span><br><span class="line">Using parallel: 1</span><br><span class="line"></span><br><span class="line">==============================================================================</span><br><span class="line">                  TEST NAME                       RESULT  TIME (ms) COMMENT</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">[  0%] binlog_gtid.binlog_xa_select_gtid_executed_explicitly_crash  [ disabled ]   Bug<span class="comment">#28588717 Fails both on FreeBSD and other platforms</span></span><br><span class="line">[  0%] binlog_nogtid.binlog_gtid_next_xa         [ disabled ]   BUG<span class="comment">#33650776 Failure of XA COMMIT of prepared txn, can result in txn rollback</span></span><br><span class="line">[  0%] sys_vars.innodb_log_writer_threads_basic  [ disabled ]   Bug<span class="comment">#32129814 SYS_VARS.INNODB_LOG_WRITER_THREADS_BASIC TIMES OUT SPORADICALLY ON PB2</span></span><br><span class="line">[  0%] sysschema.v_wait_classes_global_by_avg_latency  [ disabled ]   BUG<span class="comment">#21550054 Test fails too often.</span></span><br><span class="line">[  0%] binlog_gtid.binlog_gtid_mix_ok_packet_all_gtids <span class="string">&#x27;mix&#x27;</span>  [ pass ]    770</span><br><span class="line">[  0%] binlog_gtid.binlog_gtid_mix_response_packet <span class="string">&#x27;mix&#x27;</span>  [ pass ]   6474</span><br><span class="line">[  0%] binlog_gtid.binlog_xa_trx_gtid_response_packet <span class="string">&#x27;mix&#x27;</span>  [ pass ]    683</span><br><span class="line">......</span><br><span class="line">[  0%] binlog_gtid.binlog_gtid_errors <span class="string">&#x27;mix&#x27;</span>      [ pass ]   1583</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+
+<p>如果想执行测试后分析 <code>gmon.out</code> ，则可添加 <code>-gprof</code> 参数（仅支持 linux）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql-server/console-build-debug/mysql-test$ ./mtr --gcov -gprof -big-test</span><br></pre></td></tr></table></figure>
+
+<p>那么，在 gcov 执行完成后，<strong>mtr 就会自动调用 gprof 解析<code>gmon.out</code>文件</strong>。</p>
+<h2 id="存在问题-1"><a href="#存在问题-1" class="headerlink" title="存在问题"></a>存在问题</h2><p><strong>但在 CentOS 7.6（云服务器 4C8G SSD）实测时遇到问题——gprof 解析 gmon.out 时特别耗时，虽然该进程 CPU 占用率 100%，看起来还在运行，但并无任何输出。</strong></p>
+<p>比如，在编译的源码目录中执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">➜  mysql-test git:(heads/mysql-8.0.26) ✗ ps -axf | grep mysql</span><br><span class="line">30604 ?        SN     0:00  \_ perl mysql-test-run.pl --parallel=4 --timer --debug-server --force --testcase-timeout=180 --suite-timeout=1800 --comment=all-default-debug --vardir=var-all-default --skip-combinations --unit-tests-report --no-skip --exclude-platform=windows --skip-ndb --max-test-fail=0 --suite=rpl -gcov -gprof</span><br><span class="line">30611 ?        SN     0:30      \_ /usr/bin/perl /home/wslu/work/mysql/mysql-server/mysql-test/mysql-test-run.pl --parallel=4 --timer --debug-server --force --testcase-timeout=180 --suite-timeout=1800 --comment=all-default-debug --vardir=var-all-default --skip-combinations --unit-tests-report --no-skip --exclude-platform=windows --skip-ndb --max-test-fail=0 --suite=rpl -gcov -gprof</span><br><span class="line">32759 ?        SN     0:44          \_ /usr/bin/perl /home/wslu/work/mysql/mysql-server/mysql-test/mysql-test-run.pl --parallel=4 --timer --debug-server --force --testcase-timeout=180 --suite-timeout=1800 --comment=all-default-debug --vardir=var-all-default --skip-combinations --unit-tests-report --no-skip --exclude-platform=windows --skip-ndb --max-test-fail=0 --suite=rpl -gcov -gprof</span><br><span class="line"> 2829 ?        SN     0:00          |   \_ sh -c gprof /home/wslu/work/mysql/mysql-server/build-debug/runtime_output_directory/mysqld /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gmon.out 2 &gt; /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.err &gt; /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.msg</span><br><span class="line"> 2830 ?        RN     7:07          |       \_ gprof /home/wslu/work/mysql/mysql-server/build-debug/runtime_output_directory/mysqld /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gmon.out 2</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>gmon.out 文件只有 61MB，但 gprof 在解析<code> gmon.out</code> 时，长达 23 小时无任何输出。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">➜  mysql-test git:(heads/mysql-8.0.26) ✗ ls /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gmon.out -lh</span><br><span class="line">-rw-r--r-- 1 wslu wslu 61M Mar 27 20:21 /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gmon.out</span><br><span class="line">➜  mysql-test git:(heads/mysql-8.0.26) ✗ ll /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.err</span><br><span class="line">-rw-r--r-- 1 wslu wslu 0 Mar 28 09:23 /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.err</span><br><span class="line">➜  mysql-test git:(heads/mysql-8.0.26) ✗ ll  /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.msg</span><br><span class="line">-rw-r--r-- 1 wslu wslu 0 Mar 28 09:23 /home/wslu/work/mysql/mysql-server/mysql-test/var-all-default/3/mysqld.6/data/gprof.msg</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="单元测试"><a href="#单元测试" class="headerlink" title="单元测试"></a>单元测试</h1><h2 id="简介-7"><a href="#简介-7" class="headerlink" title="简介"></a>简介</h2><p>MySQL 使用 <a target="_blank" rel="noopener" href="https://testanything.org/" title="TAP">TAP</a>（Test Anything Protocol） 和 <a target="_blank" rel="noopener" href="https://google.github.io/googletest/" title="Google Test Framework">Google Test Framework</a> 来实现单元测试。</p>
+<h3 id="MyTAP"><a href="#MyTAP" class="headerlink" title="MyTAP"></a>MyTAP</h3><p>TAP 是 Perl 与测试模块之间所使用的简单的基于文本的接口，主要用于开发 Perl 和 PHP 模块。示例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">TAP version 13</span><br><span class="line">ok 1 - testNewArrayIsEmpty(ArrayTest)</span><br><span class="line">ok 2 - testArrayContainsAnElement(ArrayTest)</span><br><span class="line">not ok 3 - Failure: testFailure(FailureErrorTest)</span><br><span class="line">  ---</span><br><span class="line">  message: <span class="string">&#x27;Failed asserting that &lt;integer:2&gt; matches expected value &lt;integer:1&gt;.&#x27;</span></span><br><span class="line">  severity: fail</span><br><span class="line">  data:</span><br><span class="line">    got: 2</span><br><span class="line">    expected: 1</span><br><span class="line">  ...</span><br><span class="line">not ok 4 - Error: testError(FailureErrorTest)</span><br><span class="line">1..4</span><br></pre></td></tr></table></figure>
+
+<p>为了实现 C/C++ 的单元测试，MySQL 开发了一个用于生成 TAP 文本的库<code>libmytap.a</code>，源码路径位于<code>unittest/mytap/</code>。</p>
+<h3 id="Google-Test-Framework"><a href="#Google-Test-Framework" class="headerlink" title="Google Test Framework"></a>Google Test Framework</h3><p>Google Test Framework，与 MyTAP 类似，也是一个单元测试框架，但提供了更丰富的功能：</p>
+<ul>
+<li>A rich set of predicates</li>
+<li>User-defined predicates and assertions</li>
+<li>Automatic test registration</li>
+<li>Nice error reporting when a predicate fails (with line number, expected and actual values, and additional comments)</li>
+<li>Test fixtures, and setup/teardown logic</li>
+<li>Death tests</li>
+<li>Disabled tests</li>
+<li>Test filtering and shuffling</li>
+</ul>
+<h3 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_UNIT_TESTS.html" title="MySQL: Creating and Executing Unit Tests">MySQL: Creating and Executing Unit Tests</a><ul>
+<li><a target="_blank" rel="noopener" href="https://testanything.org/" title="Home - Test Anything Protocol">Home - Test Anything Protocol</a></li>
+<li><a target="_blank" rel="noopener" href="https://google.github.io/googletest/" title="GoogleTest User’s Guide | GoogleTest">GoogleTest User’s Guide | GoogleTest</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="使用方法-7"><a href="#使用方法-7" class="headerlink" title="使用方法"></a>使用方法</h2><p><strong>编译选项</strong>：<code>-DWITH_DEBUG=1 -DWITH_UNIT_TESTS=&#123;ON|OFF&#125;</code>，默认是 <code>ON</code> 。</p>
+<p><strong>执行路径</strong>：必须在编译的源码目录中执行。</p>
+<p><strong>使用方法</strong>：</p>
+<ol>
+<li> 编译后，在<strong>执行编译（cmake）的目录</strong>执行 <code>make test</code>或<code>make test-unit</code> 指令，虽然按手册描述两个指令都能实现单元测试效果，但实测<code>make test-unit</code>会输出更详细的信息，因此，<strong>建议使用<code>make test-unit</code></strong> 。</li>
+<li> 编译后，在<code>编译目录/mysql-test</code> 中执行 mtr 指令时，添加<code>--unit-tests-report</code> 选项。</li>
+</ol>
+<p><strong>注意事项</strong>：</p>
+<p>若启用了 ASAN：</p>
+<ol>
+<li> 直接在编译目录执行<code>make test-unit</code>，可能会因 ASAN 检测到单元测试代码有内存错误（<code>RUN_ALL_TESTS()</code>的子函数）而导致 case 失败。</li>
+<li>通过 mtr 指令来运行单元测试时，也可能会遇到 ASAN 检测到内存错误或内存泄漏，即使按如下方式修改 <code>.supp</code> 文件，也无法跳过：<ol>
+<li> 若是 AddressSanitizer 范畴中的错误，比如下表中的 heap-buffer-overflow，在<code>asan.supp</code> 文件添加 <code>interceptor_via_fun:RUN_ALL_TESTS</code> ，无法跳过该错误。</li>
+<li> 同理，如果是 ASAN 中的<code>LeakSanitizer</code>检测到内存泄漏，在<code>lsan.supp</code> 文件添加 <code>leak:RUN_ALL_TESTS</code>，无法跳过该错误。</li>
+</ol>
+</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">==<span class="number">228225</span>==ERROR: AddressSanitizer: heap-buffer-overflow on address <span class="number">0x620000098e90</span> at pc <span class="number">0x5570c34c26fb</span> bp <span class="number">0x7ffe1d0d0590</span> sp <span class="number">0x7ffe1d0d0580</span></span><br><span class="line">READ of size <span class="number">2</span> at <span class="number">0x620000098e90</span> thread T0</span><br><span class="line">    #<span class="number">0</span> <span class="number">0x5570c34c26fa</span> in modify_all_zh_pages /data/work/mysql/mysql-server/strings/ctype-uca.cc:<span class="number">4178</span></span><br><span class="line">    #<span class="number">1</span> <span class="number">0x5570c34c4d89</span> in init_weight_level /data/work/mysql/mysql-server/strings/ctype-uca.cc:<span class="number">4287</span></span><br><span class="line">    ......</span><br><span class="line">    #<span class="number">16</span> <span class="number">0x5570c36724b8</span> in testing::UnitTest::<span class="built_in">Run</span>() /data/work/mysql/mysql-server/extra/googletest/googletest-release<span class="number">-1.11</span><span class="number">.0</span>/googletest[表情]c/gtest.cc:<span class="number">5438</span></span><br><span class="line">    #<span class="number">17</span> <span class="number">0x5570c3285445</span> in <span class="built_in">RUN_ALL_TESTS</span>() /data/work/mysql/mysql-server/extra/googletest/googletest-release<span class="number">-1.11</span><span class="number">.0</span>/googletest/include/gtest/gtest.h:<span class="number">2490</span></span><br><span class="line">    #<span class="number">18</span> <span class="number">0x5570c3284f94</span> in main /data/work/mysql/mysql-server/unittest/gunit/gunit_test_main.cc:<span class="number">150</span></span><br><span class="line">    #<span class="number">19</span> <span class="number">0x7f680a423d8f</span> in __libc_start_call_main ../sysdeps/nptl[表情]bc_start_call_main.h:<span class="number">58</span></span><br><span class="line">    #<span class="number">20</span> <span class="number">0x7f680a423e3f</span> in __libc_start_main_impl ..[表情]u[表情]bc-start.c:<span class="number">392</span></span><br><span class="line">    #<span class="number">21</span> <span class="number">0x5570c2682f34</span> in _start (/data/work/mysql/mysql-server/console-build-debug/runtime_output_directory/merge_small_tests-t+<span class="number">0x26a9f34</span>)</span><br></pre></td></tr></table></figure>
+
+<p>综上，<strong>运行单元测试时，不建议同时启用 ASAN</strong>。</p>
+<h2 id="指令示例-5"><a href="#指令示例-5" class="headerlink" title="指令示例"></a>指令示例</h2><h3 id="make-test-示例"><a href="#make-test-示例" class="headerlink" title="make test 示例"></a><strong>make test 示例</strong></h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">➜  console-build-debug git:(my_learn_8.0.29) ✗ make <span class="built_in">test</span></span><br><span class="line">Running tests...</span><br><span class="line">Test project /Users/wslu/work/mysql/mysql-server-8.0/console-build-debug</span><br><span class="line">        Start   1: hp_test1</span><br><span class="line">  1/223 Test   <span class="comment">#1: hp_test1 ...................................................   Passed    0.49 sec</span></span><br><span class="line">        Start   2: hp_test2</span><br><span class="line">  2/223 Test   <span class="comment">#2: hp_test2 ...................................................   Passed    0.74 sec</span></span><br><span class="line">        Start   3: pfs_instr_class</span><br><span class="line">  3/223 Test   <span class="comment">#3: pfs_instr_class ............................................   Passed    0.54 sec</span></span><br><span class="line"> ......</span><br><span class="line">        Start 206: routertest_component_rest_metadata_cache</span><br><span class="line"> 206/223 Test <span class="comment">#206: routertest_component_rest_metadata_cache ...................***Failed   13.37 sec</span></span><br><span class="line">        Start 207: routertest_component_rest_mock_server</span><br><span class="line"> 207/223 Test <span class="comment">#207: routertest_component_rest_mock_server ......................   Passed   23.60 sec</span></span><br><span class="line">        Start 208: routertest_component_rest_router</span><br><span class="line"> 208/223 Test <span class="comment">#208: routertest_component_rest_router ...........................   Passed    3.87 sec</span></span><br><span class="line">        Start 209: routertest_component_rest_routing</span><br><span class="line"> 209/223 Test <span class="comment">#209: routertest_component_rest_routing ..........................***Failed  145.64 sec</span></span><br><span class="line">        Start 210: routertest_component_rest_connection_pool</span><br><span class="line"> 210/223 Test <span class="comment">#210: routertest_component_rest_connection_pool ..................   Passed    5.71 sec</span></span><br><span class="line">        Start 211: routertest_component_router_configuration_errors</span><br><span class="line"> 211/223 Test <span class="comment">#211: routertest_component_router_configuration_errors ...........   Passed    5.15 sec</span></span><br><span class="line">        Start 212: routertest_component_routing</span><br><span class="line"> 212/223 Test <span class="comment">#212: routertest_component_routing ...............................***Failed   39.04 sec</span></span><br><span class="line">        Start 213: routertest_component_routing_connection</span><br><span class="line"> 213/223 Test <span class="comment">#213: routertest_component_routing_connection ....................***Failed  117.32 sec</span></span><br><span class="line">        Start 214: routertest_component_routing_strategy</span><br><span class="line"> 214/223 Test <span class="comment">#214: routertest_component_routing_strategy ......................   Passed   83.88 sec</span></span><br><span class="line">        Start 215: routertest_component_sd_notify</span><br><span class="line"> 215/223 Test <span class="comment">#215: routertest_component_sd_notify .............................   Passed   22.63 sec</span></span><br><span class="line">        Start 216: routertest_component_shutdown</span><br><span class="line"> 216/223 Test <span class="comment">#216: routertest_component_shutdown ..............................   Passed    4.86 sec</span></span><br><span class="line">        Start 217: routertest_component_state_file</span><br><span class="line"> 217/223 Test <span class="comment">#217: routertest_component_state_file ............................   Passed   22.92 sec</span></span><br><span class="line">        Start 218: routertest_component_user_option</span><br><span class="line"> 218/223 Test <span class="comment">#218: routertest_component_user_option ...........................   Passed    0.74 sec</span></span><br><span class="line">        Start 219: routertest_component_metadata_http_auth_backend</span><br><span class="line"> 219/223 Test <span class="comment">#219: routertest_component_metadata_http_auth_backend ............***Failed   76.95 sec</span></span><br><span class="line">        Start 220: routertest_component_socket_close</span><br><span class="line"> 220/223 Test <span class="comment">#220: routertest_component_socket_close ..........................   Passed  162.52 sec</span></span><br><span class="line">        Start 221: routertest_component_routing_splicer</span><br><span class="line"> 221/223 Test <span class="comment">#221: routertest_component_routing_splicer .......................   Passed  287.30 sec</span></span><br><span class="line">        Start 222: routertest_component_mock_server</span><br><span class="line"> 222/223 Test <span class="comment">#222: routertest_component_mock_server ...........................   Passed   20.44 sec</span></span><br><span class="line">        Start 223: routertest_integration_routing_reuse</span><br><span class="line"> 223/223 Test <span class="comment">#223: routertest_integration_routing_reuse .......................   Passed  440.36 sec</span></span><br><span class="line"></span><br><span class="line">97% tests passed, 6 tests failed out of 223</span><br><span class="line"></span><br><span class="line">Total Test time (real) = 2940.80 sec</span><br><span class="line"></span><br><span class="line">The following tests FAILED:</span><br><span class="line">   14 - merge_small_tests (Failed)</span><br><span class="line">  206 - routertest_component_rest_metadata_cache (Failed)</span><br><span class="line">  209 - routertest_component_rest_routing (Failed)</span><br><span class="line">  212 - routertest_component_routing (Failed)</span><br><span class="line">  213 - routertest_component_routing_connection (Failed)</span><br><span class="line">  219 - routertest_component_metadata_http_auth_backend (Failed)</span><br><span class="line">Errors <span class="keyword">while</span> running CTest</span><br><span class="line">Output from these tests are <span class="keyword">in</span>: /Users/wslu/work/mysql/mysql-server-8.0/console-build-debug/Testing/Temporary/LastTest.log</span><br><span class="line">Use <span class="string">&quot;--rerun-failed --output-on-failure&quot;</span> to re-run the failed cases verbosely.</span><br><span class="line">make: *** [<span class="built_in">test</span>] Error 8</span><br></pre></td></tr></table></figure>
+
+<h3 id="make-test-unit-示例"><a href="#make-test-unit-示例" class="headerlink" title="make test-unit 示例"></a><strong>make test-unit 示例</strong></h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql-server/console-build-debug$ head -n 100 /tmp/maketestunit.out</span><br><span class="line">Test project /data/work/mysql/mysql-server/console-build-debug</span><br><span class="line">        Start  14: merge_small_tests</span><br><span class="line">        Start  15: merge_large_tests</span><br><span class="line">  1/223 Test  <span class="comment">#14: merge_small_tests ..........................................***Failed   70.09 sec</span></span><br><span class="line">[==========] Running 2386 tests from 132 <span class="built_in">test</span> suites.</span><br><span class="line">[----------] Global <span class="built_in">test</span> environment set-up.</span><br><span class="line">[----------] 5 tests from BoundsCheckedArrayDeathTest</span><br><span class="line">[ RUN      ] BoundsCheckedArrayDeathTest.BoundsCheckRead</span><br><span class="line">[       OK ] BoundsCheckedArrayDeathTest.BoundsCheckRead (616 ms)</span><br><span class="line">[ RUN      ] BoundsCheckedArrayDeathTest.BoundsCheckAssign</span><br><span class="line">[       OK ] BoundsCheckedArrayDeathTest.BoundsCheckAssign (329 ms)</span><br><span class="line">[ RUN      ] BoundsCheckedArrayDeathTest.BoundsCheckPopFront</span><br><span class="line">[       OK ] BoundsCheckedArrayDeathTest.BoundsCheckPopFront (276 ms)</span><br><span class="line">[ RUN      ] BoundsCheckedArrayDeathTest.BoundsCheckResize</span><br><span class="line">[       OK ] BoundsCheckedArrayDeathTest.BoundsCheckResize (277 ms)</span><br><span class="line">[ RUN      ] BoundsCheckedArrayDeathTest.BoundsCheckResizeAssign</span><br><span class="line">[       OK ] BoundsCheckedArrayDeathTest.BoundsCheckResizeAssign (290 ms)</span><br><span class="line">[----------] 5 tests from BoundsCheckedArrayDeathTest (1794 ms total)</span><br><span class="line"></span><br><span class="line">[----------] 1 <span class="built_in">test</span> from DebugDeathTest</span><br><span class="line">[ RUN      ] DebugDeathTest.Suicide</span><br><span class="line">[       OK ] DebugDeathTest.Suicide (178 ms)</span><br><span class="line">[----------] 1 <span class="built_in">test</span> from DebugDeathTest (178 ms total)</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">216/223 Test   <span class="comment">#1: hp_test1 ...................................................   Passed    0.96 sec</span></span><br><span class="line">        Start  12: pfs_misc</span><br><span class="line">217/223 Test  <span class="comment">#10: pfs_noop ...................................................   Passed    0.76 sec</span></span><br><span class="line">        Start  83: basic</span><br><span class="line">218/223 Test  <span class="comment">#83: basic ......................................................   Passed    0.12 sec</span></span><br><span class="line">        Start  79: skip</span><br><span class="line">219/223 Test  <span class="comment">#79: skip .......................................................   Passed    0.07 sec</span></span><br><span class="line">        Start  80: todo</span><br><span class="line">220/223 Test  <span class="comment">#12: pfs_misc ...................................................   Passed    0.91 sec</span></span><br><span class="line">        Start  81: skip_all</span><br><span class="line">221/223 Test  <span class="comment">#80: todo .......................................................   Passed    0.06 sec</span></span><br><span class="line">        Start  82: no_plan</span><br><span class="line">222/223 Test  <span class="comment">#81: skip_all ...................................................   Passed    0.07 sec</span></span><br><span class="line">223/223 Test  <span class="comment">#82: no_plan ....................................................   Passed    0.03 sec</span></span><br><span class="line"></span><br><span class="line">94% tests passed, 14 tests failed out of 223</span><br><span class="line"></span><br><span class="line">Total Test time (real) = 4334.59 sec</span><br><span class="line"></span><br><span class="line">The following tests FAILED:</span><br><span class="line">   14 - merge_small_tests (Failed)</span><br><span class="line">   15 - merge_large_tests (Failed)</span><br><span class="line">   56 - gcs_xcom_xcom_cache (Subprocess killed)</span><br><span class="line">   57 - gcs_xcom_control_interface (Failed)</span><br><span class="line">   65 - merge_temptable_tests-t (Failed)</span><br><span class="line">  187 - routertest_component_bootstrap (Subprocess aborted)</span><br><span class="line">  189 - routertest_component_bootstrap_clusterset (Subprocess aborted)</span><br><span class="line">  191 - routertest_component_bootstrap_tls_endpoint (Subprocess aborted)</span><br><span class="line">  192 - routertest_component_clusterset (Subprocess aborted)</span><br><span class="line">  197 - routertest_component_gr_notifications (Failed)</span><br><span class="line">  205 - routertest_component_rest_api_enable (Subprocess aborted)</span><br><span class="line">  213 - routertest_component_routing_connection (Subprocess aborted)</span><br><span class="line">  221 - routertest_component_routing_splicer (Timeout)</span><br><span class="line">  223 - routertest_integration_routing_reuse (Failed)</span><br><span class="line">Errors <span class="keyword">while</span> running CTest</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="通过-mtr-执行单元测试"><a href="#通过-mtr-执行单元测试" class="headerlink" title="通过 mtr 执行单元测试"></a>通过 mtr 执行单元测试</h3><p>在<code>编译目录/mysql-test</code> 执行如下指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-test-run.pl --timer --max-test-fail=0 --force --parallel=1 --max-test-fail=0 --vardir=var-binlog --suite=binlog --unit-tests-report</span><br></pre></td></tr></table></figure>
+
+<p>mtr 会首先运行 binlog suite 的所有 case，之后才会运行单元测试。</p>
+<h1 id="压力测试"><a href="#压力测试" class="headerlink" title="压力测试"></a>压力测试</h1><h2 id="简介-8"><a href="#简介-8" class="headerlink" title="简介"></a>简介</h2><p>涉及压力测试的有两部分：</p>
+<h3 id="压力测试-suites-x20"><a href="#压力测试-suites-x20" class="headerlink" title="压力测试 suites&#x20;"></a>压力测试 suites&#x20;</h3><p>只有两个：</p>
+<ul>
+<li>stress</li>
+<li>innodb_stress&#x20;</li>
+</ul>
+<p>如需要添加新 case，参考对应 suite 已有 case 照猫画虎即可，后续文章会详解介绍语法。</p>
+<h3 id="mysql-stress-test-pl-x20"><a href="#mysql-stress-test-pl-x20" class="headerlink" title="mysql-stress-test.pl&#x20;"></a>mysql-stress-test.pl&#x20;</h3><p>被 <code>mysql-test-run.pl</code> 调用，参数是<code>--stress</code>。</p>
+<p>使用说明位于<code>mysql-test/README.stress</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">The stress script is designed to perform testing of the MySQL server <span class="keyword">in</span></span><br><span class="line">a multi-threaded environment.</span><br><span class="line"></span><br><span class="line">All functionality regarding stress testing is implemented <span class="keyword">in</span> the</span><br><span class="line">mysql-stress-test.pl script.</span><br><span class="line"></span><br><span class="line">The stress script allows:</span><br><span class="line"></span><br><span class="line"> - To stress <span class="built_in">test</span> the mysqltest binary <span class="built_in">test</span> engine.</span><br><span class="line"> - To stress <span class="built_in">test</span> the regular <span class="built_in">test</span> suite and any additional <span class="built_in">test</span> suites</span><br><span class="line">   (such as mysql-test-extra-5.0).</span><br><span class="line"> - To specify files with lists of tests both <span class="keyword">for</span> initialization of</span><br><span class="line">   stress db and <span class="keyword">for</span> further testing itself.</span><br><span class="line"> - To define the number of threads to be concurrently used <span class="keyword">in</span> testing.</span><br><span class="line"> - To define limitations <span class="keyword">for</span> the <span class="built_in">test</span> run. such as the number of tests or</span><br><span class="line">   loops <span class="keyword">for</span> execution or duration of testing, delay between <span class="built_in">test</span></span><br><span class="line">   executions, and so forth.</span><br><span class="line"> - To get a readable <span class="built_in">log</span> file that can be used <span class="keyword">for</span> identification of</span><br><span class="line">   errors that occur during testing.</span><br><span class="line"></span><br><span class="line">There are two ways to run the mysql-stress-test.pl script:</span><br><span class="line"></span><br><span class="line"> - For most cases, it is enough to use the options below <span class="keyword">for</span> starting</span><br><span class="line">   the stress <span class="built_in">test</span> from the mysql-test-run wrapper. In this <span class="keyword">case</span>, the</span><br><span class="line">   server is run automatically, all preparation steps are performed,</span><br><span class="line">   and after that the stress <span class="built_in">test</span> is started.</span><br><span class="line"></span><br><span class="line"> - In advanced <span class="keyword">case</span>, you can run the mysql-stress-test.pl script directly.</span><br><span class="line">   But this requires that you perform some preparation steps and to specify</span><br><span class="line">   a bunch of options as well, so this invocation method may be a bit</span><br><span class="line">   complicated.</span><br></pre></td></tr></table></figure>
+
+<p>可见，有两种用法：</p>
+<ul>
+<li><p>大部分情况下，通过 <code>mysql-test-run.pl --stress=[option1,option2,...]</code> 运行即可，该脚本实现了准备阶段、压力测试阶段所需的工作。</p>
+</li>
+<li><p>更高级的用法是直接执行<code>mysql-stress-test.pl</code> 脚本，这就需要自行实现准备阶段、测试阶段所需的工作。主要包括：</p>
+<ul>
+<li><p><code> --stress-init-file[=path]</code></p>
+<p><strong>file_name</strong> is the location of the file that contains the list of tests to be run once to initialize the database for the testing. If missing, the default file is <strong>stress_init.txt</strong> in the test suite directory.</p>
+</li>
+<li><p><code>--stress-tests-file[=file_name]</code></p>
+<p>Use this option to run the stress tests. <strong>file_name</strong> is the location of the file that contains the list of tests. If <strong>file_name</strong> is omitted, the default file is <strong>stress-test.txt</strong> in the stress suite directory. (See <strong><code>--stress-suite-basedir</code></strong>).</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>其他参数见手册 <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQL_STRESS_TEST_PL.html" title="MySQL: mysql-stress-test.pl — Server Stress Test Program">MySQL: mysql-stress-test.pl — Server Stress Test Program</a></p>
+<h2 id="指令示例-6"><a href="#指令示例-6" class="headerlink" title="指令示例"></a>指令示例</h2><h3 id="单独运行压力测试-suites"><a href="#单独运行压力测试-suites" class="headerlink" title="单独运行压力测试 suites"></a>单独运行压力测试 suites</h3><p>没找到手册说明，据我理解，只要未主动关闭单元测试标记（<code>-DWITH_UNIT_TESTS=&#123;ON|OFF&#125;</code>选项，默认是开启的），就肯定会编译生成 stress suite。</p>
+<p>在 Ubuntu 22.04 X86_64 执行测试，成功。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test$ perl mysql-test-run.pl --force --timer    --comment=stress --vardir=var-stress  --suite=stress --no-skip --max-test-fail=30</span><br><span class="line">Logging: mysql-test-run.pl  --force --timer --comment=stress --vardir=var-stress --suite=stress --no-skip --max-test-fail=30</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">MySQL Version 8.0.29</span><br><span class="line"></span><br><span class="line"><span class="comment">##############################################################################</span></span><br><span class="line"><span class="comment"># stress</span></span><br><span class="line"><span class="comment">##############################################################################</span></span><br><span class="line">Checking supported features</span><br><span class="line"> - Binaries are debug compiled</span><br><span class="line">Using suite(s): stress</span><br><span class="line">Collecting tests</span><br><span class="line">Removing old var directory</span><br><span class="line">Creating var directory <span class="string">&#x27;/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-stress&#x27;</span></span><br><span class="line">Installing system database</span><br><span class="line">Using parallel: 1</span><br><span class="line"></span><br><span class="line">==============================================================================</span><br><span class="line">                  TEST NAME                       RESULT  TIME (ms) COMMENT</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[ 16%] stress.ddl_myisam                         [ pass ]  88171</span><br><span class="line">[ 33%] stress.ddl_archive                        [ pass ]  11868</span><br><span class="line">[ 50%] stress.ddl_csv                            [ pass ]   8007</span><br><span class="line">[ 66%] stress.ddl_innodb                         [ pass ]  163638</span><br><span class="line">[ 83%] stress.ddl_memory                         [ pass ]  84721</span><br><span class="line">[100%] shutdown_report                           [ pass ]</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">The servers were restarted 1 <span class="built_in">times</span></span><br><span class="line">The servers were reinitialized 0 <span class="built_in">times</span></span><br><span class="line">Spent 356.405 of 423 seconds executing testcases</span><br><span class="line"></span><br><span class="line">Completed: All 6 tests were successful.</span><br></pre></td></tr></table></figure>
+
+<h3 id="mysql-stress-test-pl-使用示例"><a href="#mysql-stress-test-pl-使用示例" class="headerlink" title="mysql-stress-test.pl 使用示例"></a>mysql-stress-test.pl 使用示例</h3><p>指令示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">perl mysql-stress-test.pl</span><br><span class="line">--stress-suite-basedir=/opt/qa/mysql-test-extra-5.0/mysql-test</span><br><span class="line">--stress-basedir=/opt/qa/<span class="built_in">test</span></span><br><span class="line">--server-logs-dir=/opt/qa/logs</span><br><span class="line">--test-count=20</span><br><span class="line">--stress-tests-file=innodb-tests.txt</span><br><span class="line">--stress-init-file=innodb-init.txt</span><br><span class="line">--threads=5</span><br><span class="line">--suite=funcs_1</span><br><span class="line">--mysqltest=/opt/mysql/mysql-5.0/client/mysqltest</span><br><span class="line">--server-user=root</span><br><span class="line">--server-database=<span class="built_in">test</span></span><br><span class="line">--cleanup</span><br></pre></td></tr></table></figure>
+
+<h2 id="官方推荐的压力测试用法"><a href="#官方推荐的压力测试用法" class="headerlink" title="官方推荐的压力测试用法"></a>官方推荐的压力测试用法</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#### 提交代码时执行</span></span><br><span class="line">perl mysql-test-run.pl --force --timer    --comment=stress --vardir=var-stress  --suite=stress --no-skip --max-test-fail=30</span><br><span class="line"></span><br><span class="line"><span class="comment">#### 每天执行</span></span><br><span class="line">perl mysql-test-run.pl --force --timer --big-test   --comment=stress --vardir=var-stress  --suite=stress --no-skip</span><br><span class="line"></span><br><span class="line"><span class="comment">##### 每周执行 basic</span></span><br><span class="line"><span class="comment"># 相较于提交代码时执行的测试指令，多了 --debug-server 选项</span></span><br><span class="line">perl mysql-test-run.pl --debug-server --force --timer --comment=stress --vardir=var-stress  --suite=stress --no-skip</span><br><span class="line"><span class="comment"># 相较于上一条多了 --big-test</span></span><br><span class="line">perl mysql-test-run.pl --debug-server --force --timer --big-test    --comment=stress --vardir=var-stress  --suite=stress --no-skip</span><br><span class="line"></span><br><span class="line"><span class="comment">#### 每天执行 valgrind</span></span><br><span class="line">perl mysql-test-run.pl --force --timer    --comment=stress --vardir=var-stress  --suite=stress</span><br><span class="line"></span><br><span class="line"><span class="comment">#### 每周执行 valgrind</span></span><br><span class="line"><span class="comment"># 指定了 --big-test</span></span><br><span class="line">perl mysql-test-run.pl --force --timer --big-test --testcase-timeout=60 --debug-server  --comment=stress-debug-big --vardir=var-stress-debug-big  --suite=stress</span><br><span class="line"></span><br><span class="line"><span class="comment"># 其他</span></span><br><span class="line">perl mysql-test-run.pl --force --timer    --comment=stress --vardir=var-stress  --suite=stress --no-skip --max-test-fail=30</span><br><span class="line">perl mysql-test-run.pl --force --timer    --comment=innodb-stress --vardir=var-innodb-stress  --suite=innodb_stress --no-skip --max-test-fail=30</span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>mysql-test/README.stress</code> 文件的最后修改日期是 2006 年，已过时，没有参考价值。</p>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><h2 id="mtr-执行路径"><a href="#mtr-执行路径" class="headerlink" title="mtr 执行路径"></a><strong>mtr 执行路径</strong></h2><ul>
+<li><strong>代码覆盖率、单元测试只能在<code>编译的源码目录/mysql-test</code>执行</strong>。</li>
+<li><strong>其他测试在<code>编译的源码目录/mysql-test</code>和 <code>安装目录/mysql-test</code>都可以执行</strong>。</li>
+<li><strong>如无特殊需求，更建议在安装目录执行 mtr 测试</strong>（目录结构更清晰）。</li>
+</ul>
+<h2 id="测试结果及兼容性"><a href="#测试结果及兼容性" class="headerlink" title="测试结果及兼容性"></a><strong>测试结果及</strong>兼容性</h2><table>
+<thead>
+<tr>
+<th><strong>名称</strong></th>
+<th><strong>对其支持是否是实验性的</strong></th>
+<th><strong>编译兼容性（同时启用可编译成功，则为兼容）</strong></th>
+<th><strong>mtr 测试结果</strong></th>
+<th><strong>结论</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ASAN</td>
+<td>否</td>
+<td>与 UBSAN 、Valgrind 兼容。</td>
+<td>若与 Valgrind 同时启用（mtr 指定 <code>--valgrind</code>等选项），执行 mtr 测试时，会导致很多 case 因 valgrind memcheck 报错而失败。比如 <code>binlog_gtid.binlog_gtid_mix_ok_packet_all_gtids</code></td>
+<td><strong>ASAN 与 Valgrind 不可同时启用，但可与 UBSAN 同时启用。</strong></td>
+</tr>
+<tr>
+<td>LSAN</td>
+<td>否</td>
+<td>已集成到 ASAN，未测试。</td>
+<td></td>
+<td>已集成到 ASAN，无需单独启用。</td>
+</tr>
+<tr>
+<td>UBSAN</td>
+<td>否</td>
+<td>与 ASAN、valgrind、TSAN 都兼容。</td>
+<td></td>
+<td><strong>建议与 ASAN 同时启用</strong>。</td>
+</tr>
+<tr>
+<td>MSAN</td>
+<td>是</td>
+<td>与 ASAN 不兼容，若同时启用，编译会报错。&#xA;单独启用 MSAN，cmake 失败，报错。</td>
+<td></td>
+<td>MySQL 对其的支持是实验性的，暂不建议使用。</td>
+</tr>
+<tr>
+<td>TSAN</td>
+<td>是</td>
+<td>与 ASAN 不兼容，若同时启用，编译会报错。&#xA;与 UBSAN、Valgrind 兼容。</td>
+<td>即使只启用 TSAN，在运行 mtr 时，install database 阶段依然有大片的 data race。</td>
+<td>MySQL 对其的支持是实验性的，暂不建议使用。</td>
+</tr>
+<tr>
+<td>valgrind</td>
+<td>否</td>
+<td>与 ASAN 、UBSAN 、TSAN 兼容。</td>
+<td>单独启用 valgrind，mtr 可正常执行<strong>完全体 valgrind 测试（mtr 指定<code>--valgrind</code>选项）</strong>，memcheck 未报错。&#xA;与 ASAN 同时启用时，若执行完全体 valgrind 测试，mtr 会因 valgrind memcheck 与 asan 冲突而 crash <strong>。</strong></td>
+<td><strong>若要使用，不建议与 ASAN 同时启用。</strong></td>
+</tr>
+<tr>
+<td>gcov/gprof</td>
+<td>否</td>
+<td>与 ASAN、UBSAN 兼容。&#xA;gprof 只支持 linux，不支持 MacOS/Windows。</td>
+<td>需要在 <strong>执行 cmake 的源码目录</strong> 测试。</td>
+<td><strong>建议与 ASAN、UBSAN 一起启用。</strong></td>
+</tr>
+<tr>
+<td>单元测试</td>
+<td>否</td>
+<td>只要是 DEBUG 版本，就会默认启用。&#xA;与 ASAN、UBSAN 兼容，其他组件未验证，理论上也应该兼容。</td>
+<td>需要在 <strong>执行 cmake 的源码目录</strong> 测试，运行<code>make test-unit</code>指令或<code>./mtr --unit-tests-report</code>。&#xA;ASAN 会检测到部分测试 case 自身存在内存泄漏，导致当前 case 失败。</td>
+<td>做单元测试时建议启用 ASAN/UBSAN/LSAN。</td>
+</tr>
+<tr>
+<td>压力测试</td>
+<td>否</td>
+<td>只要编译，就会产生 <code>stress</code>、<code>innodb_stress</code> 两个 suite 。&#xA;<code>mysql-stress-test.pl</code> 需要自定义 初始化和运行的 SQL 语句，不建议使用。</td>
+<td>测试成功。</td>
+<td>正常运行 mtr 全量 suite 或单独运行 <code>stress</code>、<code>innodb_stress </code>suites。</td>
+</tr>
+</tbody></table>
+<p><strong>注意事项：</strong></p>
+<ol>
+<li> 由于 mtr case 特别多，运行全部 case 时间过长，因此，该表中所说「正常执行」是执行一部分 suites（而不是全部）未报错。</li>
+<li> <strong>从执行时长来看，如需在 hyper 运行官方推荐 collections ，至少要开启 32 并发</strong>。</li>
+<li> <strong>对于单元测试、代码覆盖率测试、内存错误检测，建议在 X86_64 平台运行，某些选项对 ARM 平台不兼容（编译失败）</strong>。</li>
+<li> <strong>部分 perl 版本有内存泄漏，会被 ASAN 检测出来，导致 mtr 测试终止</strong>。目前验证 Ubuntu 22.04 所用的 perl 5.34.0 存在内存泄漏，而 Ubuntu 20.04 所用的 perl 5.30.0 不存在内存泄漏。</li>
+<li> 由于我主要是在虚拟机进行验证的，而 mtr 运行太过耗时，因此，本文章节涉及的 mtr 指令，大部分并未完整运行（进度小于 10%）。</li>
+</ol>
+<h2 id="推荐用法"><a href="#推荐用法" class="headerlink" title="推荐用法"></a>推荐用法</h2><blockquote>
+<p>本部分是个人根据官方 collections ，结合实际情况给出的建议，仅供参考。</p>
+</blockquote>
+<p>在代码开发阶段，统一使用 debug 版本（编译选项<code>-DWITH_DEBUG=1</code>）提前发现问题：</p>
+<ul>
+<li>push 代码到 dev 分支时，可参考 <code>default.push</code> 中的指令集。</li>
+<li>merge 代码到 main 分支时，可参考 <code>mysql-trunk-stage.push</code> （与 <code>mysql-8.0-stage.push</code> 完全相同，是<code>default.push</code>的超集）中的指令集。</li>
+</ul>
+<p>内核在发布 alpha 版本前，也要用 debug 版本来验证稳定性：</p>
+<ul>
+<li><strong>单元测试</strong>：<ul>
+<li>编译选项：<code>-DWITH_DEBUG=1 -DWITH_UNIT_TESTS=&#123;ON|OFF&#125;</code>，默认是 ON 。</li>
+<li>执行路径：<strong>只能在编译后的源码目录执行</strong>。</li>
+<li>使用方法：<ul>
+<li>执行 <code>make test</code>或<code>make test-unit</code> 指令，虽然按手册描述两个指令都能实现单元测试效果，但实测<code>make test-unit</code>会输出更详细的信息，因此，<strong>建议使用<code>make test-unit</code></strong> 。</li>
+<li>执行 mtr 指令时添加 <code>--unit-tests-report</code> 选项也有同样效果。</li>
+</ul>
+</li>
+<li>注意事项：在执行单元测试时，不建议启用 ASAN。</li>
+</ul>
+</li>
+<li><strong>内存错误检测</strong>：<ul>
+<li>工具选择：由于 valgrind 运行很慢，建议使用 ASAN + UBSAN 来测试。</li>
+<li>编译选项：<code>-DWITH_DEBUG=1 -DWITH_ASAN=1 -DUBSAN=1</code>，可选择启用<code>-DWITH_ASAN_SCOPE=1</code></li>
+<li>建议指令：官方并未提供推荐指令集，建议在 <code>default.daily</code> 的指令基础上，添加 <code>--sanitize</code> 选项。</li>
+<li>指令示例：<code>perl mysql-test-run.pl --timer --max-test-fail=0 --force --comment=var-rpl --vardir=var-rpl --suite=rpl --sanitize</code></li>
+</ul>
+</li>
+<li><strong>代码覆盖率测试</strong>：<ul>
+<li>编译选项：<code>-DWITH_DEBUG=1 -DENABLE_GCOV=1 -DENABLE_GPROF=1</code></li>
+<li>特殊要求：必须在<code>编译的源码目录</code>执行测试。</li>
+<li>指令示例：<code>./mtr --gcov --gprof -big-test --force --max-test-fail=0 --comment=gcov-gprof --vardir=var-gcov-gprof --no-skip</code> &#x20;<ul>
+<li>在 gcov 执行成功后，会将代码覆盖率相关信息写到<code>gmon.out</code>，之后，mtr 会自动调用 gprof 解析该文件 。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>压力测试</strong>：虽然 mtr 整合了<code>mysql-stress-test.pl</code> 脚本，但使用该脚本需要自行编写 stress-init、stress-test 文件，因此，<strong>建议直接测试 stress、innodb_stress 这两个 suites</strong> 。<ul>
+<li><code>perl mysql-test-run.pl --force --timer --big-test --comment=stress --vardir=var-stress --suite=stress,innodb_stress --no-skip</code></li>
+</ul>
+</li>
+<li><strong>线程竞争</strong>：参考<code>mysql-test/collections/mysql-trunk-tsan.push</code> 。<ul>
+<li>编译选项：<code>-DWITH_DEBUG=1 -DWITH_TSAN=1</code></li>
+<li>指令示例：<code>perl mysql-test-run.pl --timer --debug-server --force  --comment=main-tsan --vardir=var-main-tsan --suite=main</code><ul>
+<li><strong>在 install database 阶段会检测出大面积线程竞争，因此，当前版本无法使用</strong>。</li>
+</ul>
+</li>
+<li>注意事项：TSAN/ThreadSanitizer 运行速度很慢，因此，只建议运行 main suite 。</li>
+</ul>
+</li>
+</ul>
+<p>如果需要验证 release 版本稳定性（适用于 QA、研发），可参考 <code>default.daily</code> 中的指令集。</p>
+<ul>
+<li>该指令集覆盖了单元测试、压力测试等。</li>
+</ul>
+<h2 id="编译组合建议"><a href="#编译组合建议" class="headerlink" title="编译组合建议"></a><strong>编译组合建议</strong></h2><p>推荐：</p>
+<ul>
+<li>普通 debug 版，运行 SQL 兼容性测试 + 单元测试 + 压力测试（stress/innodb_stress suite）</li>
+<li>内存错误 + 代码覆盖率测试：asan/ubsan + gcov/gprof<ul>
+<li>当然 二者也可分开编译、测试。</li>
+<li>ASAN 与 valgrind 不可同时启用，执行 mtr 时如果添加<code>--valgrind</code> 参数，asan 会与 memcheck 冲突导致 crash，测试终止。</li>
+</ul>
+</li>
+</ul>
+<p>可选：</p>
+<ul>
+<li>valgrind ： 主要用于检测内存问题，但运行速度很慢，更建议使用 ASAN。</li>
+<li>编译选项：<code>-DWITH_VALGRIND=1</code></li>
+</ul>
+<p>持续跟踪后续版本改进情况：</p>
+<ul>
+<li>TSAN：MySQL 对其的支持尚不成熟。</li>
+<li>MSAN：与 ASAN 功能重叠，且 MySQL 对其的支持尚不成熟。</li>
+</ul>
+<h1 id="参考链接："><a href="#参考链接：" class="headerlink" title="参考链接："></a><strong>参考链接：</strong></h1><p>llvm 工具集：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/AddressSanitizer.html" title="AddressSanitizer — Clang 17.0.0git documentation (llvm.org)">AddressSanitizer — Clang 17.0.0git documentation (llvm.org)</a></li>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/LeakSanitizer.html" title="LeakSanitizer — Clang 17.0.0git documentation (llvm.org)">LeakSanitizer — Clang 17.0.0git documentation (llvm.org)</a></li>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html" title="UndefinedBehaviorSanitizer — Clang 17.0.0git documentation (llvm.org)">UndefinedBehaviorSanitizer — Clang 17.0.0git documentation (llvm.org)</a></li>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/ThreadSanitizer.html" title="ThreadSanitizer — Clang 17.0.0git documentation (llvm.org)">ThreadSanitizer — Clang 17.0.0git documentation (llvm.org)</a></li>
+<li><a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/MemorySanitizer.html" title="MemorySanitizer — Clang 17.0.0git documentation (llvm.org)">MemorySanitizer — Clang 17.0.0git documentation (llvm.org)</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/cpp/sanitizers/asan?view=msvc-170" title="AddressSanitizer | Microsoft Learn">AddressSanitizer | Microsoft Learn</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/google/sanitizers/wiki/AddressSanitizer" title="AddressSanitizer · google/sanitizers Wiki · GitHub">AddressSanitizer · google/sanitizers Wiki · GitHub</a></li>
+</ul>
+<p>linux kernel 工具集：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.kernel.org/doc/html/latest/dev-tools/kasan.html" title="The Kernel Address Sanitizer (KASAN) — The Linux Kernel documentation">The Kernel Address Sanitizer (KASAN) — The Linux Kernel documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.kernel.org/doc/html/latest/dev-tools/kmsan.html" title="The Kernel Memory Sanitizer (KMSAN) — The Linux Kernel documentation">The Kernel Memory Sanitizer (KMSAN) — The Linux Kernel documentation</a></li>
+</ul>
+<p>MySQL：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/source-configuration-options.html" title="MySQL :: MySQL 8.0 Reference Manual :: 2.8.7 MySQL Source-Configuration Options">MySQL :: MySQL 8.0 Reference Manual :: 2.8.7 MySQL Source-Configuration Options</a></li>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_UNIT_TESTS.html" title="MySQL: Creating and Executing Unit Tests">MySQL: Creating and Executing Unit Tests</a><ul>
+<li><a target="_blank" rel="noopener" href="https://testanything.org/" title="Home - Test Anything Protocol">Home - Test Anything Protocol</a></li>
+<li><a target="_blank" rel="noopener" href="https://google.github.io/googletest/" title="GoogleTest User’s Guide | GoogleTest">GoogleTest User’s Guide | GoogleTest</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/google/googletest" title="GitHub - google/googletest: GoogleTest - Google Testing and Mocking Framework">GitHub - google/googletest: GoogleTest - Google Testing and Mocking Framework</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2023-05-01, 21:03:44</p>
+        <p><span>最后更新:</span>2023-05-05, 22:43:11</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2023/05/01/mysql-mtr-02-advanced/" title="特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇">http://dbkernel.github.io/2023/05/01/mysql-mtr-02-advanced/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2023/05/01/mysql-mtr-02-advanced/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/03/18/mysql-mtr-01-introduction/">
+                    特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL-%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9"><span class="toc-number">2.</span> <span class="toc-text">MySQL 编译选项</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#valgrind"><span class="toc-number">3.</span> <span class="toc-text">valgrind</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B"><span class="toc-number">3.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E9%A1%B9"><span class="toc-number">3.2.</span> <span class="toc-text">选项</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="toc-number">3.3.</span> <span class="toc-text">使用方法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Sanitizier"><span class="toc-number">4.</span> <span class="toc-text">Sanitizier</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ASAN"><span class="toc-number">4.1.</span> <span class="toc-text">ASAN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-1"><span class="toc-number">4.1.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-1"><span class="toc-number">4.1.2.</span> <span class="toc-text">使用方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#mysql-test-asan-supp-%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.1.2.1.</span> <span class="toc-text">mysql-test&#x2F;asan.supp 示例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#mysql-test-lsan-supp-%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.1.2.2.</span> <span class="toc-text">mysql-test&#x2F;lsan.supp 示例</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.1.3.</span> <span class="toc-text">指令示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LSAN"><span class="toc-number">4.2.</span> <span class="toc-text">LSAN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-2"><span class="toc-number">4.2.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-2"><span class="toc-number">4.2.2.</span> <span class="toc-text">使用方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-1"><span class="toc-number">4.2.3.</span> <span class="toc-text">指令示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UBSAN"><span class="toc-number">4.3.</span> <span class="toc-text">UBSAN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-3"><span class="toc-number">4.3.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-3"><span class="toc-number">4.3.2.</span> <span class="toc-text">使用方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-2"><span class="toc-number">4.3.3.</span> <span class="toc-text">指令示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TSAN"><span class="toc-number">4.4.</span> <span class="toc-text">TSAN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-4"><span class="toc-number">4.4.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-4"><span class="toc-number">4.4.2.</span> <span class="toc-text">使用方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#mysql-test-tsan-supp-%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.4.2.1.</span> <span class="toc-text">mysql-test&#x2F;tsan.supp 示例</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-3"><span class="toc-number">4.4.3.</span> <span class="toc-text">指令示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%98%E5%9C%A8%E9%97%AE%E9%A2%98"><span class="toc-number">4.4.4.</span> <span class="toc-text">存在问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MSAN"><span class="toc-number">4.5.</span> <span class="toc-text">MSAN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-5"><span class="toc-number">4.5.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-5"><span class="toc-number">4.5.2.</span> <span class="toc-text">使用方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-4"><span class="toc-number">4.5.3.</span> <span class="toc-text">指令示例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">代码覆盖率测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-6"><span class="toc-number">5.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-6"><span class="toc-number">5.2.</span> <span class="toc-text">使用方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.3.</span> <span class="toc-text">示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AD%98%E5%9C%A8%E9%97%AE%E9%A2%98-1"><span class="toc-number">5.4.</span> <span class="toc-text">存在问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95"><span class="toc-number">6.</span> <span class="toc-text">单元测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-7"><span class="toc-number">6.1.</span> <span class="toc-text">简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MyTAP"><span class="toc-number">6.1.1.</span> <span class="toc-text">MyTAP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Google-Test-Framework"><span class="toc-number">6.1.2.</span> <span class="toc-text">Google Test Framework</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83%EF%BC%9A"><span class="toc-number">6.1.3.</span> <span class="toc-text">参考：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95-7"><span class="toc-number">6.2.</span> <span class="toc-text">使用方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-5"><span class="toc-number">6.3.</span> <span class="toc-text">指令示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#make-test-%E7%A4%BA%E4%BE%8B"><span class="toc-number">6.3.1.</span> <span class="toc-text">make test 示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#make-test-unit-%E7%A4%BA%E4%BE%8B"><span class="toc-number">6.3.2.</span> <span class="toc-text">make test-unit 示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%9A%E8%BF%87-mtr-%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95"><span class="toc-number">6.3.3.</span> <span class="toc-text">通过 mtr 执行单元测试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95"><span class="toc-number">7.</span> <span class="toc-text">压力测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B-8"><span class="toc-number">7.1.</span> <span class="toc-text">简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95-suites-x20"><span class="toc-number">7.1.1.</span> <span class="toc-text">压力测试 suites </span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mysql-stress-test-pl-x20"><span class="toc-number">7.1.2.</span> <span class="toc-text">mysql-stress-test.pl </span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%87%E4%BB%A4%E7%A4%BA%E4%BE%8B-6"><span class="toc-number">7.2.</span> <span class="toc-text">指令示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%95%E7%8B%AC%E8%BF%90%E8%A1%8C%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95-suites"><span class="toc-number">7.2.1.</span> <span class="toc-text">单独运行压力测试 suites</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mysql-stress-test-pl-%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">7.2.2.</span> <span class="toc-text">mysql-stress-test.pl 使用示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%98%E6%96%B9%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95%E7%94%A8%E6%B3%95"><span class="toc-number">7.3.</span> <span class="toc-text">官方推荐的压力测试用法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">8.</span> <span class="toc-text">结论</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#mtr-%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84"><span class="toc-number">8.1.</span> <span class="toc-text">mtr 执行路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E7%BB%93%E6%9E%9C%E5%8F%8A%E5%85%BC%E5%AE%B9%E6%80%A7"><span class="toc-number">8.2.</span> <span class="toc-text">测试结果及兼容性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E8%8D%90%E7%94%A8%E6%B3%95"><span class="toc-number">8.3.</span> <span class="toc-text">推荐用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E7%BB%84%E5%90%88%E5%BB%BA%E8%AE%AE"><span class="toc-number">8.4.</span> <span class="toc-text">编译组合建议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5%EF%BC%9A"><span class="toc-number">9.</span> <span class="toc-text">参考链接：</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/03/18/mysql-mtr-01-introduction/" title="下一篇: 特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2023 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>

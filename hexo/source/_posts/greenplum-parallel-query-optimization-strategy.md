@@ -13,6 +13,8 @@ toc: true
 
 <!-- more -->
 
+**作者：卢文双 高级数据库内核研发**
+
 > **本文首发于 2016-11-21 09:43:07**
 
 # 架构
@@ -66,7 +68,7 @@ explain select d.*,j.customer_id from data d join  jd1 j on d.partner_id=j.partn
 
 **问：如果 `rs` 很大或者压根就没有过滤条件，会有什么问题？如何处理？**
 
-比如本例中的表 `jd1` 和表`data`的数据行数如下：
+比如本例中的表 `jd1` 和表 `data`的数据行数如下：
 
 ```sql
 => select count(*) from jd1;
@@ -116,10 +118,10 @@ order by
 ![GreenPlum HashJoin 执行计划](greenplum-hashjoin-plan.jpeg)
 
 1. 各个节点上同时扫描各自的 nation 表数据，将各 segment 上的 nation 数据向其他节点广播（`Broadcast Motion (N:N)`）。
-2. 各个节点上同时扫描各自 customer 数据，和收到的 nation 数据 join 生成`RS-CN` 。
+2. 各个节点上同时扫描各自 customer 数据，和收到的 nation 数据 join 生成 `RS-CN` 。
 3. 各个 segment 同时扫描自己 orders 表数据，过滤数据生成 `RS-O` 。
 4. 各个 segment 同时扫描自己 lineitem 表数据，过滤生成 `RS-L` 。
-5. 各个 segment 同时将各自 `RS-O` 和 `RS-L` 进行 join，生成`RS-OL`。注意此过程不需要 `Redistribute Motion (N:N)` 重新分布数据，因为 orders 和 lineitem 的 distribute column 都是 orderkey，这就保证了各自需要 join 的对象都是在各自的机器上，所以 n 个节点就开始并行 join 了。
+5. 各个 segment 同时将各自 `RS-O` 和 `RS-L` 进行 join，生成 `RS-OL`。注意此过程不需要 `Redistribute Motion (N:N)` 重新分布数据，因为 orders 和 lineitem 的 distribute column 都是 orderkey，这就保证了各自需要 join 的对象都是在各自的机器上，所以 n 个节点就开始并行 join 了。
 6. 各个节点将自己在步骤 5 生成的 `RS-OL` 按照 cust-key 在所有节点间重新分布数据（`Redistribute Motion (N:N)`，可以按照 hash 和 range 在节点间来重新分布数据，默认是 hash），这样每个节点都会有自己的 `RS-OL` 。
 7. 各个节点将自己在步骤 2 生成的 `RS-CN` 和自己节点上的 `RS-OL` 数据进行 join，又是本机只和本机的数据进行 join 。
 8. 聚合，排序，发往主节点 master 。
