@@ -2,7 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://dbkernel.github.io/2023/07/05/mysql-mtr-03-source-code/</loc>
+    <loc>http://dbkernel.github.io/2023/07/05/mysql-mtr-04-syntax/</loc>
+    
+    <lastmod>2023-07-06</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://dbkernel.github.io/2023/06/05/mysql-mtr-03-source-code/</loc>
     
     <lastmod>2023-07-06</lastmod>
     

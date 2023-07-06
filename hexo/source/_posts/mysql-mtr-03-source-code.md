@@ -1,6 +1,6 @@
 ---
 title: 源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇
-date: 2023-07-05 22:03:44
+date: 2023-06-05 22:03:44
 categories:
   - MySQL
 tags:
@@ -29,7 +29,7 @@ toc: true
 
 <!-- more -->
 
-> **本文首发于 2023-07-05 22:03:44**
+> **本文首发于 2023-06-05 22:03:44**
 
 ---
 
@@ -838,7 +838,7 @@ perl mysql-stress-test.pl
 - **一种是可以直接执行的 SQL 语句**
 - **一种是控制语句**，控制语句用来控制 mysqlclient 的特殊行为，比如`shutdown mysqld`等，这些命令预定义在`command_names`中。
 
-详见 《[04 - MySQL 测试框架 MTR 系列教程 4 - 语法篇](https://www.wolai.com/gUcRYZJpPu5jivm7oau9Ur "04 - MySQL 测试框架 MTR 系列教程4 - 语法篇")》
+详见系列文章第四篇「MySQL 测试框架 MTR 系列教程（四）：语法篇」。
 
 ### 调用栈
 

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发 序言： 以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。 主要内容如下：  入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇">
+<meta property="og:url" content="http://dbkernel.github.io/2023/07/05/mysql-mtr-04-syntax/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发 序言： 以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。 主要内容如下：  入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2023-07-05T13:53:21.000Z">
+<meta property="article:modified_time" content="2023-07-06T06:05:13.969Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="测试框架">
+<meta property="article:tag" content="MTR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇 | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-mtr-04-syntax" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/07/05/mysql-mtr-04-syntax/" class="article-date">
+      <time datetime="2023-07-05T13:53:21.000Z" itemprop="datePublished">2023-07-05</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 5.6k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 27(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<p><strong>序言</strong>：</p>
+<p>以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。</p>
+<p>主要内容如下：</p>
+<ul>
+<li>入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加 case、常见问题、异常调试</li>
+<li>进阶篇：高阶用法，包括单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁</li>
+<li>源码篇：分析 MTR 的源码</li>
+<li>语法篇：单元测试、压力测试、mysqltest 语法、异常调试</li>
+</ul>
+<p>由于个人水平有限，所述难免有错误之处，望雅正。</p>
+<p><strong>本文是第四篇语法篇。</strong></p>
+<span id="more"></span>
+
+<blockquote>
+<p><strong>本文首发于 2023-07-05 21:53:21</strong></p>
+</blockquote>
+<hr>
+<p>MTR 系列基于 MySQL 8.0.29 版本，如有例外，会特别说明。</p>
+<h1 id="单元测试"><a href="#单元测试" class="headerlink" title="单元测试"></a>单元测试</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>前文「MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试」已介绍了单元测试的概念及使用方法，简单回顾一下：</p>
+<ul>
+<li>MySQL 使用 <a target="_blank" rel="noopener" href="https://testanything.org/" title="TAP">TAP</a>（Test Anything Protocol） 和 <a target="_blank" rel="noopener" href="https://google.github.io/googletest/" title="Google Test Framework">Google Test Framework</a> 来实现单元测试。<ul>
+<li>TAP 是 Perl 与测试模块之间所使用的简单的基于文本的接口。</li>
+<li>为了实现 C/C++ 的单元测试，MySQL 开发了一个用于生成 TAP 文本的库<code>libmytap.a</code>，源码路径位于<code>unittest/mytap/</code>。</li>
+</ul>
+</li>
+<li>使用方法：在执行 cmake 的目录执行 <code>make test</code>或<code>make test-unit</code> 指令（内容详细，更推荐）。</li>
+<li>注意事项：在执行单元测试时，不建议启用 ASAN，否则会因 ASAN 检测到单元测试代码有内存泄漏而导致 case 失败。</li>
+</ul>
+<p><code>unittest/</code> 目录介绍：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CMakeLists.txt</span><br><span class="line">examples <span class="comment"># 存放单元测试示例</span></span><br><span class="line">gunit <span class="comment"># 存放所有单元测试用例的代码</span></span><br><span class="line">mytap <span class="comment"># 存放 MyTAP 协议代码</span></span><br></pre></td></tr></table></figure>
+
+<p>如果新加的测试用例与存储引擎或插件有关，则分别存放在<code>unittest/engine_name</code> 和<code>unittest/plugin_name</code>目录或它们的子目录中。</p>
+<p>单元测试代码都位于<code>源码目录/unittest/gunit/</code> 下，其中有文件也有子目录，无论是当前目录还是子目录下的文件，都以<code>xxxxx-t.cc</code> 格式命名，每个<code>xxxxx-t.cc</code>文件都是一个测试 case，编译后都会生成一个二进制文件 <code>bin/xxxxx-t</code> 。</p>
+<p>下面举例说明如何添加单元测试 case 。</p>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p>比如在 <code>源码目录/unittest/gunit/binlogevents/</code> 目录下创建一个新的测试用例 <code>myprint</code> 。</p>
+<p>一、创建文件<code>unittest/gunit/binlogevents/myprint-t.cc</code>，内容如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;gtest/gtest.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> binary_log &#123;</span><br><span class="line"><span class="keyword">namespace</span> unittests &#123;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyPrintTest</span> :</span> <span class="keyword">public</span> ::testing::Test &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="built_in">MyPrintTest</span>() &#123;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">TestBody</span><span class="params">()</span> </span>&#123; <span class="comment">// 必须实现该虚函数</span></span><br><span class="line">      std::cout &lt;&lt; <span class="string">&quot;print_test ====&gt;&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">      <span class="built_in">ASSERT_TRUE</span>(<span class="literal">true</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 第二个参数是测试用例名字</span></span><br><span class="line"><span class="built_in">TEST_F</span>(MyPrintTest, PrintTest) &#123;</span><br><span class="line">  MyPrintTest t;</span><br><span class="line">  t.<span class="built_in">TestBody</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#125;  <span class="comment">// namespace unittests</span></span><br><span class="line">&#125;  <span class="comment">// namespace codecsog</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>二、修改 <code>unittest/gunit/binlogevents/CMakeLists.txt</code> 文件，添加<code>myprint</code>用例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line"></span><br><span class="line"><span class="comment"># Add tests SET(TESTS transaction_payload_codec</span></span><br><span class="line">  transaction_compression</span><br><span class="line">  transaction_payload_iterator</span><br><span class="line">  gtids</span><br><span class="line">  gno_intervals</span><br><span class="line">  myprint <span class="comment">####### 新加的行</span></span><br><span class="line">  heartbeat_codec)</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>三、重新执行 <code>cmake</code>（需要设置<code>-DWITH_DEBUG=1 -DWITH_UNIT_TESTS=1</code>）、编译，会生成二进制文件<code>bin/myprint-t</code>。</p>
+<p>四、运行<code>make test</code>或<code>make test-unit</code> ，或者直接执行<code>bin/myprint-t</code> ，测试用例 passed ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql-server/console-build-debug$ ./bin/myprint-t</span><br><span class="line">[==========] Running 1 <span class="built_in">test</span> from 1 <span class="built_in">test</span> suite.</span><br><span class="line">[----------] Global <span class="built_in">test</span> environment set-up.</span><br><span class="line">[----------] 1 <span class="built_in">test</span> from MyPrintTest</span><br><span class="line">[ RUN      ] MyPrintTest.PrintTest</span><br><span class="line">print_test ====&gt;</span><br><span class="line">[       OK ] MyPrintTest.PrintTest (0 ms)</span><br><span class="line">[----------] 1 <span class="built_in">test</span> from MyPrintTest (0 ms total)</span><br><span class="line"></span><br><span class="line">[----------] Global <span class="built_in">test</span> environment tear-down</span><br><span class="line">[==========] 1 <span class="built_in">test</span> from 1 <span class="built_in">test</span> suite ran. (8 ms total)</span><br><span class="line">[  PASSED  ] 1 <span class="built_in">test</span>.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_UNIT_TESTS.html" title="MySQL: Creating and Executing Unit Tests">MySQL: Creating and Executing Unit Tests</a><ul>
+<li><a target="_blank" rel="noopener" href="https://testanything.org/" title="Home - Test Anything Protocol">Home - Test Anything Protocol</a></li>
+<li><a target="_blank" rel="noopener" href="https://google.github.io/googletest/" title="GoogleTest User’s Guide | GoogleTest">GoogleTest User’s Guide | GoogleTest</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="代码覆盖率测试"><a href="#代码覆盖率测试" class="headerlink" title="代码覆盖率测试"></a>代码覆盖率测试</h1><p>目前涉及 gcov 的程序文件只有 <code>mysys/dbug.cc</code> 文件以及对应的单元测试文件<code>unittest/gunit/dbug-t.cc</code> 。</p>
+<p>gcov 的用法就是在编译时添加选项来实现的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql-server/console-build-debug/mysql-test$ grep <span class="string">&quot;coverage&quot;</span> ../../CMakeLists.txt -nr</span><br><span class="line">1128:  STRING_APPEND(CMAKE_C_FLAGS   <span class="string">&quot; -fprofile-arcs -ftest-coverage -DHAVE_GCOV&quot;</span>)</span><br><span class="line">1129:  STRING_APPEND(CMAKE_CXX_FLAGS <span class="string">&quot; -fprofile-arcs -ftest-coverage -DHAVE_GCOV&quot;</span>)</span><br><span class="line">1130:  STRING_APPEND(CMAKE_EXE_LINKER_FLAGS <span class="string">&quot; -fprofile-arcs -ftest-coverage -lgcov&quot;</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>综上，无需自行编写代码覆盖率测试代码。</p>
+<h1 id="压力测试"><a href="#压力测试" class="headerlink" title="压力测试"></a>压力测试</h1><p>有两个地方涉及压力测试：</p>
+<p>一、压力测试 suite 只有两个：</p>
+<ul>
+<li>stress</li>
+<li>innodb_stress&#x20;</li>
+</ul>
+<p>如需要添加新 case，参考对应 suite 已有 case 照猫画虎即可，语法可参考下一章节。</p>
+<p>二、<code>mysql-stress-test.pl</code> ：被 <code>mysql-test-run.pl</code> 调用，参数是<code>--stress</code>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">stress=ARGS           Run stress <span class="built_in">test</span>, providing options to</span><br><span class="line">                      mysql-stress-test.pl. Options are separated by comma.</span><br></pre></td></tr></table></figure>
+
+<p>对于 <code>mysql-stress-test.pl</code> ，更便于自定义测试内容，主要包括：</p>
+<ul>
+<li><p><code> --stress-init-file[=path]</code></p>
+<p><strong>file_name</strong> is the location of the file that contains the list of tests to be run once to initialize the database for the testing. If missing, the default file is <strong>stress_init.txt</strong> in the test suite directory.</p>
+</li>
+<li><p><code>--stress-tests-file[=file_name]</code></p>
+<p>Use this option to run the stress tests. <strong>file_name</strong> is the location of the file that contains the list of tests. If <strong>file_name</strong> is omitted, the default file is <strong>stress-test.txt</strong> in the stress suite directory. (See <strong><code>--stress-suite-basedir</code></strong>).</p>
+</li>
+</ul>
+<p>这部分暂未尝试，不做赘述。</p>
+<h1 id="SQL-测试-mtr-mysqltest-语法"><a href="#SQL-测试-mtr-mysqltest-语法" class="headerlink" title="SQL 测试 - mtr/mysqltest 语法"></a>SQL 测试 - mtr/mysqltest 语法</h1><p>之间文章介绍过 mtr 会将 <code>*.test</code>和<code>*.inc</code>等测试 case 的内容传给 mysqltest 来执行。</p>
+<p>mysqltest 是 mysql 自带的测试引擎, 它实现了一种小语言，用来描述测试过程，并将测试结果与预期对比。</p>
+<p>本节要讲解 mysqltest 语法格式，你可能会好奇学习这个语法有什么用，为了更直观的说明，首先我们看一下如何编写 mtr 的测试用例。</p>
+<h2 id="语法格式"><a href="#语法格式" class="headerlink" title="语法格式"></a>语法格式</h2><p>mysqltest 解释的是以<code>.test</code>为后缀的文件（包括其引用的<code>.inc</code>文件）。</p>
+<p>mysqltest 小语言按照语法大致分为三类：</p>
+<ul>
+<li>mysql command ：用来控制运行时的行为。一般有两种写法：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">command</span>; <span class="comment"># 这是后面带;的</span></span><br><span class="line">--<span class="built_in">command</span> <span class="comment"># 前面带--，不需要;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>SQL ：就是普通的 SQL 语句，测试 case 里大部分是 SQL 语句。</li>
+<li>comment ：注释一般用于描述测试过程，用 <code>#</code> 开头。</li>
+</ul>
+<p>示例：借鉴「MySQL 测试框架 MTR 系列教程（一）：入门篇」一文中的测试 case（路径是 <code>mysql-test/t/mytest.test</code> ），内容如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--echo #</span></span><br><span class="line"><span class="comment">--echo # some comments</span></span><br><span class="line"><span class="comment">--echo #</span></span><br><span class="line"></span><br><span class="line"><span class="comment">--disable_warnings</span></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> t1;</span><br><span class="line"><span class="keyword">SET</span> @<span class="variable">@sql</span>_mode<span class="operator">=</span><span class="string">&#x27;NO_ENGINE_SUBSTITUTION&#x27;</span>;</span><br><span class="line"><span class="comment">--enable_warnings</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SET</span> SQL_WARNINGS<span class="operator">=</span><span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1 (a <span class="type">INT</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">VALUES</span> (<span class="number">2</span>);</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> t1;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> t1;</span><br></pre></td></tr></table></figure>
+
+<h2 id="command-列表"><a href="#command-列表" class="headerlink" title="command 列表"></a>command 列表</h2><p>mysqltest 提供了几十个 command，本文只介绍最常用的，更多内容请查阅官方手册：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQLTEST_LANGUAGE_REFERENCE.html" title="MySQL: mysqltest Language Reference">MySQL: mysqltest Language Reference</a> 。</p>
+<h3 id="error-处理预期错误"><a href="#error-处理预期错误" class="headerlink" title="error 处理预期错误"></a>error 处理预期错误</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">error error_code [, error_code] ...</span><br><span class="line">sql_statements</span><br></pre></td></tr></table></figure>
+
+<p>有些 CASE 就是要验证 sql 失败的情况，在 sql 语句前面加上<code>--error 错误码</code>就可以了。</p>
+<ul>
+<li>如果 sql 报错且错误码等于 <code>--error</code> 指定的错误码，mysqltest 不会 abort，而是继续运行。</li>
+<li>反之，如果 sql 报错且错误码不等于<code>--error</code> 指定的错误码，mysqltest 会 abort 并报错退出。</li>
+</ul>
+<p><code>--error</code>后面可以跟两种值：一种是<strong>error no</strong>，另外一种是<strong>sqlstate</strong>，如果是后者需要加上 S 做前缀。 他们分别是 C API 函数 <code>mysql_errno()</code> 和 <code>mysql_sqlstate()</code> 的返回值。</p>
+<p><strong>示例一：使用错误码</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--error 1050</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t1(pk createtime <span class="keyword">primary</span> key, a <span class="type">int</span>);</span><br></pre></td></tr></table></figure>
+
+<p>等价于</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">--error ER_TABLE_EXISTS_ERROR</span><br><span class="line">create table t1(pk createtime primary key, a int);</span><br></pre></td></tr></table></figure>
+
+<p>其中数字 1050 对应错误码，<code>ER_TABLE_EXISTS_ERROR </code>对应错误的逻辑名。</p>
+<p>这样在 mysqltest 运行后，会将返回的错误信息一起写入结果文件，这些错误信息就作为期望结果的一部分了。</p>
+<p><strong>示例二：使用 SQLSTATE</strong></p>
+<p>也可以使用 <code>SQLSTATE</code> 来指示期望有错误返回，例如与 MySQL 错误码 1050 对应的 SQLSTATE 值是 42S01，使用下面的方式，注意编码增加了 S 前缀：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--error S42S01</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t1(pk createtime <span class="keyword">primary</span> key, a <span class="type">int</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例三：指定多个错误码，满足其一则通过</strong></p>
+<p>在指令 error 后面是可以加入多个错误码作为参数的，使用逗号分隔即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">--error 1050,1052</span><br><span class="line">create table t1(pk createtime primary key, a int);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>如果该 SQL 报错，若错误码是 1050 或 1051，则符合预期，测试继续。</p>
+<p>错误码参考 MySQL 安装包 include 子目录下的 <code>mysqld_error.h</code> 。</p>
+<h3 id="disable-abort-on-error-enable-abort-on-error"><a href="#disable-abort-on-error-enable-abort-on-error" class="headerlink" title="disable_abort_on_error / enable_abort_on_error"></a>disable_abort_on_error / enable_abort_on_error</h3><p>默认情况下（<code>enable_abort_on_error</code>），sql 执行失败后 mysqltest 就退出了，后面的内容就不会执行，也不会生成 <code>.reject</code>文件。</p>
+<p>显示执行<code>disable_abort_on_error</code>命令可以在 sql 失败后继续执行后面的内容，并生成 <code>.reject</code>文件。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--disable_abort_on_error</span></span><br><span class="line">sql_statements</span><br><span class="line"><span class="comment">--enable_abort_on_error</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="disable-query-log-enable-query-log"><a href="#disable-query-log-enable-query-log" class="headerlink" title="disable_query_log / enable_query_log"></a>disable_query_log / enable_query_log</h3><p>默认情况下(<code>enable_query_log</code>)，所有的 sql 语句都会记录输出结果。</p>
+<p>在一些情况下(比如，使用了循环，query 特别多)不想记录某些 sql 语句及结果，显示调用 <code>disable_query_log</code> 既可。&#x20;</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--disable_query_log</span></span><br><span class="line"><span class="comment">--enable_query_log</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>其他形如<code>enable_xx/disable_xx</code>的命令还有很多，用法都类似</strong>。</p>
+<h3 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h3><p>创建一个到 mysql server 的新连接并作为当前连接。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">connect</span> (name, host_name, user_name, password, db_name [,port_num [,socket [,options [,default_auth [,compression algorithm, [,compression level]]]]]])</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong><em>name</em></strong> is the name for the connection (for use with the <strong>connection</strong>, <strong>disconnect</strong>, and <strong>dirty_close</strong> commands). This name must not already be in use by an open connection.</li>
+<li><strong><em>host_name</em></strong> indicates the host where the server is running.</li>
+<li><strong><em>user_name</em></strong> and <strong><em>password</em></strong> are the user name and password of the MySQL account to use.</li>
+<li><strong><em>db_name</em></strong> is the default database to use. As a special case, <strong><em>NO-ONE</em></strong> means that no default database should be selected. You can also leave <strong><em>db_name</em></strong> blank to select no database.</li>
+<li><strong><em>port_num</em></strong>, if given, is the TCP/IP port number to use for the connection. This parameter can be given by using a variable.</li>
+<li><strong><em>socket</em></strong>, if given, is the socket file to use for connections to <strong>localhost</strong>. This parameter can be given by using a variable.</li>
+<li><strong><em>options</em></strong> can be one or more of the following words, separated by spaces:<ul>
+<li><code>CLEARTEXT</code>: Enable use of the cleartext authentication plugin.</li>
+<li><code>COMPRESS</code>: Use the compressed client/server protocol, if available.</li>
+<li><code>PIPE</code>: Use the named-pipe connection protocol, if available.</li>
+<li><code>SHM</code>: Use the shared-memory connection protocol, if available.</li>
+<li><code>SOCKET</code>: Use the socket-file connection protocol.</li>
+<li><code>SSL</code>:Use SSL network protocol to have encrypted connection.</li>
+<li><code>TCP</code>: Use the TCP/IP connection protocol.<br>Passing <strong>PIPE</strong> or <strong>SHM</strong> on non-Windows systems causes an error, and, similarly, passing <strong>SOCKET</strong> on Windows systems causes an error.</li>
+</ul>
+</li>
+<li><strong><em>default_auth</em></strong> is the name of an authentication plugin. It is passed to the <strong>mysql_options()</strong> C API function using the <strong>MYSQL_DEFAULT_AUTH</strong> option. If <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQLTEST.html" title="mysqltest">mysqltest</a> does not find the plugin, use the <strong>–plugin-dir</strong> option to specify the directory where the plugin is located.</li>
+<li><strong><em>compression algorithm</em></strong> is the name of compression algorithm to be used to compress data transferred between client server. It is passed to the <strong>mysql_options()</strong> C API function using the <strong>MYSQL_OPT_COMPRESSION_ALGORITHMS</strong> option.</li>
+<li><strong><em>zstd compression level</em></strong> is the extent of compression to be applied when zstd compression algorithm is used. It is passed to the <strong>mysql_options()</strong> C API function using the <strong>MYSQL_OPT_COMPRESSION_ALGORITHMS</strong> option.</li>
+<li><strong><em>compression level</em></strong> is the extent of compression to be applied based on the compression algorithm used. It is passed to the <strong>mysql_options()</strong> C API function using the <strong>MYSQL_OPT_COMPRESSION_ALGORITHMS</strong> option.</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">connect</span> (conn1,localhost,root,,);</span><br><span class="line"><span class="keyword">connect</span> (conn2,localhost,root,mypass,test);</span><br><span class="line"><span class="keyword">connect</span> (conn1,<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>,root,,test,$MASTER_MYPORT);</span><br></pre></td></tr></table></figure>
+
+<h3 id="connection-x20"><a href="#connection-x20" class="headerlink" title="connection&#x20;"></a>connection&#x20;</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">connection connection_name</span><br></pre></td></tr></table></figure>
+
+<p>选择 <code>connection_name</code>作为当前连接。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">connection master;</span><br><span class="line">connection conn2;</span><br><span class="line">connection <span class="keyword">default</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="disconnect"><a href="#disconnect" class="headerlink" title="disconnect"></a>disconnect</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">disconnect</span> connection_name</span><br></pre></td></tr></table></figure>
+
+<p>关闭连接<code>connection_name</code> 。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">disconnect</span> conn2;</span><br><span class="line"><span class="keyword">disconnect</span> slave;</span><br></pre></td></tr></table></figure>
+
+<p>测试 session 的时候会用到上述三个命令，以在多个 connection 之间切换。比如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">connect (conn3,127.0.0.1,root,,<span class="built_in">test</span>,25042);</span><br><span class="line">connection conn3;</span><br><span class="line">create table t1(a int primary key);</span><br><span class="line">drop table t1;</span><br><span class="line">disconnect conn3;</span><br></pre></td></tr></table></figure>
+
+<h3 id="exec"><a href="#exec" class="headerlink" title="exec"></a>exec</h3><p>执行 shell 命令。语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">exec</span> command [arg] ...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--exec $MYSQL_DUMP --xml --skip-create test</span></span><br><span class="line"><span class="comment">--exec rm $MYSQLTEST_VARDIR/tmp/t1</span></span><br><span class="line"><span class="keyword">exec</span> $MYSQL_SHOW test <span class="operator">-</span>v <span class="operator">-</span>v;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>On Cygwin, the command is executed from <strong>cmd.exe</strong>, so commands such as <strong>rm</strong> cannot be executed with <strong>exec</strong>. Use <strong>system</strong> instead.</p>
+</blockquote>
+<h3 id="perl-terminator"><a href="#perl-terminator" class="headerlink" title="perl [terminator]"></a>perl [<strong>terminator</strong>]</h3><p>嵌入 perl 代码，以 EOF 为结束符，也可以自定义结束符。</p>
+<p>受限于 mtr 语法，很多操作无法完成，嵌入 perl 脚本可以简化问题。</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">perl;</span><br><span class="line">  <span class="regexp">//</span> your perl script</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">perl;</span><br><span class="line"><span class="keyword">print</span> <span class="string">&quot;This is a test\n&quot;</span>;</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">perl END_OF_FILE;</span><br><span class="line"><span class="keyword">print</span> <span class="string">&quot;This is another test\n&quot;</span>;</span><br><span class="line">END_OF_FILE</span><br></pre></td></tr></table></figure>
+
+<p><strong>perl 内外的变量交互：</strong></p>
+<p>1、可以使用 let 设置环境变量</p>
+<p>如果使用 let 时变量名不加 <code>$</code> 即为设置为环境变量，在 perl 中可以通过 <code>$ENV&#123;&#39;name&#39;&#125;</code> 获取和设置</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">--let name = <span class="string">&quot;env value&quot;</span></span><br><span class="line"></span><br><span class="line">--perl</span><br><span class="line">  <span class="keyword">print</span> <span class="string">&quot;name: $ENV&#123;&#x27;name&#x27;&#125;&quot;</span>;</span><br><span class="line">  $ENV&#123;<span class="string">&#x27;name&#x27;</span>&#125; = <span class="string">&#x27;new env value&#x27;</span>;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">--echo name: $name</span><br></pre></td></tr></table></figure>
+
+<p>2、在 perl 中拼接 mtr 脚本，然后在 mtr 脚本中执行</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">perl;</span><br><span class="line">  <span class="keyword">my</span> $dir = $ENV&#123;<span class="string">&#x27;MYSQLTEST_VARDIR&#x27;</span>&#125;;</span><br><span class="line">  <span class="keyword">open</span> ( OUTPUT, <span class="string">&quot;&gt;$dir/tmp/name.inc&quot;</span>) ;</span><br><span class="line">  <span class="keyword">print</span> OUTPUT <span class="string">&quot;let \$name = abc;\n&quot;</span>;</span><br><span class="line">  <span class="keyword">close</span> (OUTPUT)</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">--source  $MYSQLTEST_VARDIR/tmp/name.inc</span><br><span class="line">--echo $name</span><br></pre></td></tr></table></figure>
+
+<h3 id="vertical-results-horizontal-results-x20"><a href="#vertical-results-horizontal-results-x20" class="headerlink" title="vertical_results/horizontal_results &#x20;"></a>vertical_results/horizontal_results &#x20;</h3><p>设置 SQL 语句结果的默认显示方式（vertical_results 表示纵向，horizontal_results 表示横向，默认是横向），功能跟 sql 语句的<code>&#39;\G&#39;</code>类似。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--vertical_results</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="exit"><a href="#exit" class="headerlink" title="exit"></a>exit</h3><p>退出当前测试 case，后续指令不再执行。</p>
+<h3 id="let"><a href="#let" class="headerlink" title="let"></a>let</h3><p>变量赋值，可支持整数、字符串。</p>
+<p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">let $var_name <span class="operator">=</span> <span class="keyword">value</span></span><br><span class="line">let $var_name <span class="operator">=</span> query_get_value(query, col_name, row_num)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--let $1= 0 # 加 -- 前缀，就不用以分号结尾</span></span><br><span class="line">let $count<span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"># 将查询结果赋给变量 q</span><br><span class="line">let $q<span class="operator">=</span> `<span class="keyword">SELECT</span> VERSION()`;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="inc-dec-x20"><a href="#inc-dec-x20" class="headerlink" title="inc/dec&#x20;"></a>inc/dec&#x20;</h3><p>为整数加 1/减 1 。</p>
+<p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">inc $var_name<span class="operator">/</span><span class="type">dec</span> $var_name</span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--inc $i;</span></span><br><span class="line">inc $<span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="eval-x20"><a href="#eval-x20" class="headerlink" title="eval &#x20;"></a>eval &#x20;</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eval statement</span><br></pre></td></tr></table></figure>
+
+<p>执行<strong>sql 语句</strong>，支持变量的传递。示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">eval USE $DB;</span><br><span class="line">eval CHANGE MASTER <span class="keyword">TO</span> MASTER_PORT<span class="operator">=</span>$SLAVE_MYPORT;</span><br><span class="line">eval <span class="keyword">PREPARE</span> STMT1 <span class="keyword">FROM</span> &quot;$my_stmt&quot;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="query"><a href="#query" class="headerlink" title="query"></a>query</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">query [statement]</span><br></pre></td></tr></table></figure>
+
+<p>显示指定当前语句是 SQL 语句，而不是 command。即使 query 之后是 command（比如<code>sleep</code>），也会当成 statement 来解析。</p>
+<h3 id="send"><a href="#send" class="headerlink" title="send"></a>send</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">send [statement]</span><br></pre></td></tr></table></figure>
+
+<p>向 server 发送一条 query，但并不等待结果，而是立即返回，该 query 的结果必须由 <code>reap</code> 指令来接收。</p>
+<p>在上一条 query 结果被 <code>reap</code> 指令接收之前，不能向当前 session 发送新的 SQL 语句。</p>
+<p>如果 statement 省略了，则执行下一行的 SQL 语句。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">send <span class="keyword">SELECT</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">等效于</span><br><span class="line"></span><br><span class="line">send;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">1</span>;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="send-eval"><a href="#send-eval" class="headerlink" title="send_eval"></a>send_eval</h3><p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">send_eval [statement]</span><br></pre></td></tr></table></figure>
+
+<p>等效于 <code>send</code> + <code>eval</code> ，<strong>与<code>send</code>不同在于支持变量传递</strong>。</p>
+<p>如果 statement 省略了，则执行下一行的 SQL 语句。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--send_eval $my_stmt</span></span><br><span class="line"></span><br><span class="line">等效于</span><br><span class="line"></span><br><span class="line"><span class="comment">--send_eval</span></span><br><span class="line">$my_stmt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="reap"><a href="#reap" class="headerlink" title="reap"></a>reap</h3><p>如果当前 session 之前有通过 <code>send</code> 指令向 server 发送 SQL 语句，<code>reap</code> 指令用来接收该 SQL 语句的执行结果。</p>
+<p>如果之前没有通过 <code>send</code> 向 server 发送 SQL，则不要执行 <code>reap</code> 指令。</p>
+<p>示例：在同一个 session 中用 <code>send</code> 后台执行，用 <code>reap</code> 恢复等待。</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">--connection <span class="number">1</span></span><br><span class="line">--<span class="keyword">send</span> <span class="keyword">select</span> <span class="keyword">sleep</span>(<span class="number">20</span>)</span><br><span class="line"></span><br><span class="line">--connection <span class="number">2</span></span><br><span class="line">--<span class="keyword">send</span> <span class="keyword">select</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">--connection <span class="number">1</span></span><br><span class="line">--reap</span><br></pre></td></tr></table></figure>
+
+<h3 id="echo"><a href="#echo" class="headerlink" title="echo"></a>echo</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo text</span><br></pre></td></tr></table></figure>
+
+<p>将 <code>text</code> 文本输出到测试 result 中。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--echo Another sql_mode test</span></span><br><span class="line">echo should <span class="keyword">return</span> <span class="keyword">only</span> <span class="number">1</span> <span class="type">row</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="query-get-value"><a href="#query-get-value" class="headerlink" title="query_get_value"></a>query_get_value</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">query_get_value(query, col_name, row_num)</span><br></pre></td></tr></table></figure>
+
+<p>获得 query 返回的结果中<strong>某行某列的值</strong>。</p>
+<p>示例：</p>
+<p>假如 <code>.test</code> 文件内容如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1(a <span class="type">INT</span>, b <span class="type">VARCHAR</span>(<span class="number">255</span>), c DATETIME);</span><br><span class="line"><span class="keyword">SHOW</span> COLUMNS <span class="keyword">FROM</span> t1;</span><br><span class="line">let $<span class="keyword">value</span><span class="operator">=</span> query_get_value(<span class="keyword">SHOW</span> COLUMNS <span class="keyword">FROM</span> t1, Type, <span class="number">1</span>);</span><br><span class="line">echo $<span class="keyword">value</span>;</span><br></pre></td></tr></table></figure>
+
+<p>输出结果为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1(a <span class="type">INT</span>, b <span class="type">VARCHAR</span>(<span class="number">255</span>), c DATETIME);</span><br><span class="line"><span class="keyword">SHOW</span> COLUMNS <span class="keyword">FROM</span> t1;</span><br><span class="line">Field   Type    <span class="keyword">Null</span>    Key     <span class="keyword">Default</span> Extra</span><br><span class="line">a       <span class="type">int</span>(<span class="number">11</span>) YES             <span class="keyword">NULL</span></span><br><span class="line">b       <span class="type">varchar</span>(<span class="number">255</span>)    YES             <span class="keyword">NULL</span></span><br><span class="line">c       datetime        YES             <span class="keyword">NULL</span></span><br><span class="line"><span class="type">int</span>(<span class="number">11</span>)</span><br></pre></td></tr></table></figure>
+
+<p><code>int(11)</code> 就是 Type 列第一行的值。</p>
+<h3 id="source"><a href="#source" class="headerlink" title="source"></a>source</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source file_name</span><br></pre></td></tr></table></figure>
+
+<p>多个 case 可能共用一块代码，这块代码可以单独放到一个<code>.inc</code>文件，再通过 source 导入。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--source path/to/script.inc</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="sleep"><a href="#sleep" class="headerlink" title="sleep"></a>sleep</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sleep num</span><br></pre></td></tr></table></figure>
+
+<p>Sleep <strong><em>num</em></strong> seconds.</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--sleep 10</span></span><br><span class="line">sleep <span class="number">0.5</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="replace-column"><a href="#replace-column" class="headerlink" title="replace_column"></a>replace_column</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">replace_column col_num <span class="keyword">value</span> [col_num <span class="keyword">value</span>] ...</span><br></pre></td></tr></table></figure>
+
+<p>将下一条语句的结果中的<strong>某些列的值进行替换</strong>，可以指定<strong>多组替换规则</strong>，列序号从 1 开始。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--replace_column 9 #</span></span><br><span class="line">replace_column <span class="number">1</span> b <span class="number">2</span> d;</span><br></pre></td></tr></table></figure>
+
+<h3 id="expr-命令-MySQL-8-之后可用"><a href="#expr-命令-MySQL-8-之后可用" class="headerlink" title="expr 命令 (MySQL 8 之后可用)"></a>expr 命令 (MySQL 8 之后可用)</h3><p>语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">expr $var_name<span class="operator">=</span> operand1 operator operand2</span><br></pre></td></tr></table></figure>
+
+<p>对数值变量进行运算，支持 <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>, <code>&amp;&amp;</code>, <code>||</code>, <code>&amp;</code>, <code>|</code>, <code>^</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--let $val1= 10</span></span><br><span class="line"><span class="comment">--let $var2= 20</span></span><br><span class="line"><span class="comment">--expr $res= $var1 + $var2</span></span><br><span class="line"><span class="comment">--echo $res</span></span><br></pre></td></tr></table></figure>
+
+<p>在 5.7 版本中用 SQL 语句替代</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--let $val1= 10</span></span><br><span class="line"><span class="comment">--let $var2= 20</span></span><br><span class="line"><span class="comment">--expr $res= `select $var1 + $var2`</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="if"><a href="#if" class="headerlink" title="if"></a>if</h3><p>语法：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (expr)</span><br></pre></td></tr></table></figure>
+
+<p>与其他语言的 if 语句含义相同。</p>
+<p>示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">let $counter<span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">if ($counter)</span><br><span class="line">&#123;</span><br><span class="line">  echo Counter <span class="keyword">is</span> <span class="keyword">not</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if (<span class="operator">!</span>$counter)</span><br><span class="line">&#123;</span><br><span class="line">  echo Counter <span class="keyword">is</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="while"><a href="#while" class="headerlink" title="while"></a>while</h3><p>语法：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (expr)</span><br></pre></td></tr></table></figure>
+
+<p>与其他语言的 while 语句含义相同。</p>
+<p>示例：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">let $i=<span class="number">5</span>;</span><br><span class="line"><span class="keyword">while</span> ($i)</span><br><span class="line">&#123;</span><br><span class="line">  echo $i;</span><br><span class="line">  dec $i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="其他命令"><a href="#其他命令" class="headerlink" title="其他命令"></a>其他命令</h3><p>其他的命令还有： &#x20;</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">assert (expr)</span><br><span class="line"></span><br><span class="line">change_user [user_name], [password], [db_name]</span><br><span class="line">character_set charset_name</span><br><span class="line"></span><br><span class="line">delimiter str</span><br><span class="line"></span><br><span class="line">die [message]</span><br><span class="line"><span class="keyword">skip</span> [message]</span><br><span class="line"></span><br><span class="line">disable_async_client, enable_async_client</span><br><span class="line">disable_connect_log, enable_connect_log</span><br><span class="line">disable_info, enable_info</span><br><span class="line">disable_metadata, enable_metadata</span><br><span class="line">disable_ps_protocol, enable_ps_protocol</span><br><span class="line">disable_query_log, enable_query_log</span><br><span class="line">disable_reconnect, enable_reconnect</span><br><span class="line">disable_result_log, enable_result_log</span><br><span class="line">disable_rpl_parse, enable_rpl_parse</span><br><span class="line">disable_session_track_info, enable_session_track_info</span><br><span class="line">disable_testcase bug_number, enable_testcase</span><br><span class="line">disable_warnings, enable_warnings</span><br><span class="line"></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line">start_timer</span><br><span class="line">end_timer</span><br><span class="line"></span><br><span class="line"># <span class="keyword">exec</span> command</span><br><span class="line">exec_in_background command [arg] ...</span><br><span class="line">execw command [arg] ...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 目录相关</span><br><span class="line">force<span class="operator">-</span>cpdir src_dir_name dst_dir_name</span><br><span class="line">force<span class="operator">-</span>rmdir dir_name</span><br><span class="line">mkdir dir_name</span><br><span class="line">rmdir dir_name</span><br><span class="line">list_files dir_name [<span class="keyword">pattern</span>]</span><br><span class="line">list_files_append_file file_name dir_name [<span class="keyword">pattern</span>]</span><br><span class="line">list_files_write_file file_name dir_name [<span class="keyword">pattern</span>]</span><br><span class="line"># 文件相关</span><br><span class="line">diff_files file_name1 file_name2</span><br><span class="line">remove_files_wildcard dir_name <span class="keyword">pattern</span> [retry]</span><br><span class="line">write_file file_name [terminator]</span><br><span class="line">append_file file_name [terminator]</span><br><span class="line">cat_file file_name</span><br><span class="line">chmod octal_mode file_name</span><br><span class="line">copy_file from_file to_file [retry]</span><br><span class="line">copy_files_wildcard src_dir_name dst_dir_name <span class="keyword">pattern</span> [retry]</span><br><span class="line">file_exists file_name [retry]</span><br><span class="line">move_file from_name to_name [retry]</span><br><span class="line">output file_name</span><br><span class="line">remove_file file_name [retry]</span><br><span class="line"></span><br><span class="line"># 结果集</span><br><span class="line">lowercase_result</span><br><span class="line">result_format version</span><br><span class="line">sorted_result</span><br><span class="line">partially_sorted_result start_column</span><br><span class="line">query_horizontal statement</span><br><span class="line">query_vertical statement</span><br><span class="line">replace_numeric_round <span class="keyword">precision</span></span><br><span class="line">replace_regex <span class="operator">/</span><span class="keyword">pattern</span><span class="operator">/</span>replacement<span class="operator">/</span>[i] ...</span><br><span class="line">replace_result from_val to_val [from_val to_val] ...</span><br><span class="line"></span><br><span class="line"># 连接</span><br><span class="line">ping</span><br><span class="line">reset_connection</span><br><span class="line">dirty_close connection_name</span><br><span class="line">send_quit connection</span><br><span class="line">send_shutdown</span><br><span class="line">shutdown_server [timeout]</span><br><span class="line">sync_slave_with_master [connection_name]</span><br><span class="line"></span><br><span class="line"># 复制</span><br><span class="line">save_master_pos</span><br><span class="line">sync_with_master <span class="keyword">offset</span></span><br><span class="line">wait_for_slave_to_stop</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>详见官方手册：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQL_TEST_COMMANDS.html" title="MySQL: mysqltest Commands">MySQL: mysqltest Commands</a></p>
+<h2 id="编写规范"><a href="#编写规范" class="headerlink" title="编写规范"></a>编写规范</h2><ol>
+<li> 尽可能避免每行超过 80 个字符;</li>
+<li> 用<code>#</code>开头，作为注释;</li>
+<li> 缩进使用空格，避免使用 tab;</li>
+<li> SQL 语句使用相同的风格，包括关键字大写，其它变量、表名、列名等小写;</li>
+<li> 增加合适的注释。特别是文件的开头，注释出测试的目的、可能的引用或者修复的 bug 编号;</li>
+<li> 为了避免可能的冲突，习惯上表命名使用 t1、t2…，视图命名使用 v1、v2…;</li>
+</ol>
+<h1 id="异常调试"><a href="#异常调试" class="headerlink" title="异常调试"></a>异常调试</h1><p>本小节已添加到《MySQL 测试框架 MTR 系列教程（一）：入门篇》，看过前文的可跳过本节。</p>
+<h2 id="分析日志"><a href="#分析日志" class="headerlink" title="分析日志"></a>分析日志</h2><p>默认情况下，在目录 <code>mysql-test/var/log/</code>中有日志生成（若指定 <code>--vardir</code> 参数，则以该参数路径为准），分析该日志也能得到一些有用信息。</p>
+<p>比如 启动失败，则可以查看 <code>bootstrap.log</code> 文件，去掉命令中的 <code>--bootstrap</code> 并运行即可启动对应的 MySQL 服务来验证、调试。</p>
+<h2 id="verbose-参数"><a href="#verbose-参数" class="headerlink" title="verbose 参数"></a>verbose 参数</h2><p>启动 mtr 时加 <code>--verbose</code> 参数，定位到引用的脚本位置后可以配置 <code>--echo</code> 命令修改调试。</p>
+<p>如果加上 <code>--verbose</code> 打印的内容还不够详细，可以再加一个，即 <code>--verbose --verbose</code>，能打印出 mtr perl 脚本中的日志信息。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test$ perl mysql-test-run.pl --timer  --force --parallel=1 --vardir=var-rpl --suite=rpl --verbose</span><br><span class="line">Logging: mysql-test-run.pl  --timer --force --parallel=1 --vardir=var-rpl --suite=rpl --verbose</span><br><span class="line">&gt; exe_name: mysqld</span><br><span class="line">MySQL Version 8.0.29</span><br><span class="line">Checking supported features</span><br><span class="line"> - Binaries are debug compiled</span><br><span class="line">&gt; Testing FIPS: --test-ssl-fips-mode 0 error:0F06D065:common libcrypto routines:FIPS_mode_set:fips mode not supported</span><br><span class="line"></span><br><span class="line">Using suite(s): rpl</span><br><span class="line">Collecting tests</span><br><span class="line">&gt; Collecting: rpl</span><br><span class="line">&gt; suitedir: /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/suite/rpl</span><br><span class="line">&gt; testdir: /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/suite/rpl/t</span><br><span class="line">&gt; resdir: /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/suite/rpl/r</span><br><span class="line">&gt; Read combinations file /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/suite/rpl/combinations.</span><br><span class="line"> - Adding combinations <span class="keyword">for</span> rpl</span><br><span class="line">&gt; Collecting: i_rpl</span><br><span class="line">Removing old var directory</span><br><span class="line">&gt; opt_vardir: /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl</span><br><span class="line">&gt; Removing /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var</span><br><span class="line">&gt; Removing /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/</span><br><span class="line">&gt; Removing /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/</span><br><span class="line">Creating var directory <span class="string">&#x27;/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl&#x27;</span></span><br><span class="line">&gt; Creating /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl</span><br><span class="line">Installing system database</span><br><span class="line"><span class="comment">### safe_path: /data/work/mysql/mysql80-install.bak_asan_ubsan/bin//mysqltest_safe_process --verbose -- /data/work/mysql/mysql80-install.bak_asan_ubsan/bin/mysqld --no-defaults --initialize-insecure --loose-skip-ndbcluster --tmpdir=/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/ --core-file --datadir=/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/data/ --secure-file-priv=/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl --innodb_buffer_pool_size=24M --innodb-log-file-size=5M --innodb_autoextend_increment=8 --character-sets-dir=/data/work/mysql/mysql80-install.bak_asan_ubsan/share/charsets --loose-auto_generate_certs=OFF --loose-sha256_password_auto_generate_rsa_keys=OFF --loose-caching_sha2_password_auto_generate_rsa_keys=OFF --init-file=/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/bootstrap.sql</span></span><br><span class="line">Using parallel: 1</span><br><span class="line"></span><br><span class="line">==============================================================================</span><br><span class="line">                  TEST NAME                       RESULT  TIME (ms) COMMENT</span><br><span class="line">------------------------------------------------------------------------------</span><br><span class="line">&gt; Client connected</span><br><span class="line">worker[1] &gt; mtr_ping_port: 13000</span><br><span class="line">worker[1] &gt; FREE</span><br><span class="line">worker[1] &gt; mtr_ping_port: 13001</span><br><span class="line">worker[1] &gt; FREE</span><br><span class="line">worker[1] &gt; mtr_ping_port: 13002</span><br><span class="line">worker[1] &gt; FREE</span><br><span class="line">worker[1] &gt; mtr_ping_port: 13003</span><br><span class="line">worker[1] &gt; FREE</span><br><span class="line">......</span><br><span class="line">worker[1] &gt; mtr_ping_port: 13029</span><br><span class="line">worker[1] &gt; FREE</span><br><span class="line">worker[1] &gt; Using MTR_BUILD_THREAD 300, with reserved ports 13000..13029</span><br><span class="line">worker[1] Creating var directory <span class="string">&#x27;/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl&#x27;</span></span><br><span class="line">worker[1] &gt; result: , file_mode: 0</span><br><span class="line">[  0%] rpl.rpl_atomic_ddl                        [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_atomic_ddl_no_binlog              [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_binlog_cache_encryption           [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_filters_error_cases_on_startup    [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_group_commit_deadlock             [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_group_commit_deadlock_myisam      [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_innodb_auto_increment             [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_killed_ddl                        [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_log_info_repository_persistence_assign_gtids_to_anonymous_transactions  [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_log_info_repository_persistence_require_row  [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_log_info_repository_persistence_require_table_primary_key_check  [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_row_crash_safe                    [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_row_mts_rec_crash_safe            [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_stm_mixed_crash_safe              [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_stm_mixed_mts_rec_crash_safe      [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_stm_mixed_mts_rec_crash_safe_checksum  [ skipped ]  Test needs <span class="string">&#x27;big-test&#x27;</span> or <span class="string">&#x27;only-big-test&#x27;</span> option.</span><br><span class="line">[  0%] rpl.rpl_io_thd_wait_for_disk_space_stress  [ disabled ]   BUG<span class="comment">#23581287 Disabled until bug is fixed.</span></span><br><span class="line">[  0%] rpl.rpl_writeset_add_unique_key           [ disabled ]   Bug<span class="comment">#33134835 RPL_WRITESET_ADD_UNIQUE_KEY FAILS SPORADICALLY</span></span><br><span class="line">worker[1] &gt; Running <span class="built_in">test</span>: rpl.rpl_plugin_load</span><br><span class="line">worker[1] &gt; Setting timezone: GMT-3</span><br><span class="line">worker[1] &gt; Cleaning datadirs...</span><br><span class="line">worker[1] &gt; clean_dir: /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp</span><br><span class="line">worker[1] &gt; unlink: <span class="string">&#x27;/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/bootstrap.sql&#x27;</span></span><br><span class="line">worker[1] &gt; Generating my.cnf from <span class="string">&#x27;/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/suite/rpl/my.cnf&#x27;</span></span><br><span class="line">worker[1] &gt; MASTER_MYPORT = 13000</span><br><span class="line">worker[1] &gt; MASTER_MYSOCK = /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/mysqld.1.sock</span><br><span class="line">worker[1] &gt; MASTER_X_MYSOCK = /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/mysqlx.1.sock</span><br><span class="line">worker[1] &gt; SLAVE_MYPORT = 13002</span><br><span class="line">worker[1] &gt; SLAVE_MYSOCK = /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/mysqld.2.sock</span><br><span class="line">worker[1] &gt; SLAVE_X_MYSOCK = /data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/tmp/mysqlx.2.sock</span><br><span class="line">worker[1] &gt; mysqld_start:  [<span class="string">&#x27; --plugin-dir=/data/work/mysql/mysql80-install.bak_asan_ubsan/lib/plugin&#x27;</span>, <span class="string">&#x27;--binlog-format=mixed &#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">### safe_path: /data/work/mysql/mysql80-install.bak_asan_ubsan/bin//mysqltest_safe_process --verbose -- /data/work/mysql/mysql80-install.bak_asan_ubsan/bin/mysqld --defaults-group-suffix=.1 --defaults-file=/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test/var-rpl/my.cnf --log-output=file --loose-debug-sync-timeout=600 --plugin-dir=/data/work/mysql/mysql80-install.bak_asan_ubsan/lib/plugin --binlog-format=mixed --core-file</span></span><br><span class="line">worker[1] &gt; Started [mysqld.1 - pid: 61921, winpid: 61921]</span><br><span class="line">worker[1] &gt; mysqld_start:  [<span class="string">&#x27; --plugin-dir=/data/work/mysql/mysql80-install.bak_asan_ubsan/lib/plugin&#x27;</span>, <span class="string">&#x27;--binlog-format=mixed &#x27;</span>]</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="脚本自身支持-debug-参数"><a href="#脚本自身支持-debug-参数" class="headerlink" title="脚本自身支持 debug 参数"></a>脚本自身支持 debug 参数</h2><p>如果引用（<code>source</code>）的脚本支持 debug 参数，比如常用的 <code>$rpl_debug</code>，则可以修改相应的 <code>.inc</code> 文件以获得更多的 debug 信息。</p>
+<h2 id="perl-的调试模式"><a href="#perl-的调试模式" class="headerlink" title="perl 的调试模式"></a>perl 的调试模式</h2><p>添加<code>-d</code> 参数可进入 perl 语言的 debug 模式。示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">wslu@ubuntu:/data/work/mysql/mysql80-install.bak_asan_ubsan/mysql-test$ perl -d mysql-test-run.pl --timer  --force --parallel=1 --vardir=var-rpl --suite=rpl</span><br><span class="line"></span><br><span class="line">Loading DB routines from perl5db.pl version 1.60</span><br><span class="line">Editor support available.</span><br><span class="line"></span><br><span class="line">Enter h or <span class="string">&#x27;h h&#x27;</span> <span class="keyword">for</span> <span class="built_in">help</span>, or <span class="string">&#x27;man perldebug&#x27;</span> <span class="keyword">for</span> more <span class="built_in">help</span>.</span><br><span class="line"></span><br><span class="line">main::(mysql-test-run.pl:54):  push @INC, <span class="string">&quot;.&quot;</span>;</span><br><span class="line">  DB&lt;1&gt; l</span><br><span class="line">54==&gt;  push @INC, <span class="string">&quot;.&quot;</span>;</span><br><span class="line">55</span><br><span class="line">56:  use My::ConfigFactory;</span><br><span class="line">57:  use My::CoreDump;</span><br><span class="line">58:  use My::File::Path;    <span class="comment"># Patched version of File::Path</span></span><br><span class="line">59:  use My::Find;</span><br><span class="line">60:  use My::Options;</span><br><span class="line">61:  use My::Platform;</span><br><span class="line">62:  use My::SafeProcess;</span><br><span class="line">63:  use My::SysInfo;</span><br><span class="line">  DB&lt;1&gt; n</span><br><span class="line">main::(mysql-test-run.pl:72):  require <span class="string">&quot;lib/mtr_gcov.pl&quot;</span>;</span><br><span class="line">  DB&lt;1&gt; l</span><br><span class="line">72==&gt;  require <span class="string">&quot;lib/mtr_gcov.pl&quot;</span>;</span><br><span class="line">73:  require <span class="string">&quot;lib/mtr_gprof.pl&quot;</span>;</span><br><span class="line">74:  require <span class="string">&quot;lib/mtr_io.pl&quot;</span>;</span><br><span class="line">75:  require <span class="string">&quot;lib/mtr_lock_order.pl&quot;</span>;</span><br><span class="line">76:  require <span class="string">&quot;lib/mtr_misc.pl&quot;</span>;</span><br><span class="line">77:  require <span class="string">&quot;lib/mtr_process.pl&quot;</span>;</span><br><span class="line">78</span><br><span class="line">79:  our <span class="variable">$secondary_engine_support</span> = <span class="built_in">eval</span> <span class="string">&#x27;use mtr_secondary_engine; 1&#x27;</span>;</span><br><span class="line">80</span><br><span class="line">81   <span class="comment"># Global variable to keep track of completed test cases</span></span><br><span class="line">  DB&lt;1&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>调试模式常用命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">h       查看帮助文档</span><br><span class="line">c line  运行到指定行</span><br><span class="line">n       运行到下一行</span><br><span class="line">s       跳到函数内部运行</span><br><span class="line">l       查看代码</span><br><span class="line">q       退出</span><br></pre></td></tr></table></figure>
+
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQL_TEST_RUN.html" title="MySQL: The MySQL Test Framework">MySQL: The MySQL Test Framework</a></p>
+<p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_WRITING_TESTCASES.html" title="MySQL: Writing Test Cases">MySQL: Writing Test Cases</a></p>
+<p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_MYSQLTEST_LANGUAGE_REFERENCE.html" title="MySQL: mysqltest Language Reference">MySQL: mysqltest Language Reference</a></p>
+<p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_UNIT_TESTS.html" title="MySQL: Creating and Executing Unit Tests">MySQL: Creating and Executing Unit Tests</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/quzq/p/11392602.html" title="mysqltest语法整理 - 叶落kiss - 博客园 (cnblogs.com)">mysqltest 语法整理 - 叶落 kiss - 博客园 (cnblogs.com)</a></p>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2023/07/05/mysql-mtr-04-syntax/">特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2023-07-05, 21:53:21</p>
+        <p><span>最后更新:</span>2023-07-06, 14:05:13</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2023/07/05/mysql-mtr-04-syntax/" title="特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇">http://dbkernel.github.io/2023/07/05/mysql-mtr-04-syntax/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2023/07/05/mysql-mtr-04-syntax/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/06/05/mysql-mtr-03-source-code/">
+                    源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95"><span class="toc-number">1.</span> <span class="toc-text">单元测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.2.</span> <span class="toc-text">示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E6%B5%8B%E8%AF%95"><span class="toc-number">2.</span> <span class="toc-text">代码覆盖率测试</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">压力测试</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#SQL-%E6%B5%8B%E8%AF%95-mtr-mysqltest-%E8%AF%AD%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">SQL 测试 - mtr&#x2F;mysqltest 语法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AD%E6%B3%95%E6%A0%BC%E5%BC%8F"><span class="toc-number">4.1.</span> <span class="toc-text">语法格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#command-%E5%88%97%E8%A1%A8"><span class="toc-number">4.2.</span> <span class="toc-text">command 列表</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#error-%E5%A4%84%E7%90%86%E9%A2%84%E6%9C%9F%E9%94%99%E8%AF%AF"><span class="toc-number">4.2.1.</span> <span class="toc-text">error 处理预期错误</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#disable-abort-on-error-enable-abort-on-error"><span class="toc-number">4.2.2.</span> <span class="toc-text">disable_abort_on_error &#x2F; enable_abort_on_error</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#disable-query-log-enable-query-log"><span class="toc-number">4.2.3.</span> <span class="toc-text">disable_query_log &#x2F; enable_query_log</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#connect"><span class="toc-number">4.2.4.</span> <span class="toc-text">connect</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#connection-x20"><span class="toc-number">4.2.5.</span> <span class="toc-text">connection </span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#disconnect"><span class="toc-number">4.2.6.</span> <span class="toc-text">disconnect</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#exec"><span class="toc-number">4.2.7.</span> <span class="toc-text">exec</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#perl-terminator"><span class="toc-number">4.2.8.</span> <span class="toc-text">perl [terminator]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#vertical-results-horizontal-results-x20"><span class="toc-number">4.2.9.</span> <span class="toc-text">vertical_results&#x2F;horizontal_results  </span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#exit"><span class="toc-number">4.2.10.</span> <span class="toc-text">exit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#let"><span class="toc-number">4.2.11.</span> <span class="toc-text">let</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#inc-dec-x20"><span class="toc-number">4.2.12.</span> <span class="toc-text">inc&#x2F;dec </span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#eval-x20"><span class="toc-number">4.2.13.</span> <span class="toc-text">eval  </span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#query"><span class="toc-number">4.2.14.</span> <span class="toc-text">query</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#send"><span class="toc-number">4.2.15.</span> <span class="toc-text">send</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#send-eval"><span class="toc-number">4.2.16.</span> <span class="toc-text">send_eval</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#reap"><span class="toc-number">4.2.17.</span> <span class="toc-text">reap</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#echo"><span class="toc-number">4.2.18.</span> <span class="toc-text">echo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#query-get-value"><span class="toc-number">4.2.19.</span> <span class="toc-text">query_get_value</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#source"><span class="toc-number">4.2.20.</span> <span class="toc-text">source</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#sleep"><span class="toc-number">4.2.21.</span> <span class="toc-text">sleep</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replace-column"><span class="toc-number">4.2.22.</span> <span class="toc-text">replace_column</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expr-%E5%91%BD%E4%BB%A4-MySQL-8-%E4%B9%8B%E5%90%8E%E5%8F%AF%E7%94%A8"><span class="toc-number">4.2.23.</span> <span class="toc-text">expr 命令 (MySQL 8 之后可用)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#if"><span class="toc-number">4.2.24.</span> <span class="toc-text">if</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#while"><span class="toc-number">4.2.25.</span> <span class="toc-text">while</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B6%E4%BB%96%E5%91%BD%E4%BB%A4"><span class="toc-number">4.2.26.</span> <span class="toc-text">其他命令</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E5%86%99%E8%A7%84%E8%8C%83"><span class="toc-number">4.3.</span> <span class="toc-text">编写规范</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E8%B0%83%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">异常调试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E6%97%A5%E5%BF%97"><span class="toc-number">5.1.</span> <span class="toc-text">分析日志</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#verbose-%E5%8F%82%E6%95%B0"><span class="toc-number">5.2.</span> <span class="toc-text">verbose 参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%84%9A%E6%9C%AC%E8%87%AA%E8%BA%AB%E6%94%AF%E6%8C%81-debug-%E5%8F%82%E6%95%B0"><span class="toc-number">5.3.</span> <span class="toc-text">脚本自身支持 debug 参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#perl-%E7%9A%84%E8%B0%83%E8%AF%95%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.4.</span> <span class="toc-text">perl 的调试模式</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/06/05/mysql-mtr-03-source-code/" title="下一篇: 源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/07/05/mysql-mtr-04-syntax/">特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/06/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/04/mysql-threadpool-main-solutions-details/">业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2023 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>
