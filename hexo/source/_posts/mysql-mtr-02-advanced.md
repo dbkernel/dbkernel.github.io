@@ -1,5 +1,5 @@
 ---
-title: 特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇
+title: 特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试
 date: 2023-05-01 21:03:44
 categories:
   - MySQL
@@ -199,7 +199,7 @@ Options for valgrind
 
 ## 使用方法
 
-**编译选项**： `-DWITH_DEBUG=1 -DWITH_VALGRIND=1`&#x20;
+**编译选项**： `-DWITH_DEBUG=1 -DWITH_VALGRIND=1`
 
 **使用建议**：
 
@@ -256,7 +256,7 @@ perl mysql-test-run.pl --timer  --force --skip-rpl --comment=all_default_valgrin
 
 - **内核 Sanitizer**包括**KASAN**和**KMSAN**
 
-Sanitizers 项目本是 LLVM 项目的一部分，但 GNU 也将该系列工具加入到了自家的 GCC 编译器中（clang 当然也支持）。 &#x20;
+Sanitizers 项目本是 LLVM 项目的一部分，但 GNU 也将该系列工具加入到了自家的 GCC 编译器中（clang 当然也支持）。
 
 - GCC 4.8 版本开始支持 **Address Sanitizer**和 **Thread Sanitizer**。
 - GCC 4.9 版本开始支持 **Leak Sanitizer** 和 **UndefinedBehaviorSanitizer**。
@@ -383,11 +383,11 @@ LSAN/LeakSanitizer 用于内存泄漏检测。
 
 **安装**：有一个单独的动态库`liblsan0.so`，会随 gcc 安装。
 
-**编译选项**：`-DWITH_DEBUG=1 -DWITH_LSAN=1`&#x20;
+**编译选项**：`-DWITH_DEBUG=1 -DWITH_LSAN=1`
 
 **验证版本**：8.0.29
 
-**MTR 选项**：`--sanitize`&#x20;
+**MTR 选项**：`--sanitize`
 
 **使用建议**：
 
@@ -426,7 +426,7 @@ UBSAN 需要在编译时修改程序，以捕获程序执行期间的各种未�
 
 **安装**：有一个单独的动态库`libubsan1.so`，会随 gcc 安装。
 
-**编译选项**：`-DWITH_DEBUG=1 -DWITH_UBSAN=1`&#x20;
+**编译选项**：`-DWITH_DEBUG=1 -DWITH_UBSAN=1`
 
 **验证版本**：8.0.29
 
@@ -469,7 +469,7 @@ TSAN/ThreadSanitizer 是用于检测数据竞争和线程死锁的工具。
 
 **安装**：有一个单独的动态库`libtsan0.so`，会随 gcc 安装。
 
-**编译选项**：`-DWITH_DEBUG=1 -DWITH_TSAN=1`&#x20;
+**编译选项**：`-DWITH_DEBUG=1 -DWITH_TSAN=1`
 
 **验证版本**：8.0.29、8.0.32
 
@@ -624,7 +624,7 @@ MSAN/MemorySanitizer 用于检测对未初始化内存的读取（uninitialized 
 
 ### 使用方法
 
-**编译选项**：`-DWITH_DEBUG=1 -DWITH_MSAN=1`&#x20;
+**编译选项**：`-DWITH_DEBUG=1 -DWITH_MSAN=1`
 
 验证版本：8.0.29
 
@@ -1018,16 +1018,16 @@ mtr 会首先运行 binlog suite 的所有 case，之后才会运行单元测试
 
 涉及压力测试的有两部分：
 
-### 压力测试 suites&#x20;
+### 压力测试 suites
 
 只有两个：
 
 - stress
-- innodb_stress&#x20;
+- innodb_stress
 
 如需要添加新 case，参考对应 suite 已有 case 照猫画虎即可，后续文章会详解介绍语法。
 
-### mysql-stress-test.pl&#x20;
+### mysql-stress-test.pl
 
 被 `mysql-test-run.pl` 调用，参数是`--stress`。
 
@@ -1234,7 +1234,7 @@ perl mysql-test-run.pl --force --timer    --comment=innodb-stress --vardir=var-i
 - **代码覆盖率测试**：
   - 编译选项：`-DWITH_DEBUG=1 -DENABLE_GCOV=1 -DENABLE_GPROF=1`
   - 特殊要求：必须在`编译的源码目录`执行测试。
-  - 指令示例：`./mtr --gcov --gprof -big-test --force --max-test-fail=0 --comment=gcov-gprof --vardir=var-gcov-gprof --no-skip` &#x20;
+  - 指令示例：`./mtr --gcov --gprof -big-test --force --max-test-fail=0 --comment=gcov-gprof --vardir=var-gcov-gprof --no-skip`
     - 在 gcov 执行成功后，会将代码覆盖率相关信息写到`gmon.out`，之后，mtr 会自动调用 gprof 解析该文件 。
 - **压力测试**：虽然 mtr 整合了`mysql-stress-test.pl` 脚本，但使用该脚本需要自行编写 stress-init、stress-test 文件，因此，**建议直接测试 stress、innodb_stress 这两个 suites** 。
   - `perl mysql-test-run.pl --force --timer --big-test --comment=stress --vardir=var-stress --suite=stress,innodb_stress --no-skip`

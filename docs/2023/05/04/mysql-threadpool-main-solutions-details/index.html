@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-05-04 22:07:40  本文主要从功能层面对比 percona-server、mariadb、华为鲲鹏 BoostKit 数据库使能套件、阿里云 AliSQL、腾讯 TXSQL、MySQL 企业版线程池方案，都基于 MySQL 8.0。 至于源码层面，腾讯、阿里云、MySQL 企业版不开源，percona 借鉴了 mariadb 早">
+<meta property="og:type" content="article">
+<meta property="og:title" content="业内 MySQL 线程池主流方案详解 - MariaDB&#x2F;Percona&#x2F;华为&#x2F;AliSQL&#x2F;TXSQL&#x2F;MySQL企业版">
+<meta property="og:url" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-05-04 22:07:40  本文主要从功能层面对比 percona-server、mariadb、华为鲲鹏 BoostKit 数据库使能套件、阿里云 AliSQL、腾讯 TXSQL、MySQL 企业版线程池方案，都基于 MySQL 8.0。 至于源码层面，腾讯、阿里云、MySQL 企业版不开源，percona 借鉴了 mariadb 早">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/response-time.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/per-thread-throughput.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-throughput.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-architecture.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-group.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-architecture-details.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/listener-flow-chart.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/worker-flow-chart.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/numa-architecture.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/huawei-kenpeng-worker-flow-chart.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/huawei-kunpeng-threadpool-benchmark.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-oltp-ro.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-oltp-rw.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-point-select.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-update-nokey.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-update-non-index.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-write-only.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-read-write.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-point-select.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2023-05-04T14:07:40.000Z">
+<meta property="article:modified_time" content="2023-05-08T08:55:04.159Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="测试框架">
+<meta property="article:tag" content="MTR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/response-time.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版 | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-threadpool-main-solutions-details" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/05/04/mysql-threadpool-main-solutions-details/" class="article-date">
+      <time datetime="2023-05-04T14:07:40.000Z" itemprop="datePublished">2023-05-04</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 13.5k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 48(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<blockquote>
+<p><strong>本文首发于 2023-05-04 22:07:40</strong></p>
+</blockquote>
+<p>本文主要从功能层面对比 percona-server、mariadb、华为鲲鹏 BoostKit 数据库使能套件、阿里云 AliSQL、腾讯 TXSQL、MySQL 企业版线程池方案，都基于 MySQL 8.0。</p>
+<p>至于源码层面，腾讯、阿里云、MySQL 企业版不开源，percona 借鉴了 mariadb 早期版本的实现，而华为鲲鹏同时借鉴了 mariadb 和 percona 的实现，但考虑到线程池代码只有 2000 行左右，相对简单，本文就不做过多阐述了。</p>
+<span id="more"></span>
+
+<hr>
+<blockquote>
+<p>版本：<br>MariaDB 10.9，<br>Percona-Server-8.0.32-24,<br>华为鲲鹏 8.0.25</p>
+</blockquote>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>社区版的 MySQL 的连接处理方法默认是为每个连接创建一个工作线程的<code>one-thread-per-connection</code>（<strong>Per_thread</strong>）模式。这种模式存在如下弊端：</p>
+<ul>
+<li><strong>由于系统的资源是有限的，随着连接数的增加，资源的竞争也增加，连接的响应时间也随之增加</strong>，如 response time 图所示。</li>
+</ul>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/response-time.png" alt="response time图" title="response time图"></p>
+<ul>
+<li><strong>在资源未耗尽时，数据库整体吞吐随着连接数增加。一旦连接数超过了某个耗尽系统资源的临界点，由于各线程互相竞争，CPU 时间片在大量线程间频繁调度，不同线程上下文频繁切换，徒增系统开销，数据库整体吞吐反而会下降</strong>，如下图所示。</li>
+</ul>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/per-thread-throughput.png" alt="Per_Thread 模式下数据库整体吞吐" title="Per_Thread 模式下数据库整体吞吐"></p>
+<p><strong>Q：如何避免 在连接数暴增时，因资源竞争而导致系统吞吐下降的问题呢？</strong></p>
+<p><strong>MariaDB &amp; Percona 中给出了简洁的答案：</strong> ​<strong>线程池</strong>。</p>
+<p>线程池的原理在<a target="_blank" rel="noopener" href="https://www.percona.com/blog/simcity-outages-traffic-control-and-thread-pool-for-mysql/" title="percona blog">percona blog</a> 中有生动的介绍，其大致可类比为早高峰期间大量汽车想通过一座大桥，如果采用<code>one-thread-per-connection</code>的方式则放任汽车自由行驶，由于桥面宽度有限，最终将导致所有汽车寸步难行。线程池的解决方案是限制同时行驶的汽车数，让桥面时刻保持最大吞吐，尽快让所有汽车抵达对岸。</p>
+<p>数据库内核月报文章 《<a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2019/02/09/" title="MySQL · 最佳实践 · MySQL多队列线程池优化">MySQL · 最佳实践 · MySQL 多队列线程池优化</a>》中举了一个高铁买票的例子，也很形象，由于售票员（类比为 CPU 的核数）有限，当有 1000 个用户（类比为数据库连接）都想买票时，如果采用 <code>one-thread-per-connection</code> 的方式，则每个人都有一个专用窗口，需要售票员跑来跑去（CPU 上下文切换，售票窗口越多，跑起来越费力）来为你服务，可以看到这是不够合理的，特别是售票员比较少而购票者很多的场景。如果采用线程池的思想，则不再是每个人都有一个专用的售票窗口（每个客户端对应一个后端线程），而是通过限定售票窗口数，让购票者排队，来减少售票员跑来跑去的成本。</p>
+<p>回归到数据库本身，MySQL 默认的线程使用模式是会话独占模式（<code>one-thread-per-connection</code>），每个会话都会创建一个独占的线程。<strong>当有大量的会话存在时，会导致大量的资源竞争，同时，大量的系统线程调度和缓存失效也会导致性能急剧下降</strong>。</p>
+<p>线程池线程池功能旨在解决以上问题，在存在大量连接的场景下，通过线程池实现<strong>线程复用</strong>：</p>
+<ul>
+<li>当连接多、并发低时，通过连接复用，避免创建大量空闲线程，减少系统资源开销。</li>
+<li>当连接多、并发高时，通过<strong>限制同时运行的线程数，将其控制在合理的范围内，可避免线程调度工作过多和大量缓存失效，减少线程池间上下文切换和热锁争用</strong>，从而对 OLTP 场景产生积极影响。</li>
+</ul>
+<p>当连接数上升时，在线程池的帮助下数据库整体吞吐维持在一个较高水准，如图所示。</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-throughput.png" alt="线程池模式下数据库整体吞吐" title="线程池模式下数据库整体吞吐"></p>
+<h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>线程池采用一定数量的工作线程来处理连接请求，线程池在查询相对较短且工作负载受 CPU 限制的情况下效率最高，通常比较适应于 OLTP 工作负载的场景。如果工作负载不受 CPU 限制，那么您仍然可以通过限制线程数量来为数据库内存缓冲区节省内存。</p>
+<p>线程池的不足在于当请求偏向于慢查询时，工作线程阻塞在高时延操作上，难以快速响应新的请求，导致系统吞吐量反而相较于传统 one-thread-per-connection 模式更低。</p>
+<p><strong>线程池适用的场景</strong>：</p>
+<ul>
+<li>对于<strong>大量连接的 OLTP 短查询</strong>的场景将有最大收益。</li>
+<li>对于<strong>大量连接的只读短查询</strong>也有明显收益。</li>
+<li>有效避免大量连接高并发下数据库性能衰减。</li>
+</ul>
+<p><strong>不太适合用线程池的场景：</strong></p>
+<ul>
+<li><strong>具有突发工作负载的场景</strong>。在这种场景下，许多用户往往长时间处于非活跃状态，但个别时候又处于特别活跃的状态，同时，对延迟的容忍度较低，因此，线程池节流效果不太理想。不过，即使在这种情况下，也可以通过调整线程的退役频率来提高性能（使用 <code>thread_pool_idle_timeout</code> 参数）。</li>
+<li><strong>高并发、长耗时语句的场景</strong>。在这种场景下，并发较多，且都是执行时间较长的语句，会导致工作线程堆积，一旦达到上限，完全阻止后续语句的执行，比如最常见的数据仓库场景。当然这样的场景下，不管是否使用线程池，数据库的表现都是不够理想的，<strong>需要应用侧控制大查询的并发度</strong>。</li>
+<li><strong>有较严重的锁冲突，如果处于锁等待的工作线程数超过总线程数，也会堆积起来，阻止无锁待的处理请求。比如某个会话执行<code> FLUSH TABLES WITH READ LOCK</code>语句获得全局锁后暂停，那么其他执行写操作的客户端连接就会阻塞，当阻塞的数量超过线程池的上限时，整个 server 都会阻塞</strong>。当然这样的场景下，不管是否使用线程池，数据库的表现都是不够理想的，<strong>需要应用侧进行优化</strong>。</li>
+<li><strong>极高并发的 Prepared Statement 请求</strong>。使用 Prepared Statement（Java 应用不算）时，会<strong>使用 MySQL Binary Protocol，会增加很多的网络来回操作</strong>，比如参数的绑定、结果集的返回，在极高请求压力下会给 epoll 监听进程带来一定的压力，处于事务状态中时，可能会让普通请求得不到执行机会。</li>
+</ul>
+<p>为了应对这种阻塞问题，一般会允许配置 <code>extra_port</code> 或 <code>admin_port</code> 来管理连接。</p>
+<h1 id="行业方案：Percona-线程池实现"><a href="#行业方案：Percona-线程池实现" class="headerlink" title="行业方案：Percona 线程池实现"></a>行业方案：Percona 线程池实现</h1><p>由于市面上的线程池方案大多都借鉴了 percona、mariadb 的方案，因此，首先介绍下 percona 线程池的工作机制，再说明其他方案相较于 percona 做了什么改进。</p>
+<h2 id="0-基本原理"><a href="#0-基本原理" class="headerlink" title="0. 基本原理"></a>0. 基本原理</h2><p>线程池的基本原理为：预先创建一定数量的工作线程（worker 线程）。在线程池监听线程（listener 线程）从现有连接中监听到新请求时，从工作线程中分配一个线程来提供服务。工作线程在服务结束之后不销毁线程（处于 idle 状态一段时间后会退出），而是保留在线程池中继续等待下一个请求来临。</p>
+<p>下面我们将从线程池架构、新连接的创建与分配、listener 线程、worker 线程、timer 线程等几个方面来介绍 percona 线程池的实现。</p>
+<h2 id="1-线程池的架构"><a href="#1-线程池的架构" class="headerlink" title="1. 线程池的架构"></a><strong>1. 线程池的架构</strong></h2><p>线程池由<strong>多个线程组（thread group）</strong>和<strong>timer 线程</strong>组成，如下图所示。</p>
+<p>线程组的数量是线程池并发的上限，通常而言<strong>线程组的数量</strong>需要配置成<strong>数据库实例的 CPU 核心数量</strong>（可通过参数<code>thread_pool_size</code>设置），从而充分利用 CPU。线程组之间通过<code>线程ID % 线程组数</code>的方式分配连接，线程组内通过竞争方式处理连接。</p>
+<p>线程池中还有一个服务于所有线程组的<strong>timer 线程</strong>，负责周期性（检查时间间隔为<code>threadpool_stall_limit</code>毫秒）检查线程组是否处于阻塞状态。当检测到阻塞的线程组时，timer 线程会通过唤醒或创建新的工作线程（<code>wake_or_create_thread</code> 函数）来让线程组恢复工作。</p>
+<p>创建新的工作线程不是每次都能创建成功，<strong>要根据当前的线程组中的线程数是否大于线程组中的连接数，活跃线程数是否为 0，以及上一次创建线程的时间间隔是否超过阈值（这个阈值与线程组中的线程数有关，线程组中的线程数越多，时间间隔越大</strong>）。</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-architecture.png" alt="Percona 线程池架构图" title="Percona 线程池架构图"></p>
+<p>线程组内部由<strong>多个 worker 线程、0 或 1 个动态 listener 线程、高低优先级事件队列（由网络事件 event 构成）、mutex、epollfd、统计信息等组成</strong>。如下图所示：</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-group.png" alt="Percona 线程组构成" title="Percona 线程组构成"></p>
+<p><strong>worker 线程</strong>：主要作用是从队列中读取并处理事件。</p>
+<ul>
+<li>如果该线程所在组中没有 listener 线程，则该 worker 线程将成为 listener 线程，通过 epoll 的方式监听数据，并将监听到的 event 放到线程组中的队列。</li>
+<li>worker 线程数目动态变化，并发较大时会创建更多的 worker 线程，当从队列中取不到 event 时，work 线程将休眠，超过一定时间后结束线程。</li>
+<li>一个 worker 线程只属于一个线程组。</li>
+</ul>
+<p><strong>listener 线程</strong>：当高低队列为空，listen 线程会自己处理，无论这次获取到多少事务。否则 listen 线程会把请求加入到队列中，<strong>如果此时<code>active_thread_count=0</code>，唤醒一个工作线程</strong>。</p>
+<p><strong>高低优先级队列</strong>：为了提高性能，将队列分为优先队列和普通队列。这里采用引入两个新变量<code>thread_pool_high_prio_tickets</code>和<code>thread_pool_high_prio_mode</code>。由它们控制高优先级队列策略。对<strong>每个新连接</strong>分配可以进入高优先级队列的 ticket。</p>
+<h2 id="2-新连接的创建与分配"><a href="#2-新连接的创建与分配" class="headerlink" title="2. 新连接的创建与分配"></a><strong>2. 新连接的创建与分配</strong></h2><p>新连接接入时，线程池按照新连接的线程 id 取模线程组个数来确定新连接归属的线程组（<code>thd-&gt;thread_id() % group_count</code>）。这样的分配逻辑非常简洁，但<strong>由于没有充分考虑连接的负载情况，繁忙的连接可能会恰巧被分配到相同的线程组，从而导致负载不均衡的现象，这是 percona 线程池值得被优化的点</strong>。</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/threadpool-architecture-details.png" alt="线程池新连接的创建与分配" title="线程池新连接的创建与分配"></p>
+<p>选定新连接归属的线程组后，<strong>新连接申请</strong>被作为<strong>事件</strong>放入<strong>低优先级队列</strong>中，等待线程组中 worker 线程将<strong>高优先级事件队列</strong>处理完后，就会处理低优先级队列中的请求。</p>
+<h2 id="3-listener-线程-【-要不要重新画图或添加-percona-源码笔记图】"><a href="#3-listener-线程-【-要不要重新画图或添加-percona-源码笔记图】" class="headerlink" title="3. listener 线程 【====要不要重新画图或添加 percona 源码笔记图】"></a><strong>3. listener 线程</strong> 【====要不要重新画图或添加 percona 源码笔记图】</h2><p>listener 线程是负责监听连接请求的线程，每个线程组都有一个<strong>listener 线程</strong>。</p>
+<p>percona 线程池的 listener 采用<strong>epoll</strong>实现。当 epoll 监听到请求事件时，listener 会根据<strong>请求事件的类型</strong>来决定将其放入哪个优先级事件队列。<strong>将事件放入高优先级队列的条件如下（见函数</strong><code>connection_is_high_prio</code><strong>），只需要满足其一即可</strong>：</p>
+<ul>
+<li>当前线程池的工作模式为<strong>高优先级模式</strong>，在此模式下只启用高优先级队列。（<code>mode == TP_HIGH_PRIO_MODE_STATEMENTS</code>）</li>
+<li>当前线程池的工作模式为<strong>高优先级事务模式</strong>，在此模式下<strong>每个连接的 event</strong>最多被放入高优先级队列<code>threadpool_high_prio_tickets</code>次。超过<code>threadpool_high_prio_tickets</code>次后，该连接的请求事件只能被放入低优先级（<code>mode == TP_HIGH_PRIO_MODE_TRANSACTIONS</code>），同时，也会重置票数。</li>
+<li>连接持有<strong>表锁</strong></li>
+<li>连接持有<strong>mdl 锁</strong></li>
+<li>连接持有<strong>全局读锁</strong></li>
+<li>连接持有<strong>backup 锁</strong></li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">connection_is_high_prio</span><span class="params">(<span class="keyword">const</span> <span class="keyword">connection_t</span> &amp;c)</span> <span class="keyword">noexcept</span> </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> ulong mode = c.thd-&gt;variables.threadpool_high_prio_mode;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (mode == TP_HIGH_PRIO_MODE_STATEMENTS) ||</span><br><span class="line">         (mode == TP_HIGH_PRIO_MODE_TRANSACTIONS &amp;&amp; c.tickets &gt; <span class="number">0</span> &amp;&amp;</span><br><span class="line">          (<span class="built_in">thd_is_transaction_active</span>(c.thd) ||</span><br><span class="line">           c.thd-&gt;variables.option_bits &amp; OPTION_TABLE_LOCK ||</span><br><span class="line">           c.thd-&gt;locked_tables_mode != LTM_NONE ||</span><br><span class="line">           c.thd-&gt;mdl_context.<span class="built_in">has_locks</span>() ||</span><br><span class="line">           c.thd-&gt;global_read_lock.<span class="built_in">is_acquired</span>() ||</span><br><span class="line">           c.thd-&gt;backup_tables_lock.<span class="built_in">is_acquired</span>() ||</span><br><span class="line">           c.thd-&gt;mdl_context.<span class="built_in">has_locks</span>(MDL_key::USER_LEVEL_LOCK) ||</span><br><span class="line">           c.thd-&gt;mdl_context.<span class="built_in">has_locks</span>(MDL_key::LOCKING_SERVICE)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>被放入高优先级队列的事件可以优先被 worker 线程处理。</p>
+<p><strong>只有当高优先级队列为空，并且当前线程组不繁忙的时候才处理低优先级队列中的事件</strong>。线程组繁忙（<code>too_many_busy_threads</code>）的判断条件是<strong>当前组内活跃工作线程数+组内处于等待状态的线程数</strong>大于<strong>线程组工作线程额定值</strong>（<code>thread_pool_oversubscribe+1</code>）。这样的设计可能带来的问题是<strong>在高优先级队列不为空或者线程组繁忙时低优先级队列中的事件迟迟得不到响应，这同样也是 percona 线程池值得被优化的一个点</strong>。</p>
+<p>listener 线程将事件放入高低优先级队列后，如果<strong>线程组的活跃 worker 数量为 0</strong>，则唤醒或创建新的 worker 线程来处理事件。</p>
+<p>percona 的线程池中<strong>listener 线程和 worker 线程是可以互相切换的</strong>，详细的切换逻辑会在「worker 线程」一节介绍。</p>
+<ul>
+<li>epoll 监听到请求事件时，如果高低优先级事件队列都为空，意味着此时线程组非常空闲，大概率不存在活跃的 worker 线程。</li>
+<li>listener 在此情况下会将除第一个事件外的所有事件按前述规则放入高低优先级事件队列，<strong>然后退出监听任务，亲自处理第一个事件</strong>。</li>
+<li>这样设计的好处在于当线程组非常空闲时，可以避免 listener 线程将事件放入队列，唤醒或创建 worker 线程来处理事件的开销，提高工作效率。</li>
+</ul>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/listener-flow-chart.png" alt="listener 线程流程图" title="listener 线程流程图"></p>
+<blockquote>
+<p>上图来源于腾讯数据库技术公众号</p>
+</blockquote>
+<h2 id="4-worker-线程-【-要不要重新画图或添加-percona-源码笔记图】"><a href="#4-worker-线程-【-要不要重新画图或添加-percona-源码笔记图】" class="headerlink" title="4. worker 线程 【====要不要重新画图或添加 percona 源码笔记图】"></a><strong>4. worker 线程</strong> 【====要不要重新画图或添加 percona 源码笔记图】</h2><p>worker 线程是线程池中真正干活的线程，正常情况下，每个线程组都会有一个活跃的 worker 线程。</p>
+<p>worker 在理想状态下，可以高效运转并且快速处理完高低优先级队列中的事件。但是在实际场景中，worker 经常会遭遇 IO、锁等等待情况而难以高效完成任务，此时任凭 worker 线程等待将使得在队列中的事件迟迟得不到处理，甚至可能出现长时间没有 listener 线程监听新请求的情况。为此，每当 worker 遭遇 IO、锁等等待情况，如果此时线程组中没有 listener 线程或者高低优先级事件队列非空，并且没有过多活跃 worker，则会尝试唤醒或者创建一个 worker。</p>
+<p>为了避免短时间内创建大量 worker，带来系统吞吐波动，线程池创建 worker 线程时有一个控制单位时间创建 worker 线程上限的逻辑，线程组内连接数越多则创建下一个线程需要等待的时间越长。</p>
+<p>当<strong>线程组活跃 worker 线程数量</strong>大于等于<code>too_many_active_threads+1</code>时，认为线程组的活跃 worker 数量过多。此时需要对 worker 数量进行适当收敛，首先判断当前线程组是否有 listener 线程：</p>
+<ul>
+<li>如果没有 listener 线程，则将当前 worker 线程转化为 listener 线程。</li>
+<li>如果当前有 listener 线程，则在进入休眠前尝试通过<code>epoll_wait</code>获取一个尚未进入队列的事件，成功获取到后立刻处理该事件，否则进入休眠等待被唤醒，等待<code>threadpool_idle_timeout</code>时间后仍未被唤醒则销毁该 worker 线程。</li>
+</ul>
+<p>worker 线程与 listener 线程的切换如下图所示：</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/worker-flow-chart.png" alt="worker 线程流程图" title="worker 线程流程图"></p>
+<p>【尝试获取一个未进入队列的事件】描述错误，此处需要改为【尝试从队列获取事件】。</p>
+<blockquote>
+<p>上图来自于腾讯数据库技术公众号</p>
+</blockquote>
+<h2 id="5-timer-线程-【-要不要重新画图或添加-percona-源码笔记图】"><a href="#5-timer-线程-【-要不要重新画图或添加-percona-源码笔记图】" class="headerlink" title="5. timer 线程 【====要不要重新画图或添加 percona 源码笔记图】"></a><strong>5. timer 线程</strong> 【====要不要重新画图或添加 percona 源码笔记图】</h2><p>timer 线程每隔<code>threadpool_stall_limit</code>时间进行一次所有线程组的扫描（<code>check_stall</code>）。</p>
+<p>当线程组高低优先级队列中存在事件，并且自上次检查至今没有新的事件被 worker 消费，则认为线程组处于停滞状态。</p>
+<ul>
+<li>停滞的主要原因可能是长时间执行的非阻塞请求， 也可能发生于线程正在等待但 <code>wait_begin/wait_end</code> （尝试唤醒或创建新的 worker 线程）被上层函数忘记调用的场景。</li>
+<li>timer 线程会通过唤醒或创建新的 worker 线程来让停滞的线程组恢复工作。</li>
+</ul>
+<p>timer 线程为了尽量减少对正常工作的线程组的影响，在<code>check_stall</code>时采用的是<code>try_lock</code>的方式，如果加不上锁则认为线程组运转良好，不再去打扰。</p>
+<p>timer 线程除上述工作外，<strong>还负责终止空闲时间超过<code>wait_timeout</code>秒的客户端</strong>。</p>
+<p><strong>下面是 Percona 的实现：</strong></p>
+<p><code>check_stall</code> 函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">check_stall</span><br><span class="line">|-- <span class="keyword">if</span> (!thread_group-&gt;listener &amp;&amp; !thread_group-&gt;io_event_count) &#123;</span><br><span class="line">|--   <span class="built_in">wake_or_create_thread</span>(thread_group); <span class="comment">// 重点函数</span></span><br><span class="line">|-- &#125;</span><br><span class="line">|-- thread_group-&gt;io_event_count = <span class="number">0</span>; <span class="comment">// 表示自上次 check 之后，当前线程组新获取的 event 数</span></span><br><span class="line">|-- <span class="keyword">if</span> (!thread_group-&gt;queue_event_count &amp;&amp; !<span class="built_in">queues_are_empty</span>(*thread_group)) &#123; <span class="comment">// 重点函数</span></span><br><span class="line">|--   thread_group-&gt;stalled = <span class="literal">true</span>;</span><br><span class="line">|--   <span class="built_in">wake_or_create_thread</span>(thread_group); <span class="comment">// 重点函数</span></span><br><span class="line">|-- &#125;</span><br><span class="line">|-- thread_group-&gt;queue_event_count = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">queues_are_empty</span><span class="params">(<span class="keyword">const</span> <span class="keyword">thread_group_t</span> &amp;tg)</span> <span class="keyword">noexcept</span> </span>&#123;</span><br><span class="line"><span class="keyword">return</span> (tg.high_prio_queue.<span class="built_in">is_empty</span>() &amp;&amp; <span class="comment">// 重点函数</span></span><br><span class="line">(tg.queue.<span class="built_in">is_empty</span>() || <span class="built_in">too_many_busy_threads</span>(tg))); <span class="comment">// 重点函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>io_event_count：当 Listen 线程监听到事件时++</li>
+<li>queue_event_count ：当 work 线程从队列中获取事件时++</li>
+</ul>
+<h1 id="行业主流方案对比"><a href="#行业主流方案对比" class="headerlink" title="行业主流方案对比"></a>行业主流方案对比</h1><h2 id="MySQL-企业版-vs-MariaDB"><a href="#MySQL-企业版-vs-MariaDB" class="headerlink" title="MySQL 企业版 vs MariaDB"></a>MySQL 企业版 vs MariaDB</h2><p>MySQL 企业版是在 5.5 版本引入的线程池，以插件的方式实现的。</p>
+<p><strong>相同点：</strong></p>
+<ul>
+<li>都具备线程池功能，都支持 <code>thread_pool_size</code> 参数。</li>
+<li>都支持专有 listener 线程（<code>thread_pool_dedicated_listeners</code> 参数）。</li>
+<li>都支持高低优先级队列，且在避免低优先级队列事件饿死方面，二者采用了相同方案，即低优先级队列事件等待一段时间（<code>thread_pool_prio_kickup_timer</code> 参数）即可移入高优先级队列。</li>
+<li>都使用相同的机制来探测处于停滞（stall）状态的线程，都提供了 <code>thread_pool_stall_limit</code> 参数（MariaDB 单位是 ms，MySQL 企业版单位是 10ms）。</li>
+</ul>
+<p><strong>不同点：</strong> Windows 平台实现方式不同。</p>
+<ul>
+<li>MariaDB 使用 Windows 自带的线程池，而 MySQL 企业版的实现用到了 <code>WSAPoll()</code> 函数（为了便于移植 Unix 程序而提供），因此，MySQL 企业版的实现将不能使用命名管道和共享内存。</li>
+<li>MariaDB 为每个操作系统都使用最高效的 IO 多路复用机制。<ul>
+<li><strong>Windows</strong>：原生线程池</li>
+<li><strong>Linux</strong>： <code>epoll</code></li>
+<li><strong>Solaris</strong> (<code>event ports</code>)</li>
+<li><strong>FreeBSD</strong> and <strong>OSX</strong> (<code>kevent</code>)</li>
+</ul>
+</li>
+<li>而 MySQL 企业版只在 Linux 上才使用优化过的 IO 多路复用机制 <code>epoll</code>，其他平台则用 <code>poll</code> 。</li>
+</ul>
+<h2 id="MariaDB-vs-Percona"><a href="#MariaDB-vs-Percona" class="headerlink" title="MariaDB vs Percona"></a>MariaDB vs Percona</h2><p><a target="_blank" rel="noopener" href="https://www.percona.com/doc/percona-server/5.7/performance/threadpool.html" title="Percona 的实现">Percona 的实现</a>移植自 MariaDB，并在此基础上添加了一些功能。特别是 Percona 在 5.5-5.7 版本添加了优先级调度。而 <a target="_blank" rel="noopener" href="https://mariadb.com/kb/en/what-is-mariadb-102/" title="MariaDB 10.2">MariaDB 10.2</a> 也支持了优先级调度，和 Percona 的工作方式类似，只是细节有所不同。</p>
+<ul>
+<li>MariaDB 10.2 版本的参数 <code>thread_pool_priority=auto,high,low</code> 对应于 Percona 的 <code>thread_pool_high_prio_mode=transactions,statements,none</code></li>
+<li>MariaDB 10.2 版本中只有<strong>处于事务中</strong>的连接才是高优先级，而 Percona 中符合高优先级的情况包括：<strong>1）处于事务中；2）持有表锁；3）持有 MDL 锁；4）持有全局读锁；5）持有 backup 锁</strong>。</li>
+<li>关于<strong>避免低优先级队列语句饿死</strong>的问题：<ul>
+<li>Percona 有一个 <code>thread_pool_high_prio_tickets</code> 参数，用于<strong>指定每个连接在高优先级队列中的 tickets 数量</strong>，而 MariaDB 没有相应参数。</li>
+<li>MariaDB 有一个 <code>thread_pool_prio_kickup_timer</code> 参数，可<strong>让低优先队列中的语句在等待指定时间后移入高优先级队列</strong>，而 Percona 没有相应参数。</li>
+</ul>
+</li>
+<li>MariaDB 有参数<code>thread_pool_dedicated_listener</code> 、<code>thread_pool_exact_stats</code>，而 Percona 没有。<ul>
+<li><code>thread_pool_dedicated_listener</code> ：可用于<strong>指定专有 listener 线程</strong>，其只负责<code>epoll_wait</code>等待网络事件，不会变为 worker 线程。默认为 OFF，表示不固定 listener。</li>
+<li><code>thread_pool_exact_stats</code> ：是否使用高精度时间戳。</li>
+</ul>
+</li>
+<li>MariaDB （比如 10.9 版本）在 <code>information_schema</code> 中新增了四张表（<code>THREAD_POOL_GROUPS</code>、<code>THREAD_POOL_QUEUES</code>、<code>THREAD_POOL_STATS</code>、<code>THREAD_POOL_WAITS</code>），便于监控线程池状态。</li>
+</ul>
+<h2 id="华为鲲鹏-vs-Percona"><a href="#华为鲲鹏-vs-Percona" class="headerlink" title="华为鲲鹏 vs Percona"></a>华为鲲鹏 vs Percona</h2><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>核心功能与 percona 线程池方案相同，优先级调度算法 及 避免低优先级队列语句饿死的策略 也相同，但额外做了一些改进：</p>
+<ul>
+<li>借鉴了 MariaDB 的实现，添加了参数 <code>thread_pool_dedicated_listener</code> ，即支持固定 listener 功能。</li>
+<li>添加参数 <code>thread_pool_toobusy</code> ：表示线程组是否过于忙碌的线程数阈值。当线程组中活跃的工作线程数+锁或 IO 等待中的工作线程数＞该阈值加 1 时，认为线程组过于忙碌，不再处理低优先级的任务，等待当前执行的任务和高优先级队列中的任务被处理，直到线程组回到非忙碌的状态。</li>
+<li>借鉴了 MariaDB 的实现，在 <code>information_schema</code> 中新增了四张表（<code>THREAD_POOL_GROUPS</code>、<code>THREAD_POOL_QUEUES</code>、<code>THREAD_POOL_STATS</code>、<code>THREAD_POOL_WAITS</code>），便于监控线程池状态。</li>
+<li>还有一些优化点：<ul>
+<li>支持 NUMA 亲和：同一线程组的工作线程分配到同一 NUMA Node。</li>
+<li><strong>高优先级 session 独占 worker 线程：</strong> ​<strong>在连接数很大，高负载时，对于一些事务取得了锁等资源时，可优先处理</strong>（详见下文）。</li>
+<li>listener 线程调用 io_poll_wait 监听 event 时，percona 最少获取 1 个 event 就处理，华为鲲鹏改为了最少获取 2 个 event 才处理。</li>
+<li>listener 线程调用 io_poll_wait 后，只要线程组不繁忙，则按需批量唤醒或创建一批 worker 线程（根据本次获得的 event 数量、活跃线程数来决定 worker 数量）。</li>
+</ul>
+</li>
+</ul>
+<p>简单来说，<strong>华为鲲鹏的线程池方案 = Percona + MariaDB + NUMA 亲和 + 插件化</strong>。&#x20;</p>
+<blockquote>
+<p>详细说明见<a target="_blank" rel="noopener" href="https://www.hikunpeng.com/document/detail/zh/kunpengdbs/basicAccelFeatures/mysqlthreadpool/kunpengdbsthreadpool8025_20_0003.html" title="官方手册">官方手册</a>（参考链接 [5.a]）。</p>
+</blockquote>
+<p>接下来重点介绍下华为鲲鹏独有的优化（Percona 和 MariaDB 没有实现）。</p>
+<h3 id="NUMA"><a href="#NUMA" class="headerlink" title="NUMA"></a>NUMA</h3><p>依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Ubuntu</span></span><br><span class="line">sudo apt install libnuma-dev</span><br><span class="line"><span class="comment"># CentOS</span></span><br><span class="line">sudo apt install numactl-devel</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<strong>thread_pool_sched_affinity</strong></p>
+<p>是否支持命令行：是</p>
+<p>是否支持配置文件：是</p>
+<p>是否支持动态修改：是</p>
+<p>参数范围：Global</p>
+<p>参数类型：Bool</p>
+<p>默认值：OFF</p>
+<p>允许值：OFF、ON</p>
+<p>线程池插件<strong>默认关闭</strong>线程组与 numa 亲和。</p>
+<p>本配置功能使用的限制条件为 mysqld 进程可使用整机所有 numa，未使用 numactl 等方式限制 mysqld 进程的可使用 cpu 范围。</p>
+<p>本配置功能开启时，thread_pool_size 配置的数量的线程组将与服务器上的 numa 轮询亲和，即例如整机 numa 数为<code>a</code>，numa 编号为<code>0 ~ a-1</code>，则第 n 个线程组将会与第<code>n%a</code>（n 对 a 的余数）个 numa 进行绑定。与 numa 亲和的线程组上创建的线程都会与该 numa 亲和。通过线程与 numa 亲和，<strong>使数据与 session 关联性大的类型的业务的跨 numa 内存访问概率降低，从而提升性能</strong>。</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/numa-architecture.png" alt="NUMA 架构图" title="NUMA 架构图"></p>
+<h3 id="优先-session-独占-worker-线程"><a href="#优先-session-独占-worker-线程" class="headerlink" title="优先 session 独占 worker 线程"></a>优先 session 独占 worker 线程</h3><p><strong>在连接数很大，高负载时，对于一些事务取得了锁等资源时，可优先处理</strong>。</p>
+<p>原先的处理逻辑（percona/mariadb 也是）是此类连接发生可读事件后，会被线程组加到优先队列中，等待空闲 worker 线程优先处理。</p>
+<p>进一步优化逻辑，<strong>需要优先处理的 session 不将当前 worker 还给线程池，继续独占当前 worker 线程</strong>，类似每线程每连接的模式，独占 worker 线程专用于处理该优先连接之后的所有语句，直到该连接释放了优先资源转为普通连接，例如该连接事务执行结束释放锁资源。</p>
+<p>优先 session 连接的判断逻辑如下图。</p>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/huawei-kenpeng-worker-flow-chart.png" alt="华为鲲鹏线程池 worker 线程流程图" title="华为鲲鹏线程池 worker 线程流程图"></p>
+<p>以下描述序号对应上图的数字标记点。</p>
+<ol>
+<li> 新连接建立时，worker 线程处理器登录校验的逻辑，连接生命周期开始。</li>
+<li> 新连接登录校验完成后进入是否高优先级 session 的判断。</li>
+<li> <strong>如果是 Admin 端口上的管理连接，则会一直独占 worker 线程</strong>，避免进入等待队列得不到 worker 线程的处理。</li>
+<li> 如果 session 经过判断后为高优先级的 session，将继续占用当前 worker 线程，进入 [6] 等待下一条 SQL 语句并执行。</li>
+<li> 如果 session 经过判断后为普通 session，则会将当前 session 的连接标识加入到当前线程组的 epoll_wait 中，当前 worker 线程将状态置为空闲并归还本线程组。</li>
+<li> epoll_wait 中触发网络可读事件（有 SQL 语句到达）或 worker 独占的 session，将在 worker 线程等待 SQL 语句的到达。</li>
+<li> worker 线程中等待接收 SQL 语句并执行完成后，若执行结果正常且非结束连接，将进入 [3] 进行 session 优先级判断。</li>
+<li> 登录校验失败，连接生命周期结束。</li>
+<li> 等待接收 SQL 语句或执行 SQL 语句出现异常，或 session 结束退出时，连接生命周期结束。</li>
+</ol>
+<h3 id="小线程组数模式配置"><a href="#小线程组数模式配置" class="headerlink" title="小线程组数模式配置"></a>小线程组数模式配置</h3><p>相对于默认模式的线程池参数配置，使用小线程组数模式的线程池参数配置时，每个线程组上可以创建更多的 active 线程数，使长查询的连接绑定到某个线程组时，<strong>该长查询的连接对该线程组的时延影响可以更小或无明显时延差异</strong>。</p>
+<p>同时使用小线程组数模式时，对于部分场景（例如 OLTP writeonly）在连接数非常大（例如 8192 个连接）时，仍然可以保持 90%左右的曲线峰值。</p>
+<p>小线程组数模式相对于默认模式（使用默认参数），就是参数配置的优化使用，在高并发连接数时，可以更好保持峰值性能的配置模式，相关配置说明如下表：</p>
+<table>
+<thead>
+<tr>
+<th><strong>参数名称</strong></th>
+<th><strong>默认模式配置</strong></th>
+<th><strong>小线程组数模式</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>thread_pool_size</td>
+<td>默认为 CPU 逻辑核数，或手动配置为 1-3 倍 CPU 逻辑核数</td>
+<td>配置为 4 倍 NUMA 数（TPCH 场景测试经验值）</td>
+</tr>
+<tr>
+<td>thread_pool_dedicated_listener</td>
+<td>默认为 OFF，listener 线程可转为 worker 线程</td>
+<td>配置为 ON，listener 线程只负责网络事件等待，不转为 worker 线程</td>
+</tr>
+<tr>
+<td>thread_pool_oversubscribe</td>
+<td>默认为 3</td>
+<td>配置该值=基线版本最优性能时的连接数/thread_pool_size 的配置值</td>
+</tr>
+<tr>
+<td>thread_pool_toobusy</td>
+<td>默认为 13</td>
+<td>配置该值=thread_pool_oversubscribe</td>
+</tr>
+</tbody></table>
+<h2 id="AliSQL-vs-Percona"><a href="#AliSQL-vs-Percona" class="headerlink" title="AliSQL vs Percona"></a>AliSQL vs Percona</h2><p>AliSQL 线程池也一定程度借鉴了 Percona 的机制，但也有自己的特色：</p>
+<ul>
+<li>AliSQL 线程池<strong>给予管理类的 SQL 语句更高的优先级</strong>，保证这些语句优先执行。这样在系统负载很高时，新建连接、管理、监控等操作也能够稳定执行。</li>
+<li><strong>AliSQL 线程池给予复杂查询 SQL 语句相对较低的优先级，并且有最大并发数的限制</strong>。这样可以<strong>避免过多的复杂 SQL 语句将系统资源耗尽，导致整个数据库服务不可用</strong>。</li>
+<li>AliSQL 支持<strong>动态开关线程池</strong>。</li>
+<li>从官网手册及内核月报公开资料，无法获知 AliSQL 是否支持线程组专职 listener 。</li>
+</ul>
+<p>AliSQL 虽然也使用了队列，但没有直接采用 percona 或 mariadb 的高低优先级调度策略，结合<a target="_blank" rel="noopener" href="https://help.aliyun.com/document_detail/130306.html" title="官方手册">官方手册</a>和数据库内核月报 2019 年 2 月份的文章 《<a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2019/02/09/?spm=wolai.workspace.0.0.3857b476u3d92G" title="MySQL 多队列线程优化">MySQL 多队列线程优化</a>》，推测是使用了两层队列：</p>
+<ul>
+<li><strong>第一层队列为网络请求队列</strong>，可以区分为<strong>请求队列</strong>（不在事务状态中的请求）和<strong>高优先级队列</strong>（已经在事务状态中的请求，收到请求后会马上执行，不进入第二队列）。</li>
+<li><strong>第二层队列为工作任务队列</strong>，可以区分为<strong>查询队列、更新队列和事务队列</strong>。</li>
+</ul>
+<p>第一层请求队列的请求经过快速的处理和分析进入第二层队列。如果是管理操作，则直接执行（假定所有管理操作都是小操作）。</p>
+<p>对第二层队列，可以分别设置一个允许的并发度（可以接近 CPU 的个数），以实现总线程数的控制。只要线程数大于四类操作的设计并发度之和，则不同类型的操作不会互相干涉（在这里是假定同一操作超过各自并发度而进行排队是合理的）。任何一个队列超过一定的时间，如果没有完成任何语句，处于阻塞模式，则可以考虑放行，在 MySQL 线程池中有<code>thread_pool_stall_limit</code>变量来控制这个间隔，以防止任何一个队列挂起。</p>
+<p>可以从配置参数的变化来了解优化后的线程池工作机制：</p>
+<ul>
+<li><code>thread_pool_enabled</code> ：线程池开关。</li>
+<li><code>thread_pool_idle_timeout</code> ：线程最大空闲时间，超过则退出。</li>
+<li><code>thread_pool_max_threads</code> ：线程池最大工作线程数。</li>
+<li><code>thread_pool_oversubscribe</code>：每个 Thread Group 的目标线程数。</li>
+<li><code>thread_pool_normal_weights</code>（相较 percona 新加）：<strong>查询、更新操作的目标线程比例（假定这两类操作的比重相同）</strong>，即<code>并发度 = thread_pool_oversubscribe * 目标比例/100</code>。</li>
+<li><code>thread_pool_trans_weights</code>（相较 percona 新加）：<strong>事务操作的目标线程比例</strong>，即<code>并发度 = thread_pool_oversubscribe * 目标比例/100</code>。</li>
+<li><code>thread_pool_stall_limit</code>：阻塞模式检查频率（同时检查 5 个队列的状态）</li>
+<li><code>thread_pool_size</code>：线程组的个数（在优化锁并发后，线程组的个数不是很关键，可以用来根据物理机器的资源配置情况来软性调节处理能力）</li>
+</ul>
+<p>另外，AliSQL 新增了 6 个状态变量：<code>thread_pool_active_threads</code>，<code>thread_pool_big_threads</code>，<code>thread_pool_dml_threads</code>，<code>thread_pool_qry_threads</code>，<code>thread_pool_trx_threads</code>，<code>thread_pool_wait_threads</code> 。还有 2 个状态变量与 percona 线程池含义相同，只是名字不同。</p>
+<h2 id="TXSQL-vs-Percona"><a href="#TXSQL-vs-Percona" class="headerlink" title="TXSQL vs Percona"></a>TXSQL vs Percona</h2><p>腾讯云 TXSQL 线程池核心方案与 Percona 完全一样，额外支持的功能如下：</p>
+<h3 id="1-支持线程池动态切换"><a href="#1-支持线程池动态切换" class="headerlink" title="1. 支持线程池动态切换"></a><strong>1. 支持线程池动态切换</strong></h3><p>线程池采用一定数量的工作线程来处理用户连接请求，通常比较适应于 OLTP 工作负载的场景。但线程池并不是万能的，线程池的不足在于当用户请求偏向于慢查询时，工作线程阻塞在高时延操作上，难以快速响应新的用户请求，导致系统吞吐量反而相较于 one-thread-per-connection（简称为 Per_thread）模式更低。</p>
+<p>Per_thread 模式与 Thread_pool 模式各有优劣，系统需要根据用户的业务类型灵活切换两种模式。在业务高峰时段切换模式，重启服务器，会严重影响用户业务。为了解决此问题，TXSQL 提出了<strong>线程池动态切换</strong>的优化，即在不重启数据库服务的情况下，动态开启或关闭线程池。</p>
+<p>通过参数 <code>thread_handling_switch_mode</code> 控制，可选值及含义如下：</p>
+<table>
+<thead>
+<tr>
+<th>可选值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>disabled</td>
+<td>禁止模式动态迁移</td>
+</tr>
+<tr>
+<td>stable</td>
+<td>只有新连接迁移</td>
+</tr>
+<tr>
+<td>fast</td>
+<td>新连接 + 新请求都迁移，默认模式</td>
+</tr>
+<tr>
+<td>sharp</td>
+<td>kill 当前活跃连接，迫使用户重连，达到快速切换的效果</td>
+</tr>
+</tbody></table>
+<p>在了解了 TXSQL 动态线程池的使用方法后，我们再来了解一下其具体的实现。</p>
+<p>mysql 的<code>thread_handling</code>参数代表了连接管理方法。</p>
+<p><strong>在原生 mysql 中，thread_handling 是只读参数，不允许在线修改</strong>。</p>
+<p><code>thread_handling</code> 参数对应的底层实现对象是<code>Connection_handler_manager</code>，后者是 mysql 提供连接管理服务的单例类，可对外提供多种连接管理服务：</p>
+<ul>
+<li><code>Per_thread</code> : 参数值是 one-thread-per-connection</li>
+<li><code>No_threads</code> : 参数值是 no-threads</li>
+<li><code>Thread_pool</code> : 新加</li>
+<li><code>Plugin_connection_handler</code> : 参数值是 loaded-dynamically</li>
+</ul>
+<p>在 mysql 启动时<code>Connection_handler_manager</code>只需要按照<code>thread_handling</code>初始化一种连接管理方法即可。</p>
+<p>为了支持动态线程池，允许用户连接从 Per_thread 和 Thread_pool 模式中来回切换，我们需要允许多种连接管理方法同时存在。因此，<strong>在 mysql 初始化阶段，TXSQL 初始化了所有连接管理方法</strong>。</p>
+<p>在支持<code>thread_handling</code>在<strong>Per_thread 和 Thread_pool 模式</strong>中来回切换后，我们需要考虑的问题主要有以下几个：</p>
+<h4 id="1-1-活跃用户连接的-thread-handling-切换"><a href="#1-1-活跃用户连接的-thread-handling-切换" class="headerlink" title="1.1. 活跃用户连接的 thread_handling 切换"></a><strong>1.1. 活跃用户连接的 thread_handling 切换</strong></h4><p>Per_thread 模式下，每个用户连接对应一个<code>handle_connection</code>线程，<code>handle_connection</code>线程既负责用户网络请求的监听，又负责请求的处理。</p>
+<p>Thread_pool 模式下，每个 thread_group 都用<code>epoll</code>来管理其中所有用户连接的网络事件，监听到的事件放入事件队列中，交予 worker 处理。</p>
+<p><strong>不论是哪种模式，在处理请求的过程中（<code>do_command</code>）切换都不是一个好选择，而在完成一次 command 之后，尚未接到下一次请求之前是一个较合适的切换点。</strong></p>
+<ul>
+<li>为实现用户连接从 Per_thread 到 Thread_pool 的切换，需要在请求处理完（<code>do_command</code>）之后判断<code>thread_handling</code>是否发生了变化。<br>如需切换则立刻按照 2.2 中介绍的逻辑，通过<code>thread_id % group_size</code>选定目标 thread_group，<strong>将当前用户连接迁移至 Thread_pool 的目标 thread_group 中</strong>，后续该用户连接的所有网络事件统一交予 thread_group 的 epoll 监听。在完成连接迁移之后，handle_connection 线程即可完成退出或者缓存至下一次 Per_thread 模式处理新连接时复用（此为<strong>原生 mysql 支持的逻辑</strong>，目的是避免 Per_thread 模式下频繁地创建和销毁 handle_connection 线程）。</li>
+<li>为实现用户连接从 Thread_pool 到 Per_thread 的切换，需要在请求处理完（<code>threadpool_process_request</code>）后，<strong>将用户线程网络句柄重新挂载到 epoll</strong>（<code>start_io</code>）之前判断 thread_handling 是否发生了变化。<strong>如需切换则先将网络句柄从 epoll 中移除以及将连接的信息从对应 thread_group 中清除</strong>。由于 Per_thread 模式下每个连接对应一个 handle_connection 线程，<strong>还需为当前用户连接创建一个 handle_connection 线程</strong>，后续当前用户连接的网络监听和请求处理都交予该 handle_connection 线程处理。</li>
+</ul>
+<h4 id="1-2-新连接的处理"><a href="#1-2-新连接的处理" class="headerlink" title="1.2. 新连接的处理"></a><strong>1.2. 新连接的处理</strong></h4><p>由于 thread_handling 可能随时动态变化，为了使得新连接能被新 thread_handling 处理，需要在新连接处理接口<code>Connection_handler_manager::process_new_connection</code>中，<strong>读取最新的 thread_handling，利用其相应的连接管理方法添加新连接</strong>。</p>
+<ul>
+<li>对于 Per_thread 模式，需要为新连接创建<code>handle_connection</code>线程；</li>
+<li>对于 Thread_pool 模式，则需要为新连接选定 thread_group 和将其网络句柄绑定到 thread_group 的<code>epoll</code>中。</li>
+</ul>
+<h4 id="1-3-thread-handling-切换的快速生效"><a href="#1-3-thread-handling-切换的快速生效" class="headerlink" title="1.3. thread_handling 切换的快速生效"></a><strong>1.3. thread_handling 切换的快速生效</strong></h4><p>从前文的讨论中可以看到，<strong>处于连接状态的用户线程需要等到一个请求处理结束才会等到合适的切换点</strong>。</p>
+<p>如果该用户连接迟迟不发送网络请求，则连接会阻塞在 do_command 下的<code>get_command</code>的网络等待中，无法及时切换到 Thread_pool。如何快速完成此类线程的切换呢？</p>
+<blockquote>
+<p>一种比较激进的方法就是<strong>迫使此类连接重连</strong>，在重连后作为新连接自然地切换到 Thread_pool 中，其下一个网络请求也将被 Thread_pool 应答。</p>
+</blockquote>
+<p><strong>线程池动态切换对性能的影响</strong>：</p>
+<ul>
+<li><code>pool-of-threads</code> 切换为 <code>one-thread-per-connection</code> 过程本身<strong>不会带来 query 堆积，以及性能影响</strong>。</li>
+<li><code>one-thread-per-connection</code> 切换为 <code>pool-of-threads</code> 过程，由于<strong>之前线程池处于休眠状态</strong>，在 QPS 极高并且有持续高压的情况下，<strong>可能存在一定的请求累积</strong>。解决方案如下：<ul>
+<li>方案 1：适当增大 <code>thread_pool_oversubscribe</code>，并适当调小 <code>thread_pool_stall_limit</code>，快速激活线程池。待消化完堆积 SQL 再视情况还原上述修改。</li>
+<li>方案 2：出现 SQL 累积时，短暂暂停或降低业务流量几秒钟，等待 <code>pool-of-threads</code> 完成激活，再恢复持续高压业务流量。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-线程池负载均衡优化"><a href="#2-线程池负载均衡优化" class="headerlink" title="2. 线程池负载均衡优化"></a>2. 线程池负载均衡优化</h3><p>如前文所述，新连接<strong>按照线程 id 取模线程组个数</strong>来确定新连接归属的线程组（<code>thd-&gt;thread_id() % group_count</code>）。这样的分配方式未能将各线程组的实际负载考虑在内，因此<strong>可能将繁忙的连接分配到相同的线程组，使得线程池出现负载不均衡的现象</strong>。为了避免负载不均衡的发生，TXSQL 提出了线程池负载均衡优化。</p>
+<h4 id="2-1-负载的度量"><a href="#2-1-负载的度量" class="headerlink" title="2.1. 负载的度量"></a><strong>2.1. 负载的度量</strong></h4><p>在提出负载均衡的算法之前，我们首先需要找到一种度量线程组负载状态的方法，通常我们称之为”信息策略“。下面我们分别讨论几种可能的信息策略。</p>
+<p><strong>1） queue_length</strong></p>
+<p><code>queue_length</code><strong>代表线程组中低优先级队列和高优先级队列的长度</strong>。此信息策略的最大优势在于简单，直接用<strong>在工作队列中尚未处理的 event 的数量</strong>描述当前线程组的工作负载情况。此信息策略的不足是 无法将每个网络事件 event 的处理效率纳入考量。由于每个 event 的处理效率并不相同，简单地以工作队列长度作为度量标准会带来一些误判。</p>
+<p><strong>2） average_wait_usecs_in_queue</strong></p>
+<p><code>average_wait_usecs_in_queue</code><strong>表示最近 n 个 event 在队列中的平均等待时间</strong>。此信息策略的优势在于能够直观地反映线程组处理 event 的响应速度。某线程组<code>average_wait_usecs_in_queue</code>明显高于其他线程组说明其工作队列中的 event 无法及时被处理，需要其他线程组对其提供帮助。</p>
+<p><strong>3） group_efficiency</strong></p>
+<p><code>group_efficiency</code>表示一定的时间周期内，<strong>线程组处理完的 event 总数占（工作队列存量 event 数+新增 event 数）的比例</strong>。此信息策略的优势在于能够直观反映出线程组一定时间周期内的工作效率，不足在于对于运转良好的线程组也可能存在误判：当时间周期选择不合适时，运转良好的线程组可能存在时而 group_efficiency 小于 1，时而大于 1 的情况。 &#x20;<br>上述三种信息策略只是举例说明，还有更多信息策略可以被采用，就不再一一罗列。</p>
+<h4 id="2-2-负载均衡的实现介绍"><a href="#2-2-负载均衡的实现介绍" class="headerlink" title="2 .2. 负载均衡的实现介绍"></a>2 <strong>.2. 负载均衡的实现介绍</strong></h4><p>在明确了度量线程组负载的方法之后，我们接下来讨论如何均衡负载。我们需要考虑的问题主要如下：</p>
+<p><strong>1） 负载均衡算法的触发条件</strong></p>
+<p><strong>负载均衡操作会将用户连接从一个线程组迁移至另一个线程组，在非必要情况下触发用户连接的迁移反而会导致用户连接的性能抖动</strong>。为尽可能避免负载均衡算法错误触发，我们需要为触发负载均衡算法<strong>设定一个负载阈值 M，以及负载比例 N。只有线程组的负载阈值大于 M，并且其与参与均衡负载的线程组的负载比例大于 N 时，才需要启动负载均衡算法平衡负载</strong>。</p>
+<p><strong>2） 负载均衡的参数对象</strong></p>
+<p>Q：当线程组触发了负载均衡算法后，该由哪些线程组参与平衡高负载线程组的负载呢？</p>
+<p>很容易想到的一个方案是<strong>我们维护全局的线程组负载动态序列，让负载最轻的线程组负责分担负载</strong>。但是遗憾的是为了维护全局线程组负载动态序列，线程组每处理完一次任务都可能需要更新自身的状态，并在全局锁的保护下更新其在全局负载序列中的位置，如此一来对性能的影响势必较大，因此<strong>全局线程组负载动态序列的方案并不理想</strong>。</p>
+<p>为了避免均衡负载对线程池整体性能的影响，需改全局负载比较为局部负载比较。一种可能的方法为<strong>当当前线程组的负载高于阈值 M 时，只比较其与左右相邻的 X 个（通常 1-2 个）线程组的负载差异，当当前线程组的负载与相邻线程组的比例也高于 N 倍时，从当前线程组向低负载线程组迁移用户连接</strong>。需要注意的是当当前线程组的负载与相邻线程组的比例不足 N 倍时，说明要么当前线程组还不够繁忙、要么其相邻线程组也较为忙碌，此时为了避免线程池整体表现恶化，不适合强行均衡负载。</p>
+<p><strong>3） 均衡负载的方法</strong></p>
+<p>讨论完负载均衡的触发条件及参与对象之后，接下来我们需要讨论高负载线程组向低负载线程组<strong>迁移负载的方法</strong>。总体而言，包括两种方法：<strong>新连接的优化分配、旧连接的合理转移</strong>。</p>
+<p>在掌握了线程组的量化负载之后，<strong>较容易实现的均衡负载方法是在新连接分配线程组时特意避开高负载线程组</strong>，这样一来已经处于高负载状态的线程组便不会因新连接的加入进一步恶化。但仅仅如此还不够，如果高负载线程组的响应已经很迟钝，我们还需要主动将其中的旧连接迁移至合适的低负载线程组，具体迁移时机在 3.1 中已有述及，为在请求处理完（<code>threadpool_process_request</code>）后，将用户线程网络句柄重新挂载到<code>epoll</code>（start_io）之前，此处便不再展开讨论。</p>
+<h3 id="3-线程池断连优化"><a href="#3-线程池断连优化" class="headerlink" title="3. 线程池断连优化"></a>3. 线程池断连优化</h3><h4 id="3-1-percona-线程池问题"><a href="#3-1-percona-线程池问题" class="headerlink" title="3.1. percona 线程池问题"></a>3.1. percona 线程池问题</h4><p>如前文所述，线程池采用 epoll 来处理网络事件。当 epoll 监听到网络事件时，listener 会将网络事件放入事件队列或自己处理，此时相应用户连接不会被 epoll 监听。<strong>percona 线程池需要等到请求处理结束之后才会使用 epoll 重新监听用户连接的新网络事件</strong>。percona 线程池这样的设计通常不会带来问题，因为用户连接在请求未被处理时，也不会有发送新请求的需求。<strong>但特殊情况下，如果用户连接在重新被 epoll 监听前自行退出了，此时用户连接发出的断连信号无法被 epoll 捕捉，因此在 mysql 服务器端无法及时退出该用户连接</strong>。这样带来的影响主要有两点：</p>
+<ol>
+<li> <strong>用户连接客户端虽已退出，但 mysql 服务器端却仍在运行该连接</strong>，继续消耗 CPU、内存资源，甚至可能继续持有锁，只有等到连接超时才能退出；</li>
+<li> 由于<strong>用户连接在 mysql 服务器端未及时退出，连接数也并未清理</strong>，如果用户业务连接数较多，可能导致用户新连接数触达最大连接数上限，用户无法连接数据库，严重影响业务。</li>
+</ol>
+<p>为解决上述问题，TXSQL 提出了线程池断连优化。</p>
+<h4 id="3-2-断连优化的实现介绍"><a href="#3-2-断连优化的实现介绍" class="headerlink" title="3.2. 断连优化的实现介绍"></a><strong>3.2. 断连优化的实现介绍</strong></h4><p>断连优化的重点在于<strong>及时监听用户连接的断连事件并及时处理</strong>。为此需要作出的优化如下：</p>
+<ol>
+<li> <strong>在 epoll 接到用户连接的正常网络事件后，立刻监听该用户连接的断连事件</strong>；</li>
+<li> <strong>所有用户连接退出从同步改为异步</strong>，所有退出的连接先放入<code>quit_connection_queue</code>，后统一处理；</li>
+<li> <strong>一旦 epoll 接到断连事件后立刻将用户连接<code>thd-&gt;killed</code>设置为<code>THD::KILL_CONNECTION</code>状态，并将连接放入<code>quit_connection_queue</code>中异步退出</strong>；</li>
+<li> <strong>listener 每隔固定时间（例如 100ms）处理一次<code>quit_connection_queue</code>，让其中的用户连接退出</strong>。</li>
+</ol>
+<h3 id="4-新增用于监控的状态变量"><a href="#4-新增用于监控的状态变量" class="headerlink" title="4. 新增用于监控的状态变量"></a><strong>4. 新增用于监控的状态变量</strong></h3><ul>
+<li>新增指令 <code>show threadpool status</code> ，可展示 25 个线程池状态变量。</li>
+<li>在 <code>show full processlist</code> 中新增如下状态变量：<ul>
+<li><code>Moved_to_per_thread</code> 表示该连接迁移到 Per_thread 的次数。</li>
+<li><code>Moved_to_thread_pool</code> 表示该连接迁移到 Thread_pool 的次数。</li>
+</ul>
+</li>
+</ul>
+<h1 id="性能结果"><a href="#性能结果" class="headerlink" title="性能结果"></a>性能结果</h1><p>由于腾讯 TXSQL、Percona 官方手册都没有性能数据，因此仅列出其他几种方案的性能结果。</p>
+<h2 id="华为鲲鹏"><a href="#华为鲲鹏" class="headerlink" title="华为鲲鹏"></a>华为鲲鹏</h2><p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/huawei-kunpeng-threadpool-benchmark.png" alt="华为鲲鹏线程池性能测试" title="华为鲲鹏线程池性能测试"></p>
+<h2 id="MariaDB-5-5-无优先级队列"><a href="#MariaDB-5-5-无优先级队列" class="headerlink" title="MariaDB 5.5 - 无优先级队列"></a>MariaDB 5.5 - 无优先级队列</h2><blockquote>
+<p>本小节内容来源于<a target="_blank" rel="noopener" href="https://mariadb.com/kb/en/threadpool-benchmarks/" title="官网手册">官网手册</a>。</p>
+</blockquote>
+<p>MariaDB 官网是基于 5.5 版本线程池测试的，也就是不支持高低优先级队列的版本。</p>
+<p>采用 Sysbench 0.4，以 pitbull (Linux, 24 cores) 的情况来说明在不同场景下的 QPS 情况。</p>
+<h3 id="OLTP-RO"><a href="#OLTP-RO" class="headerlink" title="OLTP_RO"></a>OLTP_RO</h3><table>
+<thead>
+<tr>
+<th>并发数</th>
+<th>16</th>
+<th>32</th>
+<th>64</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>per_thread</td>
+<td>6754</td>
+<td>7905</td>
+<td>8152</td>
+<td>7948</td>
+<td>7924</td>
+<td>7587</td>
+<td>5313</td>
+<td>3827</td>
+<td>208</td>
+</tr>
+<tr>
+<td>threadpool</td>
+<td>6566</td>
+<td>7725</td>
+<td>8108</td>
+<td>8079</td>
+<td>7976</td>
+<td>7793</td>
+<td>7429</td>
+<td>6523</td>
+<td>4456</td>
+</tr>
+</tbody></table>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-oltp-ro.png" alt="MariaDB Sysbench oltp_ro 性能" title="MariaDB Sysbench oltp_ro 性能"></p>
+<h3 id="OLTP-RW"><a href="#OLTP-RW" class="headerlink" title="OLTP_RW"></a>OLTP_RW</h3><table>
+<thead>
+<tr>
+<th>并发数</th>
+<th>16</th>
+<th>32</th>
+<th>64</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>per_thread</td>
+<td>4561</td>
+<td>5316</td>
+<td>5332</td>
+<td>3512</td>
+<td>2874</td>
+<td>2476</td>
+<td>1380</td>
+<td>265</td>
+<td>53</td>
+</tr>
+<tr>
+<td>threadpool</td>
+<td>4504</td>
+<td>5382</td>
+<td>5694</td>
+<td>5567</td>
+<td>5302</td>
+<td>4514</td>
+<td>2548</td>
+<td>1186</td>
+<td>484</td>
+</tr>
+</tbody></table>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-oltp-rw.png" alt="MariaDB Sysbench oltp_rw 性能" title="MariaDB Sysbench oltp_rw 性能"></p>
+<h3 id="POINT-SELECT"><a href="#POINT-SELECT" class="headerlink" title="POINT_SELECT"></a>POINT_SELECT</h3><table>
+<thead>
+<tr>
+<th>并发数</th>
+<th>16</th>
+<th>32</th>
+<th>64</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>per_thread</td>
+<td>148673</td>
+<td>161547</td>
+<td>169747</td>
+<td>172083</td>
+<td>69036</td>
+<td>42041</td>
+<td>21775</td>
+<td>4368</td>
+<td>282</td>
+</tr>
+<tr>
+<td>threadpool</td>
+<td>143222</td>
+<td>167069</td>
+<td>167270</td>
+<td>165977</td>
+<td>164983</td>
+<td>158410</td>
+<td>148690</td>
+<td>147107</td>
+<td>143934</td>
+</tr>
+</tbody></table>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-point-select.png" alt="MariaDB Sysbench point_select 性能" title="MariaDB Sysbench point_select 性能"></p>
+<h3 id="UPDATE-NOKEY"><a href="#UPDATE-NOKEY" class="headerlink" title="UPDATE_NOKEY"></a>UPDATE_NOKEY</h3><table>
+<thead>
+<tr>
+<th>并发数</th>
+<th>16</th>
+<th>32</th>
+<th>64</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>per_thread</td>
+<td>65213</td>
+<td>71680</td>
+<td>19418</td>
+<td>13008</td>
+<td>11155</td>
+<td>8742</td>
+<td>5645</td>
+<td>635</td>
+<td>332</td>
+</tr>
+<tr>
+<td>threadpool</td>
+<td>64902</td>
+<td>70236</td>
+<td>70037</td>
+<td>68926</td>
+<td>69930</td>
+<td>69929</td>
+<td>67099</td>
+<td>62376</td>
+<td>17766</td>
+</tr>
+</tbody></table>
+<p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/mariadb-threadpool-sysbench-update-nokey.png" alt="MariaDB Sysbench update_nokey 性能" title="MariaDB Sysbench update_nokey 性能"></p>
+<h2 id="AliSQL"><a href="#AliSQL" class="headerlink" title="AliSQL"></a>AliSQL</h2><p>如下是开启线程池和不开启线程池的性能对比。从测试结果可以看出线程池在高并发的情况下有着明显的性能优势。</p>
+<h3 id="update-non-index"><a href="#update-non-index" class="headerlink" title="update_non_index"></a>update_non_index</h3><p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-update-non-index.png" alt="AliSQL update_non_index 性能" title="AliSQL update_non_index 性能"></p>
+<h3 id="write-only"><a href="#write-only" class="headerlink" title="write_only"></a>write_only</h3><p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-write-only.png" alt="AliSQL write_only 性能" title="AliSQL write_only 性能"></p>
+<h3 id="read-write"><a href="#read-write" class="headerlink" title="read_write"></a>read_write</h3><p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-read-write.png" alt="AliSQL read_write 性能" title="AliSQL read_write 性能"></p>
+<h3 id="point-select"><a href="#point-select" class="headerlink" title="point_select"></a>point_select</h3><p><img src="/2023/05/04/mysql-threadpool-main-solutions-details/alisql-sysbench-point-select.png" alt="AliSQL point_select 性能" title="AliSQL point_select 性能"></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><h2 id="功能区别"><a href="#功能区别" class="headerlink" title="功能区别"></a>功能区别</h2><table>
+<thead>
+<tr>
+<th></th>
+<th><strong>MySQL 企业版</strong></th>
+<th><strong>MariaDB</strong></th>
+<th><strong>Percona</strong></th>
+<th>华为鲲鹏</th>
+<th>腾讯 TXSQL</th>
+<th>阿里云 AliSQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>功能实现方式</strong></td>
+<td>插件</td>
+<td>非插件</td>
+<td>非插件</td>
+<td>插件</td>
+<td>非插件</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>版本</strong></td>
+<td>5.5 版本引入</td>
+<td>5.5 版本引入，10.2 版本完善</td>
+<td>5.5-5.7/8.0</td>
+<td>5.7/8.0</td>
+<td>5.7/8.0</td>
+<td>5.6/5.7/8.0</td>
+</tr>
+<tr>
+<td><strong>是否开源</strong></td>
+<td>否</td>
+<td>是</td>
+<td>是</td>
+<td>是</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><strong>动态开关线程池</strong></td>
+<td>插件式，不支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>插件式，不支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td><strong>优先级处理策略</strong></td>
+<td>设定高低优先级，且低优先级事件等待一段时间可升为高优先级队列</td>
+<td>设定高低优先级，且低优先级事件等待一段时间可升为高优先级队列</td>
+<td>设定高低优先级，且限制每个连接在高优先级队列中的票数</td>
+<td>设定高低优先级，且限制每个连接在高优先级队列中的票数</td>
+<td>设定高低优先级，且限制每个连接在高优先级队列中的票数</td>
+<td>控制事务、非事务语句的比例</td>
+</tr>
+<tr>
+<td><strong>各线程组之间负载均衡优化</strong></td>
+<td>不支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>线程池断连优化</strong></td>
+<td>-</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>监控</strong></td>
+<td>-</td>
+<td>2 个状态变量</td>
+<td>2 个状态变量</td>
+<td>4 张状态信息表</td>
+<td>27 个状态变量</td>
+<td>8 个状态变量</td>
+</tr>
+<tr>
+<td><strong>借鉴方案</strong></td>
+<td>-</td>
+<td>-</td>
+<td>MariaDB</td>
+<td>Percona + MariaDB 10.2 及之后版本</td>
+<td>Percona</td>
+<td>MariaDB 5.5</td>
+</tr>
+<tr>
+<td><strong>跨平台</strong></td>
+<td>Windows/Unix</td>
+<td>Windows/Unix/MacOS</td>
+<td>Windows/Unix</td>
+<td>Unix</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>Q：<strong>如果线程池阻塞了，怎么处理？</strong></p>
+<blockquote>
+<p>MySQL 8.0.14 以前的版本使用 <code>extra_port</code> 功能（percona &amp; mariadb），8.0.14 及之后版本官方支持了 <code>admin_port</code> 功能。</p>
+</blockquote>
+<p>由上表可见，<strong>华为鲲鹏社区的线程池方案相对较全，腾讯 TXSQL 的优化点也有较大参考价值</strong>。</p>
+<h2 id="参数区别"><a href="#参数区别" class="headerlink" title="参数区别"></a>参数区别</h2><p>由于业内线程池方案基本都会参考 MariaDB 或 Percona，因此，以 Percona 和 MariaDB 的参数为准，基于 MySQL 8.0，总结其他方案是否有相同或类似参数。</p>
+<blockquote>
+<p>注意：MySQL 企业版核心方案与 MariaDB 类似，且关于差异点，官方描述较少，因此，不做对比。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MariaDB</th>
+<th>Percona</th>
+<th>华为鲲鹏</th>
+<th>腾讯 TXSQL</th>
+<th>阿里云 AliSQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>thread_handling</code> <br>线程池开关</td>
+<td>有</td>
+<td>有</td>
+<td>无（插件方式）</td>
+<td>有类似参数 <code>thread_handling_switch_mode</code> （支持动态开关）</td>
+<td>有类似参数 <code>thread_pool_enabled</code>（支持动态开关）</td>
+</tr>
+<tr>
+<td><code>thread_pool_idle_timeout</code> <br>线程最大空闲时间，超过则退出。</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_high_prio_mode</code> <br>高优先级队列调度策略，<br>支持 <code>transactions</code>,<code>statements</code>,<code>none</code> 三种策略</td>
+<td>有类似参数 <code>thread_pool_priority</code>，<br>支持 <code>high</code>, <code>low</code>, <code>auto</code> 三种策略</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_high_prio_tickets</code> <br>控制每个连接在高优先级中的票数，仅在调度模式是<strong>事务模式</strong>时生效</td>
+<td>无</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_max_threads</code> <br>线程池最大工作线程数</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_oversubscribe</code> <br>每个线程组中的最大工作线程数</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_size</code> <br>线程组数，一般推荐设为 CPU 核心数</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_stall_limit</code> <br>timer 线程判断线程组是否停滞（定期调用 check_stall ）的时间间隔</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_prio_kickup_timer</code> <br>低优先队列中的语句在等待该值指定的时间后，则移入高优先级队列</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_dedicated_listener</code> <br>是否启用专用 listener 线程。若关闭，则 listener 有可能变为 worker。</td>
+<td>有</td>
+<td>无</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_exact_stats</code> <br>是否使用高精度时间戳</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_toobusy</code> <br>表示线程组是否过于忙碌的线程数阈值</td>
+<td>无</td>
+<td>无</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_sched_affinity</code> <br>指定是否启用线程组与 numa 亲和，默认关闭。</td>
+<td>无</td>
+<td>无</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>thread_pool_normal_weights</code>：<br>查询、更新操作的目标线程比例（假定这两类操作的比重相同），<br>即<code>并发度= thread_pool_oversubscribe * 目标比例/100</code></td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>有</td>
+</tr>
+<tr>
+<td><code>thread_pool_trans_weights</code>：<br>事务操作的目标线程比例，<br>即<code>并发度= thread_pool_oversubscribe * 目标比例/100</code></td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>有</td>
+</tr>
+</tbody></table>
+<p><strong>可见</strong>：</p>
+<ol>
+<li> 华为鲲鹏主要基于 percona 方案实现，同时实现了专用 listener 线程（参数 <code>thread_pool_prio_kickup_timer</code>）。</li>
+<li> 阿里云 AliSQL 线程池资料较少，虽然有些参数不具备，但并不说明未实现对应机制，比如专用 listener 线程。</li>
+</ol>
+<h2 id="监控区别"><a href="#监控区别" class="headerlink" title="监控区别"></a>监控区别</h2><h3 id="Percona、MariaDB："><a href="#Percona、MariaDB：" class="headerlink" title="Percona、MariaDB："></a><strong>Percona、MariaDB：</strong></h3><p>只有两个状态变量：</p>
+<ul>
+<li>&#x20;<code>Threadpool_threads</code>&#x20;</li>
+<li><code>Threadpool_idle_threads</code></li>
+</ul>
+<h3 id="华为鲲鹏："><a href="#华为鲲鹏：" class="headerlink" title="华为鲲鹏："></a><strong>华为鲲鹏</strong>：</h3><ul>
+<li><code>information_schema</code> 中增加四张<strong>状态信息表</strong>：<ul>
+<li><code>THREAD_POOL_GROUPS</code>查询线程组相关信息。</li>
+<li><code>THREAD_POOL_QUEUES</code>查询线程组队列中连接的信息。</li>
+<li><code>THREAD_POOL_STATS</code>查询线程组状态信息的统计值，比如线程组由于 check_stall 创建的线程数、由 listener 线程 poll 到的任务数等。</li>
+<li><code>THREAD_POOL_WAITS</code>提供线程组的 worker 线程在执行 SQL 语句时，各类等待原因的统计数据。 等待原因有：UNKNOWN、SLEEP、DISKIO、ROW_LOCK、GLOBAL_LOCK、META_DATA_LOCK、TABLE_LOCK、USER_LOCK、BINLOG、GROUP_COMMIT、SYNC、NET。</li>
+</ul>
+</li>
+</ul>
+<h3 id="阿里云-AliSQL："><a href="#阿里云-AliSQL：" class="headerlink" title="阿里云 AliSQL："></a><strong>阿里云 AliSQL</strong>：</h3><p>新增了一些状态变量：</p>
+<table>
+<thead>
+<tr>
+<th>状态名</th>
+<th>状态说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>thread_pool_active_threads</td>
+<td>线程池中的活跃线程数</td>
+</tr>
+<tr>
+<td>thread_pool_big_threads</td>
+<td>线程池中正在执行复杂查询的线程数。复杂查询包括有子查询、聚合函数、group by、limit 等的查询语句。</td>
+</tr>
+<tr>
+<td>thread_pool_dml_threads</td>
+<td>线程池中的在执行 DML 的线程数</td>
+</tr>
+<tr>
+<td>thread_pool_idle_threads</td>
+<td>线程池中的空闲线程数</td>
+</tr>
+<tr>
+<td>thread_pool_qry_threads</td>
+<td>线程池中正在执行简单查询的线程数</td>
+</tr>
+<tr>
+<td>thread_pool_total_threads</td>
+<td>线程池中的总线程数</td>
+</tr>
+<tr>
+<td>thread_pool_trx_threads</td>
+<td>线程池中正在执行事务的线程数</td>
+</tr>
+<tr>
+<td>thread_pool_wait_threads</td>
+<td>线程池中正在等待磁盘 IO、事务提交的线程数</td>
+</tr>
+</tbody></table>
+<h3 id="腾讯云-TXSQL："><a href="#腾讯云-TXSQL：" class="headerlink" title="腾讯云 TXSQL："></a><strong>腾讯云 TXSQL</strong>：</h3><p>新增 <code>show threadpool status</code> 指令，展示的相关状态如下：</p>
+<table>
+<thead>
+<tr>
+<th>状态名</th>
+<th>状态说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>groupid</td>
+<td>线程组 id</td>
+</tr>
+<tr>
+<td>connection_count</td>
+<td>线程组用户连接数</td>
+</tr>
+<tr>
+<td>thread_count</td>
+<td>线程组内工作线程数</td>
+</tr>
+<tr>
+<td>havelistener</td>
+<td>线程组当前是否存在 listener</td>
+</tr>
+<tr>
+<td>active_thread_count</td>
+<td>线程组内活跃 worker 数量</td>
+</tr>
+<tr>
+<td>waiting_thread_count</td>
+<td>线程组内等待中的 worker 数量（调用 wait_begin 的 worker）</td>
+</tr>
+<tr>
+<td>waiting_threads_size</td>
+<td>线程组中无网络事件需要处理，进入休眠期等待被唤醒的 worker 数量（等待 thread_pool_idle_timeout 秒后自动销毁）</td>
+</tr>
+<tr>
+<td>queue_size</td>
+<td>线程组普通优先级队列长度</td>
+</tr>
+<tr>
+<td>high_prio_queue_size</td>
+<td>线程组高优先级队列长度</td>
+</tr>
+<tr>
+<td>get_high_prio_queue_num</td>
+<td>线程组内事件从高优先级队列被取走的总次数</td>
+</tr>
+<tr>
+<td>get_normal_queue_num</td>
+<td>线程组内事件从普通优先级队列被取走的总次数</td>
+</tr>
+<tr>
+<td>create_thread_num</td>
+<td>线程组内创建的 worker 线程总数</td>
+</tr>
+<tr>
+<td>wake_thread_num</td>
+<td>线程组内从 waiting_threads 队列中唤醒的 worker 总数</td>
+</tr>
+<tr>
+<td>oversubscribed_num</td>
+<td>线程组内 worker 发现当前线程组处于 oversubscribed 状态，并且准备进入休眠的次数</td>
+</tr>
+<tr>
+<td>mysql_cond_timedwait_num</td>
+<td>线程组内 worker 进入 waiting_threads 队列的总次数</td>
+</tr>
+<tr>
+<td>check_stall_nolistener</td>
+<td>线程组被 timer 线程 check_stall 检查中发现没有 listener 的总次数</td>
+</tr>
+<tr>
+<td>check_stall_stall</td>
+<td>线程组被 timer 线程 check_stall 检查中被判定为 stall 状态的总次数</td>
+</tr>
+<tr>
+<td>max_req_latency_us</td>
+<td>线程组中用户连接在队列等待的最长时间（单位毫秒）</td>
+</tr>
+<tr>
+<td>conns_timeout_killed</td>
+<td>线程组中用户连接因客户端无新消息时间超过阈值（net_wait_timeout）被 killed 的总次数</td>
+</tr>
+<tr>
+<td>connections_moved_in</td>
+<td>从其他线程组中迁入该线程组的连接总数</td>
+</tr>
+<tr>
+<td>connections_moved_out</td>
+<td>从该线程组迁出到其他线程组的连接总数</td>
+</tr>
+<tr>
+<td>connections_moved_from_per_thread</td>
+<td>从 one-thread-per-connection 模式中迁入该线程组的连接总数</td>
+</tr>
+<tr>
+<td>connections_moved_to_per_thread</td>
+<td>从该线程组中迁出到 one-thread-per-connection 模式的连接总数</td>
+</tr>
+<tr>
+<td>events_consumed</td>
+<td>线程组处理过的 events 总数</td>
+</tr>
+<tr>
+<td>average_wait_usecs_in_queue</td>
+<td>线程组内所有 events 在队列中的平均等待时间</td>
+</tr>
+</tbody></table>
+<p>在 <code>show full processlist</code> 中新增如下状态：</p>
+<ul>
+<li><code>Moved_to_per_thread</code> 表示该连接迁移到 Per_thread 的次数。</li>
+<li><code>Moved_to_thread_pool</code> 表示该连接迁移到 Thread_pool 的次数.</li>
+</ul>
+<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><ol>
+<li>腾讯 TXSQL：<ol>
+<li> <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/BXEYVfYCsZ5fD2IG6fNVrA" title="原创｜线程池详解 (qq.com)">原创｜线程池详解 (qq.com)</a></li>
+<li> <a target="_blank" rel="noopener" href="https://cloud.tencent.com/document/product/236/48851" title="云数据库 MySQL 动态线程池-自研内核 TXSQL-文档中心-腾讯云 (tencent.com)">云数据库 MySQL 动态线程池-自研内核 TXSQL-文档中心-腾讯云 (tencent.com)</a></li>
+</ol>
+</li>
+<li>Percona：<ol>
+<li> <a target="_blank" rel="noopener" href="https://docs.percona.com/percona-server/8.0/performance/threadpool.html" title="Thread pool - Percona Server for MySQL">Thread pool - Percona Server for MySQL</a></li>
+<li> <a target="_blank" rel="noopener" href="https://www.percona.com/blog/simcity-outages-traffic-control-and-thread-pool-for-mysql/" title="SimCity outages, traffic control and Thread Pool for MySQL (percona.com)">SimCity outages, traffic control and Thread Pool for MySQL (percona.com)</a></li>
+<li> <a target="_blank" rel="noopener" href="https://dbaplus.cn/news-11-1989-1.html" title="关于MySQL线程池，这也许是目前最全面的实用帖 - MySQL - dbaplus社群">关于 MySQL 线程池，这也许是目前最全面的实用帖 - MySQL - dbaplus 社群</a></li>
+</ol>
+</li>
+<li>MariaDB：<ol>
+<li> <a target="_blank" rel="noopener" href="https://mariadb.com/kb/en/thread-pool-in-mariadb/" title="Thread Pool in MariaDB - MariaDB Knowledge Base">Thread Pool in MariaDB - MariaDB Knowledge Base</a></li>
+</ol>
+</li>
+<li>阿里云 AliSQL：<ol>
+<li> <a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2016/02/09/" title="MySQL · 特性分析 · 线程池 (taobao.org)">MySQL · 特性分析 · 线程池 (taobao.org)</a></li>
+<li> <a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2019/02/09/" title="MySQL · 最佳实践 · MySQL多队列线程池优化 (taobao.org)">MySQL · 最佳实践 · MySQL 多队列线程池优化 (taobao.org)</a></li>
+</ol>
+</li>
+<li>华为鲲鹏：<ol>
+<li> <a target="_blank" rel="noopener" href="https://www.hikunpeng.com/document/detail/zh/kunpengdbs/basicAccelFeatures/mysqlthreadpool/kunpengdbsthreadpool8025_20_0003.html" title="MySQL 8.0.25-MySQL线程池特性-鲲鹏BoostKit数据库使能套件-文档首页-鲲鹏社区 (hikunpeng.com)">MySQL 8.0.25-MySQL 线程池特性-鲲鹏 BoostKit 数据库使能套件-文档首页-鲲鹏社区 (hikunpeng.com)</a></li>
+</ol>
+</li>
+<li>MySQL 企业版：<ol>
+<li> <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/thread-pool.html" title="MySQL :: MySQL 8.0 Reference Manual :: 5.6.3 MySQL Enterprise Thread Pool">MySQL :: MySQL 8.0 Reference Manual :: 5.6.3 MySQL Enterprise Thread Pool</a></li>
+</ol>
+</li>
+</ol>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2023/05/04/mysql-threadpool-main-solutions-details/">业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2023-05-04, 22:07:40</p>
+        <p><span>最后更新:</span>2023-05-08, 16:55:04</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2023/05/04/mysql-threadpool-main-solutions-details/" title="业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版">http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2023/05/04/mysql-threadpool-main-solutions-details/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+            <div id="article-nav-newer" class="article-nav-title">
+                <a href="/2023/07/05/mysql-mtr-03-source-code/">
+                    源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇
+                </a>
+            </div>
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/05/01/mysql-mtr-02-advanced/">
+                    特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">2.</span> <span class="toc-text">适用场景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%8C%E4%B8%9A%E6%96%B9%E6%A1%88%EF%BC%9APercona-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">行业方案：Percona 线程池实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">3.1.</span> <span class="toc-text">0. 基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%9A%84%E6%9E%B6%E6%9E%84"><span class="toc-number">3.2.</span> <span class="toc-text">1. 线程池的架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%96%B0%E8%BF%9E%E6%8E%A5%E7%9A%84%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%88%86%E9%85%8D"><span class="toc-number">3.3.</span> <span class="toc-text">2. 新连接的创建与分配</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-listener-%E7%BA%BF%E7%A8%8B-%E3%80%90-%E8%A6%81%E4%B8%8D%E8%A6%81%E9%87%8D%E6%96%B0%E7%94%BB%E5%9B%BE%E6%88%96%E6%B7%BB%E5%8A%A0-percona-%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E5%9B%BE%E3%80%91"><span class="toc-number">3.4.</span> <span class="toc-text">3. listener 线程 【&#x3D;&#x3D;&#x3D;&#x3D;要不要重新画图或添加 percona 源码笔记图】</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-worker-%E7%BA%BF%E7%A8%8B-%E3%80%90-%E8%A6%81%E4%B8%8D%E8%A6%81%E9%87%8D%E6%96%B0%E7%94%BB%E5%9B%BE%E6%88%96%E6%B7%BB%E5%8A%A0-percona-%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E5%9B%BE%E3%80%91"><span class="toc-number">3.5.</span> <span class="toc-text">4. worker 线程 【&#x3D;&#x3D;&#x3D;&#x3D;要不要重新画图或添加 percona 源码笔记图】</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-timer-%E7%BA%BF%E7%A8%8B-%E3%80%90-%E8%A6%81%E4%B8%8D%E8%A6%81%E9%87%8D%E6%96%B0%E7%94%BB%E5%9B%BE%E6%88%96%E6%B7%BB%E5%8A%A0-percona-%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E5%9B%BE%E3%80%91"><span class="toc-number">3.6.</span> <span class="toc-text">5. timer 线程 【&#x3D;&#x3D;&#x3D;&#x3D;要不要重新画图或添加 percona 源码笔记图】</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%8C%E4%B8%9A%E4%B8%BB%E6%B5%81%E6%96%B9%E6%A1%88%E5%AF%B9%E6%AF%94"><span class="toc-number">4.</span> <span class="toc-text">行业主流方案对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL-%E4%BC%81%E4%B8%9A%E7%89%88-vs-MariaDB"><span class="toc-number">4.1.</span> <span class="toc-text">MySQL 企业版 vs MariaDB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MariaDB-vs-Percona"><span class="toc-number">4.2.</span> <span class="toc-text">MariaDB vs Percona</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%8E%E4%B8%BA%E9%B2%B2%E9%B9%8F-vs-Percona"><span class="toc-number">4.3.</span> <span class="toc-text">华为鲲鹏 vs Percona</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">4.3.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NUMA"><span class="toc-number">4.3.2.</span> <span class="toc-text">NUMA</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%85%88-session-%E7%8B%AC%E5%8D%A0-worker-%E7%BA%BF%E7%A8%8B"><span class="toc-number">4.3.3.</span> <span class="toc-text">优先 session 独占 worker 线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%8F%E7%BA%BF%E7%A8%8B%E7%BB%84%E6%95%B0%E6%A8%A1%E5%BC%8F%E9%85%8D%E7%BD%AE"><span class="toc-number">4.3.4.</span> <span class="toc-text">小线程组数模式配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AliSQL-vs-Percona"><span class="toc-number">4.4.</span> <span class="toc-text">AliSQL vs Percona</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TXSQL-vs-Percona"><span class="toc-number">4.5.</span> <span class="toc-text">TXSQL vs Percona</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%94%AF%E6%8C%81%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8A%A8%E6%80%81%E5%88%87%E6%8D%A2"><span class="toc-number">4.5.1.</span> <span class="toc-text">1. 支持线程池动态切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1-%E6%B4%BB%E8%B7%83%E7%94%A8%E6%88%B7%E8%BF%9E%E6%8E%A5%E7%9A%84-thread-handling-%E5%88%87%E6%8D%A2"><span class="toc-number">4.5.1.1.</span> <span class="toc-text">1.1. 活跃用户连接的 thread_handling 切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-%E6%96%B0%E8%BF%9E%E6%8E%A5%E7%9A%84%E5%A4%84%E7%90%86"><span class="toc-number">4.5.1.2.</span> <span class="toc-text">1.2. 新连接的处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-thread-handling-%E5%88%87%E6%8D%A2%E7%9A%84%E5%BF%AB%E9%80%9F%E7%94%9F%E6%95%88"><span class="toc-number">4.5.1.3.</span> <span class="toc-text">1.3. thread_handling 切换的快速生效</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%BC%98%E5%8C%96"><span class="toc-number">4.5.2.</span> <span class="toc-text">2. 线程池负载均衡优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-%E8%B4%9F%E8%BD%BD%E7%9A%84%E5%BA%A6%E9%87%8F"><span class="toc-number">4.5.2.1.</span> <span class="toc-text">2.1. 负载的度量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%9A%84%E5%AE%9E%E7%8E%B0%E4%BB%8B%E7%BB%8D"><span class="toc-number">4.5.2.2.</span> <span class="toc-text">2 .2. 负载均衡的实现介绍</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%AD%E8%BF%9E%E4%BC%98%E5%8C%96"><span class="toc-number">4.5.3.</span> <span class="toc-text">3. 线程池断连优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-percona-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%97%AE%E9%A2%98"><span class="toc-number">4.5.3.1.</span> <span class="toc-text">3.1. percona 线程池问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-%E6%96%AD%E8%BF%9E%E4%BC%98%E5%8C%96%E7%9A%84%E5%AE%9E%E7%8E%B0%E4%BB%8B%E7%BB%8D"><span class="toc-number">4.5.3.2.</span> <span class="toc-text">3.2. 断连优化的实现介绍</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%96%B0%E5%A2%9E%E7%94%A8%E4%BA%8E%E7%9B%91%E6%8E%A7%E7%9A%84%E7%8A%B6%E6%80%81%E5%8F%98%E9%87%8F"><span class="toc-number">4.5.4.</span> <span class="toc-text">4. 新增用于监控的状态变量</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E7%BB%93%E6%9E%9C"><span class="toc-number">5.</span> <span class="toc-text">性能结果</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%8E%E4%B8%BA%E9%B2%B2%E9%B9%8F"><span class="toc-number">5.1.</span> <span class="toc-text">华为鲲鹏</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MariaDB-5-5-%E6%97%A0%E4%BC%98%E5%85%88%E7%BA%A7%E9%98%9F%E5%88%97"><span class="toc-number">5.2.</span> <span class="toc-text">MariaDB 5.5 - 无优先级队列</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#OLTP-RO"><span class="toc-number">5.2.1.</span> <span class="toc-text">OLTP_RO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#OLTP-RW"><span class="toc-number">5.2.2.</span> <span class="toc-text">OLTP_RW</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#POINT-SELECT"><span class="toc-number">5.2.3.</span> <span class="toc-text">POINT_SELECT</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UPDATE-NOKEY"><span class="toc-number">5.2.4.</span> <span class="toc-text">UPDATE_NOKEY</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AliSQL"><span class="toc-number">5.3.</span> <span class="toc-text">AliSQL</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#update-non-index"><span class="toc-number">5.3.1.</span> <span class="toc-text">update_non_index</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#write-only"><span class="toc-number">5.3.2.</span> <span class="toc-text">write_only</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#read-write"><span class="toc-number">5.3.3.</span> <span class="toc-text">read_write</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#point-select"><span class="toc-number">5.3.4.</span> <span class="toc-text">point_select</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E5%8C%BA%E5%88%AB"><span class="toc-number">6.1.</span> <span class="toc-text">功能区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E5%8C%BA%E5%88%AB"><span class="toc-number">6.2.</span> <span class="toc-text">参数区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%91%E6%8E%A7%E5%8C%BA%E5%88%AB"><span class="toc-number">6.3.</span> <span class="toc-text">监控区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Percona%E3%80%81MariaDB%EF%BC%9A"><span class="toc-number">6.3.1.</span> <span class="toc-text">Percona、MariaDB：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%8E%E4%B8%BA%E9%B2%B2%E9%B9%8F%EF%BC%9A"><span class="toc-number">6.3.2.</span> <span class="toc-text">华为鲲鹏：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%98%BF%E9%87%8C%E4%BA%91-AliSQL%EF%BC%9A"><span class="toc-number">6.3.3.</span> <span class="toc-text">阿里云 AliSQL：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%85%BE%E8%AE%AF%E4%BA%91-TXSQL%EF%BC%9A"><span class="toc-number">6.3.4.</span> <span class="toc-text">腾讯云 TXSQL：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2023/07/05/mysql-mtr-03-source-code/" title="上一篇: 源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/05/01/mysql-mtr-02-advanced/" title="下一篇: 特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/07/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/04/mysql-threadpool-main-solutions-details/">业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2023 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>

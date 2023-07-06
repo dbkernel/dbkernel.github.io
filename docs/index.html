@@ -301,6 +301,184 @@
 </nav>
       <div class="body-wrap">
   
+    <article id="post-mysql-mtr-03-source-code" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/07/05/mysql-mtr-03-source-code/" class="article-date">
+      <time datetime="2023-07-05T14:03:44.000Z" itemprop="datePublished">2023-07-05</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/07/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+            <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<p><strong>序言</strong>：</p>
+<p>以前对 MySQL 测试框架 MTR 的使用，主要集中于 SQL 正确性验证。近期由于工作需要，深入了解了 MTR 的方方面面，发现 MTR 的能力不仅限于此，还支持单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁等功能，因此，本着分享的精神，将其总结成一个系列。</p>
+<p>主要内容如下：</p>
+<ul>
+<li>入门篇：工作机制、编译安装、参数、指令示例、推荐用法、添加 case、常见问题、异常调试</li>
+<li>进阶篇：高阶用法，包括单元测试、压力测试、代码覆盖率测试、内存错误检测、线程竞争与死锁</li>
+<li>源码篇：分析 MTR 的源码</li>
+<li>语法篇：单元测试、压力测试、mysqltest 语法、异常调试</li>
+</ul>
+<p>由于个人水平有限，所述难免有错误之处，望雅正。</p>
+<p><strong>本文是第三篇源码篇。</strong></p>
+        
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li></ul>
+    </div>
+
+      <br></br> <!--字数统计另起一行-->
+      
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 7k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 36(分)
+		</span>
+	
+
+      
+        <p class="article-more-link">
+          <a href="/2023/07/05/mysql-mtr-03-source-code/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
+    <article id="post-mysql-threadpool-main-solutions-details" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/05/04/mysql-threadpool-main-solutions-details/" class="article-date">
+      <time datetime="2023-05-04T14:07:40.000Z" itemprop="datePublished">2023-05-04</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/05/04/mysql-threadpool-main-solutions-details/">业内 MySQL 线程池主流方案详解 - MariaDB/Percona/华为/AliSQL/TXSQL/MySQL企业版</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+            <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<blockquote>
+<p><strong>本文首发于 2023-05-04 22:07:40</strong></p>
+</blockquote>
+<p>本文主要从功能层面对比 percona-server、mariadb、华为鲲鹏 BoostKit 数据库使能套件、阿里云 AliSQL、腾讯 TXSQL、MySQL 企业版线程池方案，都基于 MySQL 8.0。</p>
+<p>至于源码层面，腾讯、阿里云、MySQL 企业版不开源，percona 借鉴了 mariadb 早期版本的实现，而华为鲲鹏同时借鉴了 mariadb 和 percona 的实现，但考虑到线程池代码只有 2000 行左右，相对简单，本文就不做过多阐述了。</p>
+        
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+      
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li></ul>
+    </div>
+
+      <br></br> <!--字数统计另起一行-->
+      
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 13.5k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 48(分)
+		</span>
+	
+
+      
+        <p class="article-more-link">
+          <a href="/2023/05/04/mysql-threadpool-main-solutions-details/#more">more >></a>
+        </p>
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
     <article id="post-mysql-mtr-02-advanced" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
@@ -320,7 +498,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇</a>
+      <a class="article-title" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a>
     </h1>
   
 
@@ -940,156 +1118,6 @@
 	
 		<span class="post-readcount" itemprop="timeRequired">
 			阅读时长: 8(分)
-		</span>
-	
-
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-clickhouse-and-friends-11-mysql-gtid-replication" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/" class="article-date">
-      <time datetime="2020-08-28T12:40:14.000Z" itemprop="datePublished">2020-08-28</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-    <div class="article-category tagcloud">
-    <a class="article-category-link" href="/categories/ClickHouse/">ClickHouse</a>
-    </div>
-
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li></ul>
-    </div>
-
-      <br></br> <!--字数统计另起一行-->
-      
-	
-		<span class="post-wordcount" itemprop="wordCount">
-			字数统计: 1.1k(字) </a>
-		</span>
-	
-	
-		<span class="post-readcount" itemprop="timeRequired">
-			阅读时长: 4(分)
-		</span>
-	
-
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
-    <article id="post-percona-xtrabackup-2.4-vs-8.0" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/" class="article-date">
-      <time datetime="2020-08-27T05:46:15.000Z" itemprop="datePublished">2020-08-27</time>
-</a>
-
-
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-    <div class="article-category tagcloud">
-    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
-    </div>
-
-
-      
-    <div class="article-tag tagcloud">
-        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
-    </div>
-
-      <br></br> <!--字数统计另起一行-->
-      
-	
-		<span class="post-wordcount" itemprop="wordCount">
-			字数统计: 3.3k(字) </a>
-		</span>
-	
-	
-		<span class="post-readcount" itemprop="timeRequired">
-			阅读时长: 17(分)
 		</span>
 	
 
