@@ -77,7 +77,7 @@ SQL 正确性：对比（diff）期望输出和实际输出，若完全一致，
 
 ## 整体流程图
 
-![线程池流程图](threadpool-architecture.png "线程池流程图")
+![MTR整体流程图](threadpool-architecture.png "MTR整体流程图")
 
 ## mysql-test-run.pl
 
