@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-11-30 20:47:35 https:&#x2F;&#x2F;dbkernel.com  当主从复制采用 binlog 的行模式时，如果从库启用 slow_query_log、log_slow_replica_statements 且从库重放 CREATE TABLE、DROP TABLE 时因特殊情况（比如被从库其他 SQL 占用 MDL 锁）执行耗时较">
+<meta property="og:type" content="article">
+<meta property="og:title" content="捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)">
+<meta property="og:url" content="http://dbkernel.github.io/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-11-30 20:47:35 https:&#x2F;&#x2F;dbkernel.com  当主从复制采用 binlog 的行模式时，如果从库启用 slow_query_log、log_slow_replica_statements 且从库重放 CREATE TABLE、DROP TABLE 时因特殊情况（比如被从库其他 SQL 占用 MDL 锁）执行耗时较">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2023-11-30T12:47:35.000Z">
+<meta property="article:modified_time" content="2023-11-30T05:32:03.099Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="慢日志">
+<meta property="article:tag" content="复制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log) | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MariaDB/" rel="tag">MariaDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E5%88%B6/" rel="tag">复制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%85%A2%E6%97%A5%E5%BF%97/" rel="tag">慢日志</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-bug-write-slow-log-when-replica-do-apply-events" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/" class="article-date">
+      <time datetime="2023-11-30T12:47:35.000Z" itemprop="datePublished">2023-11-30</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%A4%8D%E5%88%B6/" rel="tag">复制</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%85%A2%E6%97%A5%E5%BF%97/" rel="tag">慢日志</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 1.7k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 8(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<blockquote>
+<p><strong>本文首发于 2023-11-30 20:47:35</strong></p>
+<p><a target="_blank" rel="noopener" href="https://dbkernel.com/">https://dbkernel.com</a></p>
+</blockquote>
+<p>当主从复制采用 binlog 的行模式时，如果从库启用 slow_query_log、log_slow_replica_statements 且从库重放 CREATE TABLE、DROP TABLE 时因特殊情况（比如被从库其他 SQL 占用 MDL 锁）执行耗时较长，会被从库记录到慢日志（slow log），而 ALTER TABLE 却不会被记录到慢日志。</p>
+<blockquote>
+<p>ALTER TABLE 等管理语句是否会记录到慢日志，受参数 slow_query_log、log_slow_admin_statements 控制。</p>
+</blockquote>
+<p>本文基于 MySQL 8.0.30 版本。</p>
+<span id="more"></span>
+
+<h2 id="复现步骤"><a href="#复现步骤" class="headerlink" title="复现步骤"></a>复现步骤</h2><h3 id="1-搭建主从复制"><a href="#1-搭建主从复制" class="headerlink" title="1. 搭建主从复制"></a>1. 搭建主从复制</h3><p>主（master）、从（replica）my.cnf 中启用 binlog 的行模式：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">binlog_format</span>=ROW <span class="comment"># 行模式</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-从库动态设置配置参数"><a href="#2-从库动态设置配置参数" class="headerlink" title="2. 从库动态设置配置参数"></a>2. 从库动态设置配置参数</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> long_query_time<span class="operator">=</span><span class="number">0.0001</span>;</span><br><span class="line"># 当然，除了这种方法，还有另一种方法：</span><br><span class="line"># 主库执行<span class="keyword">DROP</span> <span class="keyword">TABLE</span> db1.tbl 语句之前，在从库先用事务阻塞住 <span class="keyword">DROP</span> <span class="keyword">TABLE</span> db1.tbl 的重放（会处于 Waiting <span class="keyword">for</span> <span class="keyword">table</span> metadata lock 状态）：</span><br><span class="line"># <span class="keyword">begin</span>; <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> db1.tbl <span class="keyword">for</span> update;</span><br><span class="line"># 等待几秒后（大于long_query_time的配置即可），再 <span class="keyword">commit</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> slow_query_log<span class="operator">=</span><span class="keyword">on</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> log_slow_replica_statements<span class="operator">=</span><span class="keyword">on</span>;</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;%slow%&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------+----------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name               <span class="operator">|</span> <span class="keyword">Value</span>                                                    <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------+----------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> log_slow_admin_statements   <span class="operator">|</span> OFF                                                      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> log_slow_extra              <span class="operator">|</span> OFF                                                      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> log_slow_replica_statements <span class="operator">|</span> <span class="keyword">ON</span>                                                       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> log_slow_slave_statements   <span class="operator">|</span> <span class="keyword">ON</span>                                                       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> slow_launch_time            <span class="operator">|</span> <span class="number">2</span>                                                        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> slow_query_log              <span class="operator">|</span> <span class="keyword">ON</span>                                                       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> slow_query_log_file         <span class="operator">|</span> <span class="operator">/</span>home<span class="operator">/</span>wslu<span class="operator">/</span>work<span class="operator">/</span>mysql<span class="operator">/</span>mysql80<span class="operator">-</span>data<span class="operator">/</span>s1<span class="operator">-</span>slave1<span class="operator">/</span>vm<span class="operator">-</span>slow.log <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------+----------------------------------------------------------+</span></span><br><span class="line"><span class="number">7</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-主库执行-SQL-语句"><a href="#3-主库执行-SQL-语句" class="headerlink" title="3. 主库执行 SQL 语句"></a>3. 主库执行 SQL 语句</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> db1.tbl(a <span class="type">int</span>, b <span class="type">int</span>);</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> db1.tbl;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-查看从库慢日志"><a href="#4-查看从库慢日志" class="headerlink" title="4. 查看从库慢日志"></a>4. 查看从库慢日志</h3><p>查看从库<code>slow_query_log_file</code>参数指定的慢日志文件，其中出现 DROP TABLE 语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># <span class="type">Time</span>: <span class="number">2023</span><span class="number">-11</span><span class="number">-30</span>T09:<span class="number">36</span>:<span class="number">32.202303</span><span class="operator">+</span><span class="number">08</span>:<span class="number">00</span></span><br><span class="line"># <span class="keyword">User</span><span class="variable">@Host</span>: <span class="keyword">skip</span><span class="operator">-</span>grants <span class="keyword">user</span>[] @  []  Id:    <span class="number">41</span></span><br><span class="line"># Query_time: <span class="number">0.060373</span>  Lock_time: <span class="number">0.000143</span> Rows_sent: <span class="number">0</span>  Rows_examined: <span class="number">0</span></span><br><span class="line"><span class="keyword">SET</span> <span class="type">timestamp</span><span class="operator">=</span><span class="number">1701308185</span>;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `tbl` (</span><br><span class="line">  `my_row_id` <span class="type">bigint</span> unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT <span class="comment">/*!80023 INVISIBLE */</span>,</span><br><span class="line">  `a` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `b` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`my_row_id`)</span><br><span class="line">);</span><br><span class="line"># <span class="type">Time</span>: <span class="number">2023</span><span class="number">-11</span><span class="number">-30</span>T09:<span class="number">36</span>:<span class="number">37.768072</span><span class="operator">+</span><span class="number">08</span>:<span class="number">00</span></span><br><span class="line"># <span class="keyword">User</span><span class="variable">@Host</span>: <span class="keyword">skip</span><span class="operator">-</span>grants <span class="keyword">user</span>[] @  []  Id:    <span class="number">41</span></span><br><span class="line"># Query_time: <span class="number">0.025328</span>  Lock_time: <span class="number">0.000089</span> Rows_sent: <span class="number">0</span>  Rows_examined: <span class="number">0</span></span><br><span class="line"><span class="keyword">SET</span> <span class="type">timestamp</span><span class="operator">=</span><span class="number">1701308197</span>;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> `tbl` <span class="comment">/* generated by server */</span>;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="初步分析"><a href="#初步分析" class="headerlink" title="初步分析"></a>初步分析</h2><p><strong>这与官方对 log_slow_slave_statements 参数的描述不符</strong>：</p>
+<p>When the slow query log is enabled, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-replica.html#sysvar_log_slow_replica_statements" title="log_slow_replica_statements">log_slow_replica_statements</a> enables logging for queries that have taken more than <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_long_query_time" title="long_query_time">long_query_time</a> seconds to execute on the replica. Note that if row-based replication is in use (<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" title="binlog_format=ROW">binlog_format=ROW</a>), <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-replica.html#sysvar_log_slow_replica_statements" title="log_slow_replica_statements">log_slow_replica_statements</a> has no effect. Queries are only added to the replica’s slow query log when they are logged in statement format in the binary log, that is, when <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" title="binlog_format=STATEMENT">binlog_format=STATEMENT</a> is set, or when <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" title="binlog_format=MIXED">binlog_format=MIXED</a> is set and the statement is logged in statement format. Slow queries that are logged in row format when <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" title="binlog_format=MIXED">binlog_format=MIXED</a> is set, or that are logged when <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" title="binlog_format=ROW">binlog_format=ROW</a> is set, are not added to the replica’s slow query log, even if <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-replica.html#sysvar_log_slow_replica_statements" title="log_slow_replica_statements">log_slow_replica_statements</a> is enabled.</p>
+<p>Setting <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-replica.html#sysvar_log_slow_replica_statements" title="log_slow_replica_statements">log_slow_replica_statements</a> has no immediate effect. The state of the variable applies on all subsequent <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/start-replica.html" title="START REPLICA">START REPLICA</a> statements. Also note that the global setting for <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_long_query_time" title="long_query_time">long_query_time</a> applies for the lifetime of the SQL thread. If you change that setting, you must stop and restart the replication SQL thread to implement the change there (for example, by issuing <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/stop-replica.html" title="STOP REPLICA">STOP REPLICA</a> and <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/start-replica.html" title="START REPLICA">START REPLICA</a> statements with the <code>SQL_THREAD</code> option).</p>
+<p>按照官方的描述，在 binlog_format 是行模式的情况下，即使启用<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-replica.html#sysvar_log_slow_replica_statements" title="log_slow_replica_statements">log_slow_replica_statements</a> 参数，从库重放时也不该产生慢日志。</p>
+<p><strong>补充说明</strong>：</p>
+<p><strong>按照上述同样的步骤执行 ALTER TABLE 语句，则不会记录到 slow log</strong>。</p>
+<p>通过阅读手册及自行验证，ALTER TABLE 等管理语句是否记录到从库的 slow log 受参数<code>log_slow_admin_statements</code>控制。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_log_slow_admin_statements" title="log_slow_admin_statements">log_slow_admin_statements</a></p>
+<p>Include slow administrative statements in the statements written to the slow query log. Administrative statements include <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/alter-table.html" title="ALTER TABLE">ALTER TABLE</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/analyze-table.html" title="ANALYZE TABLE">ANALYZE TABLE</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/check-table.html" title="CHECK TABLE">CHECK TABLE</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/create-index.html" title="CREATE INDEX">CREATE INDEX</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/drop-index.html" title="DROP INDEX">DROP INDEX</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/optimize-table.html" title="OPTIMIZE TABLE">OPTIMIZE TABLE</a>, and <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/repair-table.html" title="REPAIR TABLE">REPAIR TABLE</a>.</p>
+</blockquote>
+<h2 id="代码解读"><a href="#代码解读" class="headerlink" title="代码解读"></a>代码解读</h2><p>函数堆栈：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#<span class="number">0</span>  Query_logger::<span class="built_in">slow_log_write</span> (<span class="keyword">this</span>=<span class="number">0xaaaaef99e760</span> &lt;query_logger&gt;, thd=<span class="number">0xffff3c291be0</span>, query=<span class="number">0xffff34165cb8</span> <span class="string">&quot;DROP TABLE `tbl` /* generated by server */&quot;</span>,</span><br><span class="line">    query_length=<span class="number">42</span>, aggregate=<span class="literal">false</span>, lock_usec=<span class="number">0</span>, exec_usec=<span class="number">0</span>) at /home/wslu/work/mysql/mac-mysql-server/sql/log.cc:<span class="number">1334</span></span><br><span class="line">#<span class="number">1</span>  <span class="number">0x0000aaaaead81368</span> <span class="function">in <span class="title">log_slow_do</span> <span class="params">(thd=<span class="number">0xffff3c291be0</span>)</span> at /home/wslu/work/mysql/mac-mysql-server/sql/log.cc:<span class="number">1643</span></span></span><br><span class="line"><span class="function">#<span class="number">2</span>  <span class="number">0x0000aaaaead813a0</span> in log_slow_statement (thd=</span><span class="number">0xffff3c291be0</span>) at /home/wslu/work/mysql/mac-mysql-server/sql/log.cc:<span class="number">1660</span></span><br><span class="line">#<span class="number">3</span>  <span class="number">0x0000aaaaeb9ce438</span> <span class="function">in <span class="title">Query_log_event::do_apply_event</span> <span class="params">(<span class="keyword">this</span>=<span class="number">0xffff341ce540</span>, rli=<span class="number">0xffff3402ad80</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">    query_arg=<span class="number">0xffff34165cb8</span> <span class="string">&quot;DROP TABLE `tbl` /* generated by server */&quot;</span>, q_len_arg=<span class="number">42</span>)</span> at /home/wslu/work/mysql/mac-mysql-server/sql/log_event.cc:<span class="number">4884</span></span></span><br><span class="line"><span class="function">#<span class="number">4</span>  <span class="number">0x0000aaaaeb9cc840</span> in Query_log_event::do_apply_event (this=</span><span class="number">0xffff341ce540</span>, rli=<span class="number">0xffff3402ad80</span>)</span><br><span class="line">    at /home/wslu/work/mysql/mac-mysql-server/sql/log_event.cc:<span class="number">4447</span></span><br><span class="line">#<span class="number">5</span>  <span class="number">0x0000aaaaeb9f43c4</span> in Log_event::<span class="built_in">do_apply_event_worker</span> (<span class="keyword">this</span>=<span class="number">0xffff341ce540</span>, w=<span class="number">0xffff3402ad80</span>)</span><br><span class="line">    at /home/wslu/work/mysql/mac-mysql-server/sql/log_event.cc:<span class="number">1087</span></span><br><span class="line">#<span class="number">6</span>  <span class="number">0x0000aaaaebacb3a4</span> in Slave_worker::<span class="built_in">slave_worker_exec_event</span> (<span class="keyword">this</span>=<span class="number">0xffff3402ad80</span>, ev=<span class="number">0xffff341ce540</span>)</span><br><span class="line">    at /home/wslu/work/mysql/mac-mysql-server/sql/rpl_rli_pdb.cc:<span class="number">1733</span></span><br><span class="line">#<span class="number">7</span>  <span class="number">0x0000aaaaebacda04</span> in <span class="built_in">slave_worker_exec_job_group</span> (worker=<span class="number">0xffff3402ad80</span>, rli=<span class="number">0xaaab2f98d4d0</span>)</span><br><span class="line">    at /home/wslu/work/mysql/mac-mysql-server/sql/rpl_rli_pdb.cc:<span class="number">2457</span></span><br><span class="line">#<span class="number">8</span>  <span class="number">0x0000aaaaebae84d4</span> in <span class="built_in">handle_slave_worker</span> (arg=<span class="number">0xffff3402ad80</span>) at /home/wslu/work/mysql/mac-mysql-server/sql/rpl_replica.cc:<span class="number">5913</span></span><br><span class="line">#<span class="number">9</span>  <span class="number">0x0000aaaaec8356f0</span> in <span class="built_in">pfs_spawn_thread</span> (arg=<span class="number">0xffff784dd4e0</span>) at /home/wslu/work/mysql/mac-mysql-server/storage/perfschema/pfs.cc:<span class="number">2942</span></span><br><span class="line">#<span class="number">10</span> <span class="number">0x0000ffff928bd5c8</span> in <span class="built_in">start_thread</span> (arg=<span class="number">0x0</span>) at ./nptl/pthread_create.c:<span class="number">442</span></span><br><span class="line">#<span class="number">11</span> <span class="number">0x0000ffff92925d1c</span> in <span class="built_in">thread_start</span> () at ../sysdeps/unix/sysv/linux/aarch64/clone.S:<span class="number">79</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>最终会调用<code>Query_logger::slow_log_write</code>函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Query_logger::slow_log_write</span><span class="params">(THD *thd, <span class="keyword">const</span> <span class="keyword">char</span> *query,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="keyword">size_t</span> query_length, <span class="keyword">bool</span> aggregate,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  ulonglong lock_usec, ulonglong exec_usec)</span> </span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(thd-&gt;enable_slow_log &amp;&amp; opt_slow_log);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!(*slow_log_handler_list)) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* do not log slow queries from replication threads */</span></span><br><span class="line">  <span class="keyword">if</span> (thd-&gt;slave_thread &amp;&amp; !opt_log_slow_replica_statements) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">// ====&gt; 关键位置</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">/* fill in user_host value: the format is &quot;%s[%s] @ %s [%s]&quot; */</span></span><br><span class="line">  <span class="keyword">char</span> user_host_buff[MAX_USER_HOST_SIZE + <span class="number">1</span>];</span><br><span class="line">  Security_context *sctx = thd-&gt;<span class="built_in">security_context</span>();</span><br><span class="line">  LEX_CSTRING sctx_user = sctx-&gt;<span class="built_in">user</span>();</span><br><span class="line">  LEX_CSTRING sctx_host = sctx-&gt;<span class="built_in">host</span>();</span><br><span class="line">  LEX_CSTRING sctx_ip = sctx-&gt;<span class="built_in">ip</span>();</span><br><span class="line">  <span class="keyword">size_t</span> user_host_len =</span><br><span class="line">      (<span class="built_in">strxnmov</span>(user_host_buff, MAX_USER_HOST_SIZE, sctx-&gt;<span class="built_in">priv_user</span>().str, <span class="string">&quot;[&quot;</span>,</span><br><span class="line">                sctx_user.length ? sctx_user.str : <span class="string">&quot;&quot;</span>, <span class="string">&quot;] @ &quot;</span>,</span><br><span class="line">                sctx_host.length ? sctx_host.str : <span class="string">&quot;&quot;</span>, <span class="string">&quot; [&quot;</span>,</span><br><span class="line">                sctx_ip.length ? sctx_ip.str : <span class="string">&quot;&quot;</span>, <span class="string">&quot;]&quot;</span>, NullS) -</span><br><span class="line">       user_host_buff);</span><br><span class="line">  ulonglong current_utime = <span class="built_in">my_micro_time</span>();</span><br><span class="line">  ulonglong query_utime, lock_utime;</span><br><span class="line">  <span class="keyword">if</span> (aggregate) &#123;</span><br><span class="line">    query_utime = exec_usec;</span><br><span class="line">    lock_utime = lock_usec;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (thd-&gt;start_utime) &#123;</span><br><span class="line">    query_utime = (current_utime - thd-&gt;start_utime);</span><br><span class="line">    lock_utime = thd-&gt;<span class="built_in">get_lock_usec</span>();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    query_utime = <span class="number">0</span>;</span><br><span class="line">    lock_utime = <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">bool</span> is_command = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">if</span> (!query) &#123;</span><br><span class="line">    is_command = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">const</span> std::string &amp;cn = Command_names::<span class="built_in">str_global</span>(thd-&gt;<span class="built_in">get_command</span>());</span><br><span class="line">    query = cn.<span class="built_in">c_str</span>();</span><br><span class="line">    query_length = cn.<span class="built_in">length</span>();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">mysql_rwlock_rdlock</span>(&amp;LOCK_logger);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">bool</span> error = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">for</span> (Log_event_handler **current_handler = slow_log_handler_list;</span><br><span class="line">       *current_handler;) &#123;</span><br><span class="line">    error |= (*current_handler++)</span><br><span class="line">                 -&gt;<span class="built_in">log_slow</span>(thd, current_utime,</span><br><span class="line">                            (thd-&gt;start_time.tv_sec * <span class="number">1000000ULL</span>) +</span><br><span class="line">                                thd-&gt;start_time.tv_usec,</span><br><span class="line">                            user_host_buff, user_host_len, query_utime,</span><br><span class="line">                            lock_utime, is_command, query, query_length); <span class="comment">// 写慢日志</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">mysql_rwlock_unlock</span>(&amp;LOCK_logger);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> error;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>我查看了 8.0.31-8.0.35 版本的 change log，其中并无对<code>DROP TABLE</code>相关的 Bug Fix，说明该问题官方尚未修复。</p>
+<p>可行的修改思路有两种：</p>
+<ol>
+<li> 比较直接的方式是修改<code>Query_logger::slow_log_write</code>函数中的逻辑，添加额外的条件判断（见后文）。</li>
+<li> 借鉴参数<code>log_slow_admin_statements</code>的处理逻辑。如果启用<code>log_slow_admin_statements</code>参数且管理语句执行时长大于 long_query_time，则会将其记录到慢日志，最终也会调用到<code>Query_logger::slow_log_write</code>函数；反之，如果未启用该参数，则不会记录管理语句到慢日志。这说明是在中间过程中判断并过滤的，本文不再展开说明。</li>
+</ol>
+<p>公司同事向官方提交了 BUG，官方已经确认，其中的 patch 采用的思路 1：</p>
+<p><a target="_blank" rel="noopener" href="https://bugs.mysql.com/bug.php?id=113251" title="MySQL Bugs: #113251: the slow log in slave is logged ,when binlog_format is row">MySQL Bugs: #113251: the slow log in slave is logged ,when binlog_format is row</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">--- a/sql/log.cc</span><br><span class="line">+++ b/sql/log.cc</span><br><span class="line">@@ <span class="number">-1295</span>,<span class="number">6</span> +<span class="number">1295</span>,<span class="number">9</span> @@ <span class="function"><span class="keyword">bool</span> <span class="title">Query_logger::slow_log_write</span><span class="params">(THD *t</span></span></span><br><span class="line"><span class="params"><span class="function">   <span class="comment">/* do not log slow queries from replication threads */</span></span></span></span><br><span class="line"><span class="params"><span class="function">   <span class="keyword">if</span> (thd-&gt;slave_thread &amp;&amp; !opt_log_slow_replica_statements) <span class="keyword">return</span> <span class="literal">false</span>;</span></span></span><br><span class="line"><span class="params"><span class="function"></span></span></span><br><span class="line"><span class="params"><span class="function">+  <span class="comment">/*when binlog_format=MIXED is set, or that are logged when binlog_format=ROW is set, are not added to the replica&#x27;s slow query log, even if log_slow_replica_statements is enabled.*/</span></span></span></span><br><span class="line"><span class="params"><span class="function">+  <span class="keyword">if</span> (thd-&gt;slave_thread &amp;&amp; opt_log_slow_replica_statements &amp;&amp; (thd-&gt;current_stmt_binlog_format == BINLOG_FORMAT_MIXED ||thd-&gt;current_stmt_binlog_format == BINLOG_FORMAT_ROW) ) <span class="keyword">return</span> <span class="literal">false</span>;</span></span></span><br><span class="line"><span class="params"><span class="function">+</span></span></span><br><span class="line"><span class="params"><span class="function">   <span class="comment">/* fill in user_host value: the format is &quot;%s[%s] @ %s [%s]&quot; */</span></span></span></span><br><span class="line"><span class="params"><span class="function">   <span class="keyword">char</span> user_host_buff[MAX_USER_HOST_SIZE + <span class="number">1</span>];</span></span></span><br><span class="line"><span class="params"><span class="function">   Security_context *sctx = thd-&gt;security_context();</span></span></span><br><span class="line"><span class="params"><span class="function"></span></span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/">捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2023-11-30, 20:47:35</p>
+        <p><span>最后更新:</span>2023-11-30, 13:32:03</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/" title="捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)">http://dbkernel.github.io/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/07/05/mysql-mtr-04-syntax/">
+                    特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E7%8E%B0%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.</span> <span class="toc-text">复现步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%90%AD%E5%BB%BA%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6"><span class="toc-number">1.1.</span> <span class="toc-text">1. 搭建主从复制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BB%8E%E5%BA%93%E5%8A%A8%E6%80%81%E8%AE%BE%E7%BD%AE%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.2.</span> <span class="toc-text">2. 从库动态设置配置参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%BB%E5%BA%93%E6%89%A7%E8%A1%8C-SQL-%E8%AF%AD%E5%8F%A5"><span class="toc-number">1.3.</span> <span class="toc-text">3. 主库执行 SQL 语句</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%9F%A5%E7%9C%8B%E4%BB%8E%E5%BA%93%E6%85%A2%E6%97%A5%E5%BF%97"><span class="toc-number">1.4.</span> <span class="toc-text">4. 查看从库慢日志</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9D%E6%AD%A5%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">初步分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E8%A7%A3%E8%AF%BB"><span class="toc-number">3.</span> <span class="toc-text">代码解读</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">4.</span> <span class="toc-text">结论</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/07/05/mysql-mtr-04-syntax/" title="下一篇: 特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/">捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/07/05/mysql-mtr-04-syntax/">特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/06/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/04/mysql-threadpool-main-solutions-details/">万字长文 | 业内 MySQL 线程池主流方案详解 - MariaDB/Percona/AliSQL/TXSQL/MySQL企业版</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2023 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>

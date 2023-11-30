@@ -14,6 +14,8 @@ toc: true
 **作者：卢文双 资深数据库内核研发**
 
 > **本文首发于 2023-05-04 22:07:40**
+>
+> https://dbkernel.com
 
 本文主要从功能层面对比 percona-server、mariadb、阿里云 AliSQL、腾讯 TXSQL、MySQL 企业版线程池方案，都基于 MySQL 8.0。
 
