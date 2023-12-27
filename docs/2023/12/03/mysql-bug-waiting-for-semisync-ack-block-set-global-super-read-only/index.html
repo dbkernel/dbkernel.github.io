@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-12-03 21:33:21 https:&#x2F;&#x2F;dbkernel.com  问题描述为什么主库上有Waiting for semi-sync ACK from slave的时候，执行set global super_read_only&#x3D;ON会导致等待全局读锁？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only&#x3D;ON">
+<meta property="og:url" content="http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发  本文首发于 2023-12-03 21:33:21 https:&#x2F;&#x2F;dbkernel.com  问题描述为什么主库上有Waiting for semi-sync ACK from slave的时候，执行set global super_read_only&#x3D;ON会导致等待全局读锁？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/no-block.png">
+<meta property="og:image" content="http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/has-block.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2023-12-03T13:33:21.000Z">
+<meta property="article:modified_time" content="2023-12-27T02:26:57.874Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="复制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/no-block.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MariaDB/" rel="tag">MariaDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E5%88%B6/" rel="tag">复制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%85%A2%E6%97%A5%E5%BF%97/" rel="tag">慢日志</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/" class="article-date">
+      <time datetime="2023-12-03T13:33:21.000Z" itemprop="datePublished">2023-12-03</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%A4%8D%E5%88%B6/" rel="tag">复制</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 2.6k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 13(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<blockquote>
+<p><strong>本文首发于 2023-12-03 21:33:21</strong></p>
+<p><a target="_blank" rel="noopener" href="https://dbkernel.com/">https://dbkernel.com</a></p>
+</blockquote>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>为什么主库上有<code>Waiting for semi-sync ACK from slave</code>的时候，执行<code>set global super_read_only=ON</code>会导致等待全局读锁？</p>
+<span id="more"></span>
+
+<h2 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h2><p>MySQL 主从高可用集群，semi-sync 超时无限大：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> rpl_semi_sync_master_timeout<span class="operator">=</span><span class="number">10000000000</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在主从 semi-sync 复制正常运行时，<code>kill -9 从库mysqld</code>进程，之后在主库执行的新事务会处于<code>Waiting for semi-sync ACK from slave</code>状态。</p>
+<p>一、如果主库执行的是<code>flush xxx</code>等非事务型语句，则不会阻塞<code>set global super_read_only=on</code>的执行：</p>
+<p><img src="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/no-block.png" title="未阻塞的情况"></p>
+<p>二、如果主库执行的是事务型的语句，比如<code>create database</code>、<code>insert into</code>，则会阻塞<code>set global super_read_only=on</code>的执行：</p>
+<p><img src="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/has-block.png" title="阻塞的情况"></p>
+<h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><h3 id="初步分析"><a href="#初步分析" class="headerlink" title="初步分析"></a>初步分析</h3><p>由于<code>set global super_read_only=on</code>修改变量时会调用<code>fix_super_read_only</code>函数，进而调用<code>thd-&gt;global_read_lock.lock_global_read_lock(thd)</code>，此时，由于全局读锁被其他事务型语句占用，导致阻塞：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">Setting super_read_only to ON triggers read_only to also be set to ON.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> Sys_var_bool <span class="title">Sys_super_readonly</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="string">&quot;super_read_only&quot;</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="string">&quot;Make all non-temporary tables read-only, with the exception for &quot;</span></span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="string">&quot;replication applier threads.  Users with the SUPER privilege are &quot;</span></span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="string">&quot;affected, unlike read_only.  Setting super_read_only to ON &quot;</span></span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="string">&quot;also sets read_only to ON.&quot;</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">    GLOBAL_VAR(super_read_only), CMD_LINE(OPT_ARG), DEFAULT(<span class="literal">false</span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(<span class="literal">nullptr</span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    ON_UPDATE(fix_super_read_only))</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">fix_super_read_only</span><span class="params">(sys_var *, THD *thd, enum_var_type type)</span> </span>&#123;</span><br><span class="line">  DBUG_TRACE;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* return if no changes: */</span></span><br><span class="line">  <span class="keyword">if</span> (super_read_only == opt_super_readonly) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* return immediately if turning super_read_only OFF: */</span></span><br><span class="line">  <span class="keyword">if</span> (super_read_only == <span class="literal">false</span>) &#123;</span><br><span class="line">    opt_super_readonly = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Do this last as it temporarily releases the global sys-var lock.</span></span><br><span class="line">    <span class="built_in">event_scheduler_restart</span>(thd);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">bool</span> result = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">bool</span> new_super_read_only =</span><br><span class="line">      super_read_only; <span class="comment">/* make a copy before releasing a mutex */</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">/* set read_only to ON if it is OFF, letting fix_read_only()</span></span><br><span class="line"><span class="comment">     handle its own locking needs</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line">  <span class="keyword">if</span> (!opt_readonly) &#123;</span><br><span class="line">    read_only = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">if</span> ((result = <span class="built_in">fix_read_only</span>(<span class="literal">nullptr</span>, thd, type))) <span class="keyword">goto</span> end;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* if we already have global read lock, set super_read_only</span></span><br><span class="line"><span class="comment">     and return immediately:</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line">  <span class="keyword">if</span> (thd-&gt;global_read_lock.<span class="built_in">is_acquired</span>()) &#123;</span><br><span class="line">    opt_super_readonly = super_read_only;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* now we&#x27;re turning ON super_read_only: */</span></span><br><span class="line">  super_read_only = opt_super_readonly;</span><br><span class="line">  <span class="built_in">mysql_mutex_unlock</span>(&amp;LOCK_global_system_variables);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (thd-&gt;global_read_lock.<span class="built_in">lock_global_read_lock</span>(thd)) <span class="comment">// ====&gt; 阻塞位置</span></span><br><span class="line">    <span class="keyword">goto</span> end_with_mutex_unlock;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ((result = thd-&gt;global_read_lock.<span class="built_in">make_global_read_lock_block_commit</span>(thd)))</span><br><span class="line">    <span class="keyword">goto</span> end_with_read_lock;</span><br><span class="line">  opt_super_readonly = new_super_read_only;</span><br><span class="line">  result = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">end_with_read_lock:</span><br><span class="line">  <span class="comment">/* Release the lock */</span></span><br><span class="line">  thd-&gt;global_read_lock.<span class="built_in">unlock_global_read_lock</span>(thd);</span><br><span class="line">end_with_mutex_unlock:</span><br><span class="line">  <span class="built_in">mysql_mutex_lock</span>(&amp;LOCK_global_system_variables);</span><br><span class="line">end:</span><br><span class="line">  super_read_only = opt_super_readonly;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>lock_global_read_lock</code>函数定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  Take global read lock, wait if there is protection against lock.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">  If the global read lock is already taken by this thread, then nothing is done.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">  See also &quot;Handling of global read locks&quot; above.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">  @param thd     Reference to thread.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">  @retval False  Success, global read lock set, commits are NOT blocked.</span></span><br><span class="line"><span class="comment">  @retval True   Failure, thread was killed.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Global_read_lock::lock_global_read_lock</span><span class="params">(THD *thd)</span> </span>&#123;</span><br><span class="line">  DBUG_TRACE;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!m_state) &#123;</span><br><span class="line">    MDL_request mdl_request;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">assert</span>(!thd-&gt;mdl_context.<span class="built_in">owns_equal_or_stronger_lock</span>(MDL_key::GLOBAL, <span class="string">&quot;&quot;</span>,</span><br><span class="line">                                                         <span class="string">&quot;&quot;</span>, MDL_SHARED));</span><br><span class="line">    <span class="built_in">MDL_REQUEST_INIT</span>(&amp;mdl_request, MDL_key::GLOBAL, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, MDL_SHARED, <span class="comment">// ====&gt; 注意此处是 MDL_key::GLOBAL，且是共享锁</span></span><br><span class="line">                     MDL_EXPLICIT);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Increment static variable first to signal innodb memcached server</span></span><br><span class="line"><span class="comment">       to release mdl locks held by it */</span></span><br><span class="line">    Global_read_lock::m_atomic_active_requests++;</span><br><span class="line">    <span class="keyword">if</span> (thd-&gt;mdl_context.<span class="built_in">acquire_lock</span>(&amp;mdl_request,</span><br><span class="line">                                      thd-&gt;variables.lock_wait_timeout)) &#123;</span><br><span class="line">      Global_read_lock::m_atomic_active_requests--;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    m_mdl_global_shared_lock = mdl_request.ticket;</span><br><span class="line">    m_state = GRL_ACQUIRED;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">    We DON&#x27;T set global_read_lock_blocks_commit now, it will be set after</span></span><br><span class="line"><span class="comment">    tables are flushed (as the present function serves for FLUSH TABLES WITH</span></span><br><span class="line"><span class="comment">    READ LOCK only). Doing things in this order is necessary to avoid</span></span><br><span class="line"><span class="comment">    deadlocks (we must allow COMMIT until all tables are closed; we should not</span></span><br><span class="line"><span class="comment">    forbid it before, or we can have a 3-thread deadlock if 2 do SELECT FOR</span></span><br><span class="line"><span class="comment">    UPDATE and one does FLUSH TABLES WITH READ LOCK).</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可见获取全局读锁主要指的是调用<code>thd-&gt;mdl_context.acquire_lock</code>函数 。</p>
+<blockquote>
+<p>调用 Global_read_lock::lock_global_read_lock 函数的其他位置与事务提交没太大关系，应与此无关。</p>
+</blockquote>
+<h3 id="继续分析"><a href="#继续分析" class="headerlink" title="继续分析"></a>继续分析</h3><p>那问题就在于事务型语句是否会获取 MDL 锁。</p>
+<p>跟踪代码，发现一处可疑点：<code>ha_commit_trans</code>函数（位于<code>sql/handler.cc</code>文件）中的如下调用：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">DBUG_EXECUTE_IF</span>(<span class="string">&quot;dbug.enabled_commit&quot;</span>, &#123;</span><br><span class="line">  <span class="keyword">const</span> <span class="keyword">char</span> act[] = <span class="string">&quot;now signal Reached wait_for signal.commit_continue&quot;</span>;</span><br><span class="line">  <span class="built_in">assert</span>(!<span class="built_in">debug_sync_set_action</span>(thd, <span class="built_in">STRING_WITH_LEN</span>(act)));</span><br><span class="line">&#125;;);</span><br><span class="line"><span class="built_in">DEBUG_SYNC</span>(thd, <span class="string">&quot;ha_commit_trans_before_acquire_commit_lock&quot;</span>);</span><br><span class="line"><span class="keyword">if</span> (rw_trans &amp;&amp; !ignore_global_read_lock) &#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">    Acquire a metadata lock which will ensure that COMMIT is blocked</span></span><br><span class="line"><span class="comment">    by an active FLUSH TABLES WITH READ LOCK (and vice versa:</span></span><br><span class="line"><span class="comment">    COMMIT in progress blocks FTWRL).</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    We allow the owner of FTWRL to COMMIT; we assume that it knows</span></span><br><span class="line"><span class="comment">    what it does.</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line">  <span class="built_in">MDL_REQUEST_INIT</span>(&amp;mdl_request, MDL_key::COMMIT, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="comment">// ====&gt; 注意此处是 MDL_key::COMMIT，且是意向排他锁</span></span><br><span class="line">                   MDL_INTENTION_EXCLUSIVE, MDL_EXPLICIT);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">DBUG_PRINT</span>(<span class="string">&quot;debug&quot;</span>, (<span class="string">&quot;Acquire MDL commit lock&quot;</span>));</span><br><span class="line">  <span class="keyword">if</span> (thd-&gt;mdl_context.<span class="built_in">acquire_lock</span>(&amp;mdl_request,</span><br><span class="line">                                    thd-&gt;variables.lock_wait_timeout)) &#123;</span><br><span class="line">    <span class="built_in">ha_rollback_trans</span>(thd, all);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  release_mdl = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">DEBUG_SYNC</span>(thd, <span class="string">&quot;ha_commit_trans_after_acquire_commit_lock&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟踪一条<code>create database</code>事务，堆栈如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#<span class="number">0</span>  MDL_context::<span class="built_in">acquire_lock</span> (<span class="keyword">this</span>=<span class="number">0xaaaab5e21090</span>, mdl_request=<span class="number">0xffffe021c4c0</span>, lock_wait_timeout=<span class="number">31536000</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/mdl.cc:<span class="number">3383</span></span><br><span class="line">#<span class="number">1</span>  <span class="number">0x0000aaaaae48224c</span> <span class="function">in <span class="title">ha_commit_trans</span> <span class="params">(thd=<span class="number">0xaaaab5e20d00</span>, all=<span class="literal">true</span>, ignore_global_read_lock=<span class="literal">false</span>)</span> at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/handler.cc:<span class="number">1627</span></span></span><br><span class="line"><span class="function">#<span class="number">2</span>  <span class="number">0x0000aaaaae24a3f0</span> in trans_commit (thd=</span><span class="number">0xaaaab5e20d00</span>, ignore_global_read_lock=<span class="literal">false</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/transaction.cc:<span class="number">246</span></span><br><span class="line">#<span class="number">3</span>  <span class="number">0x0000aaaaae0121c0</span> in <span class="built_in">mysql_create_db</span> (thd=<span class="number">0xaaaab5e20d00</span>, db=<span class="number">0xffffb401e8c8</span> <span class="string">&quot;db6&quot;</span>, create_info=<span class="number">0xffffe021d030</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_db.cc:<span class="number">498</span></span><br><span class="line">#<span class="number">4</span>  <span class="number">0x0000aaaaae095ccc</span> in <span class="built_in">mysql_execute_command</span> (thd=<span class="number">0xaaaab5e20d00</span>, first_level=<span class="literal">true</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">3761</span></span><br><span class="line">#<span class="number">5</span>  <span class="number">0x0000aaaaae09a1d4</span> in <span class="built_in">dispatch_sql_command</span> (thd=<span class="number">0xaaaab5e20d00</span>, parser_state=<span class="number">0xffffe021e308</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">5278</span></span><br><span class="line">#<span class="number">6</span>  <span class="number">0x0000aaaaae0911e4</span> in <span class="built_in">dispatch_command</span> (thd=<span class="number">0xaaaab5e20d00</span>, com_data=<span class="number">0xffffe021ec20</span>, command=COM_QUERY) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">1960</span></span><br><span class="line">#<span class="number">7</span>  <span class="number">0x0000aaaaae08f5ec</span> in <span class="built_in">do_command</span> (thd=<span class="number">0xaaaab5e20d00</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">1363</span></span><br><span class="line">#<span class="number">8</span>  <span class="number">0x0000ffffe9245c4c</span> in <span class="built_in">threadpool_process_request</span> (thd=<span class="number">0xaaaab5e20d00</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_common.cc:<span class="number">251</span></span><br><span class="line">#<span class="number">9</span>  <span class="number">0x0000ffffe924ba10</span> in <span class="built_in">handle_event</span> (connection=<span class="number">0xaaaab5e1b3d0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_unix.cc:<span class="number">1528</span></span><br><span class="line">#<span class="number">10</span> <span class="number">0x0000ffffe924be48</span> in <span class="built_in">worker_main</span> (param=<span class="number">0xffffe926bd00</span> &lt;all_groups+<span class="number">512</span>&gt;) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_unix.cc:<span class="number">1621</span></span><br><span class="line">#<span class="number">11</span> <span class="number">0x0000aaaab01956f0</span> in <span class="built_in">pfs_spawn_thread</span> (arg=<span class="number">0xaaaab5e12550</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/storage/perfschema/pfs.cc:<span class="number">2942</span></span><br><span class="line">#<span class="number">12</span> <span class="number">0x0000fffff767d5c8</span> in <span class="built_in">start_thread</span> (arg=<span class="number">0x0</span>) at ./nptl/pthread_create.c:<span class="number">442</span></span><br><span class="line">#<span class="number">13</span> <span class="number">0x0000fffff76e5d1c</span> in <span class="built_in">thread_start</span> () at ../sysdeps/unix/sysv/linux/aarch64/clone.S:<span class="number">79</span></span><br></pre></td></tr></table></figure>
+
+<p>可见确实获取了 MDL 锁。</p>
+<p>那么，问题来了，<strong>为何连续两条【create database db4; create database db5;】语句都能成功获取 MDL 锁，而 fix_super_read_only 函数中获取 MDL 锁时却会阻塞呢</strong>？</p>
+<p>在 MDL 中 MDL_KEY 按照 namespace+DB+OBJECT_NAME 的方式进行表示，所谓的 namespace 也比较重要，<strong>下面是 namespace 的分类（也就是 MDL_key 的类型）</strong>：</p>
+<p>先来看<code>MDL_key</code>的类型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  Object namespaces.</span></span><br><span class="line"><span class="comment">  Sic: when adding a new member to this enum make sure to</span></span><br><span class="line"><span class="comment">  update m_namespace_to_wait_state_name array in mdl.cc!</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">  Different types of objects exist in different namespaces</span></span><br><span class="line"><span class="comment">   - GLOBAL is used for the global read lock.</span></span><br><span class="line"><span class="comment">   - BACKUP_LOCK is to block any operations that could cause</span></span><br><span class="line"><span class="comment">     inconsistent backup. Such operations are most DDL statements,</span></span><br><span class="line"><span class="comment">     and some administrative statements.</span></span><br><span class="line"><span class="comment">   - TABLESPACE is for tablespaces.</span></span><br><span class="line"><span class="comment">   - SCHEMA is for schemas (aka databases).</span></span><br><span class="line"><span class="comment">   - TABLE is for tables and views.</span></span><br><span class="line"><span class="comment">   - FUNCTION is for stored functions.</span></span><br><span class="line"><span class="comment">   - PROCEDURE is for stored procedures.</span></span><br><span class="line"><span class="comment">   - TRIGGER is for triggers.</span></span><br><span class="line"><span class="comment">   - EVENT is for event scheduler events.</span></span><br><span class="line"><span class="comment">   - COMMIT is for enabling the global read lock to block commits.</span></span><br><span class="line"><span class="comment">   - USER_LEVEL_LOCK is for user-level locks.</span></span><br><span class="line"><span class="comment">   - LOCKING_SERVICE is for the name plugin RW-lock service</span></span><br><span class="line"><span class="comment">   - SRID is for spatial reference systems</span></span><br><span class="line"><span class="comment">   - ACL_CACHE is for ACL caches</span></span><br><span class="line"><span class="comment">   - COLUMN_STATISTICS is for column statistics, such as histograms</span></span><br><span class="line"><span class="comment">   - RESOURCE_GROUPS is for resource groups.</span></span><br><span class="line"><span class="comment">   - FOREIGN_KEY is for foreign key names.</span></span><br><span class="line"><span class="comment">   - CHECK_CONSTRAINT is for check constraint names.</span></span><br><span class="line"><span class="comment">  Note that requests waiting for user-level locks get special</span></span><br><span class="line"><span class="comment">  treatment - waiting is aborted if connection to client is lost.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">enum_mdl_namespace</span> &#123;</span></span><br><span class="line">  GLOBAL = <span class="number">0</span>,</span><br><span class="line">  BACKUP_LOCK,</span><br><span class="line">  TABLESPACE,</span><br><span class="line">  SCHEMA,</span><br><span class="line">  TABLE,</span><br><span class="line">  FUNCTION,</span><br><span class="line">  PROCEDURE,</span><br><span class="line">  TRIGGER,</span><br><span class="line">  EVENT,</span><br><span class="line">  COMMIT,</span><br><span class="line">  USER_LEVEL_LOCK,</span><br><span class="line">  LOCKING_SERVICE,</span><br><span class="line">  SRID,</span><br><span class="line">  ACL_CACHE,</span><br><span class="line">  COLUMN_STATISTICS,</span><br><span class="line">  RESOURCE_GROUPS,</span><br><span class="line">  FOREIGN_KEY,</span><br><span class="line">  CHECK_CONSTRAINT,</span><br><span class="line">  <span class="comment">/* This should be the last ! */</span></span><br><span class="line">  NAMESPACE_END</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>其中：</p>
+<ul>
+<li><code>GLOBAL</code> is used for the global read lock.</li>
+<li><code>COMMIT</code> is for enabling the global read lock to block commits.</li>
+</ul>
+<p>根据「八怪」的文章《<a target="_blank" rel="noopener" href="https://juejin.cn/post/7238814783597723704" title="MySQL：理解MDL Lock - 掘金 (juejin.cn)">MySQL：理解 MDL Lock</a>》的说法：</p>
+<ul>
+<li>“Waiting for table metadata lock”：通常就是 namespace TABLE 级别的 MDL Lock。</li>
+<li>“Waiting for global read lock”：通常就是 namespace GLOBAL 级别的 MDL Lock，通常和 flush table with read lock 有关。</li>
+<li>“Waiting for commit lock”：<strong>通常就是 namespace COMMIT 级别的 MDL Lock，通常和 flush table with read lock 有关</strong>。</li>
+</ul>
+<p>如 flush table with read lock 会获取<code>namespace space:GLOBAL type:S</code>和<code>namespace space:COMMIT type:S</code>的 MDL Lock。它包含<strong>GLOBAL, COMMIT, TABLESPACE 和 SCHEMA</strong>。</p>
+<p>但是<strong>MDL_key::GLOBAL 与 MDL_key::COMMIT 之间是不存在冲突的，此路不通</strong>。</p>
+<h3 id="换一种思路"><a href="#换一种思路" class="headerlink" title="换一种思路"></a>换一种思路</h3><p>是否在执行 INSERT/UPDATE 等事务语句期间有获取 MDL_key::GLOBAL 呢？</p>
+<p>继续调试，重新模拟执行<code>insert into</code>语句时出现 Waiting semi-sync ACK 的情况，跟踪代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#<span class="number">0</span>  <span class="built_in">open_table</span> (thd=<span class="number">0xaaaab5e633b0</span>, table_list=<span class="number">0xffffd8004c98</span>, ot_ctx=<span class="number">0xffffb0395b60</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_base.cc:<span class="number">3057</span></span><br><span class="line">#<span class="number">1</span>  <span class="number">0x0000aaaaadf826d0</span> <span class="function">in <span class="title">open_and_process_table</span> <span class="params">(thd=<span class="number">0xaaaab5e633b0</span>, lex=<span class="number">0xaaaab5e66710</span>, tables=<span class="number">0xffffd8004c98</span>, counter=<span class="number">0xaaaab5e66768</span>, prelocking_strategy=<span class="number">0xffffb0395be8</span>, has_prelocking_list=<span class="literal">false</span>, ot_ctx=<span class="number">0xffffb0395b60</span>)</span> at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_base.cc:<span class="number">5051</span></span></span><br><span class="line"><span class="function">#<span class="number">2</span>  <span class="number">0x0000aaaaadf84060</span> in open_tables (thd=</span><span class="number">0xaaaab5e633b0</span>, start=<span class="number">0xffffb0395bd0</span>, counter=<span class="number">0xaaaab5e66768</span>, flags=<span class="number">0</span>, prelocking_strategy=<span class="number">0xffffb0395be8</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_base.cc:<span class="number">5854</span></span><br><span class="line">#<span class="number">3</span>  <span class="number">0x0000aaaaadf85b14</span> in <span class="built_in">open_tables_for_query</span> (thd=<span class="number">0xaaaab5e633b0</span>, tables=<span class="number">0xffffd8004c98</span>, flags=<span class="number">0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_base.cc:<span class="number">6736</span></span><br><span class="line">#<span class="number">4</span>  <span class="number">0x0000aaaaae11c248</span> in Sql_cmd_dml::<span class="built_in">prepare</span> (<span class="keyword">this</span>=<span class="number">0xffffd8005300</span>, thd=<span class="number">0xaaaab5e633b0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_select.cc:<span class="number">372</span></span><br><span class="line">#<span class="number">5</span>  <span class="number">0x0000aaaaae11cc10</span> in Sql_cmd_dml::<span class="built_in">execute</span> (<span class="keyword">this</span>=<span class="number">0xffffd8005300</span>, thd=<span class="number">0xaaaab5e633b0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_select.cc:<span class="number">533</span></span><br><span class="line">#<span class="number">6</span>  <span class="number">0x0000aaaaae095404</span> in <span class="built_in">mysql_execute_command</span> (thd=<span class="number">0xaaaab5e633b0</span>, first_level=<span class="literal">true</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">3578</span></span><br><span class="line">#<span class="number">7</span>  <span class="number">0x0000aaaaae09a1d4</span> in <span class="built_in">dispatch_sql_command</span> (thd=<span class="number">0xaaaab5e633b0</span>, parser_state=<span class="number">0xffffb0397308</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">5278</span></span><br><span class="line">#<span class="number">8</span>  <span class="number">0x0000aaaaae0911e4</span> in <span class="built_in">dispatch_command</span> (thd=<span class="number">0xaaaab5e633b0</span>, com_data=<span class="number">0xffffb0397c20</span>, command=COM_QUERY) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">1960</span></span><br><span class="line">#<span class="number">9</span>  <span class="number">0x0000aaaaae08f5ec</span> in <span class="built_in">do_command</span> (thd=<span class="number">0xaaaab5e633b0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/sql/sql_parse.cc:<span class="number">1363</span></span><br><span class="line">#<span class="number">10</span> <span class="number">0x0000ffffe9245c4c</span> in <span class="built_in">threadpool_process_request</span> (thd=<span class="number">0xaaaab5e633b0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_common.cc:<span class="number">251</span></span><br><span class="line">#<span class="number">11</span> <span class="number">0x0000ffffe924ba10</span> in <span class="built_in">handle_event</span> (connection=<span class="number">0xaaaab5e67df0</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_unix.cc:<span class="number">1528</span></span><br><span class="line">#<span class="number">12</span> <span class="number">0x0000ffffe924be48</span> in <span class="built_in">worker_main</span> (param=<span class="number">0xffffe926bb00</span> &lt;all_groups&gt;) at /home/wslu/work/mysql/cmss-mac-mysql-server/plugin/thread_pool/threadpool_unix.cc:<span class="number">1621</span></span><br><span class="line">#<span class="number">13</span> <span class="number">0x0000aaaab01956f0</span> in <span class="built_in">pfs_spawn_thread</span> (arg=<span class="number">0xaaaab5e69a90</span>) at /home/wslu/work/mysql/cmss-mac-mysql-server/storage/perfschema/pfs.cc:<span class="number">2942</span></span><br><span class="line">#<span class="number">14</span> <span class="number">0x0000fffff767d5c8</span> in <span class="built_in">start_thread</span> (arg=<span class="number">0x0</span>) at ./nptl/pthread_create.c:<span class="number">442</span></span><br><span class="line">#<span class="number">15</span> <span class="number">0x0000fffff76e5d1c</span> in <span class="built_in">thread_start</span> () at ../sysdeps/unix/sysv/linux/aarch64/clone.S:<span class="number">79</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>open_table(THD *thd, TABLE_LIST *table_list, Open_table_context *ot_ctx)</code>函数中有申请 IX 模式的 MDL_key::GLOBAL 锁：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (thd-&gt;global_read_lock.<span class="built_in">can_acquire_protection</span>()) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line"> <span class="built_in">MDL_REQUEST_INIT</span>(&amp;protection_request, MDL_key::GLOBAL, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>,</span><br><span class="line">                  MDL_INTENTION_EXCLUSIVE, MDL_STATEMENT); <span class="comment">// ====&gt; 意向排他的 GLOBAL 锁</span></span><br><span class="line"></span><br><span class="line"> <span class="comment">/*</span></span><br><span class="line"><span class="comment">   Install error handler which if possible will convert deadlock error</span></span><br><span class="line"><span class="comment">   into request to back-off and restart process of opening tables.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   Prefer this context as a victim in a deadlock when such a deadlock</span></span><br><span class="line"><span class="comment">   can be easily handled by back-off and retry.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"> thd-&gt;<span class="built_in">push_internal_handler</span>(&amp;mdl_deadlock_handler);</span><br><span class="line"> thd-&gt;mdl_context.<span class="built_in">set_force_dml_deadlock_weight</span>(ot_ctx-&gt;<span class="built_in">can_back_off</span>());</span><br><span class="line"></span><br><span class="line"> <span class="keyword">bool</span> result = thd-&gt;mdl_context.<span class="built_in">acquire_lock</span>(&amp;protection_request,</span><br><span class="line">                                             ot_ctx-&gt;<span class="built_in">get_timeout</span>()); <span class="comment">// ====&gt; 加锁</span></span><br></pre></td></tr></table></figure>
+
+<p>而<code>set global super_read_only=ON</code>申请的 S 模式的 MDL_key::GLOBAL 锁，查阅手册（<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html" title="MySQL :: MySQL 8.0 Reference Manual :: 15.7.1 InnoDB Locking">MySQL :: MySQL 8.0 Reference Manual :: 15.7.1 InnoDB Locking</a>），IX 与 S 模式是冲突的：</p>
+<blockquote>
+<p>下表是表级锁，全局锁应该也是如此：</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>X</code></th>
+<th><code>IX</code></th>
+<th><code>S</code></th>
+<th><code>IS</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>X</code></td>
+<td>Conflict</td>
+<td>Conflict</td>
+<td>Conflict</td>
+<td>Conflict</td>
+</tr>
+<tr>
+<td><code>IX</code></td>
+<td>Conflict</td>
+<td>Compatible</td>
+<td>Conflict</td>
+<td>Compatible</td>
+</tr>
+<tr>
+<td><code>S</code></td>
+<td>Conflict</td>
+<td>Conflict</td>
+<td>Compatible</td>
+<td>Compatible</td>
+</tr>
+<tr>
+<td><code>IS</code></td>
+<td>Conflict</td>
+<td>Compatible</td>
+<td>Compatible</td>
+<td>Compatible</td>
+</tr>
+</tbody></table>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>MySQL 8.0 <code>open_tables</code>函数 会加 <code>MDL_key::GLOBAL</code>锁，IX 模式，而 <code>set global super_read_only=on</code> 也会加 <code>MDL_key::GLOBAL</code>锁，S 模式，这两种模式是冲突的，</p>
+<p>而<code>insert into</code>语句在 Semi-Sync 的 AFTER_SYNC 模式下是先等待从库接收完成后自己才提交，在提交后才 close table、释放<code>MDL_key::GLOBAL</code>锁。</p>
+<p>由于处于<code>Waiting for semi-sync ACK from slave</code>状态的事务还未提交，也就未释放<code>MDL_key::GLOBAL</code>锁，因此，才会阻塞<code>set global super_read_only=on</code>语句。</p>
+<blockquote>
+<p>实际上，<strong>DELTE/UPDATE/INSERT/FOR UPDATE 等 DML 操作会在 GLOBAL 上加 IX 锁，然后才会在本对象上加锁。而 DDL 语句至少会在 GLOBAL 上加 IX 锁，对象所属 SCHEMA 上加 IX 锁，本对象加锁</strong>。</p>
+</blockquote>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/">问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2023-12-03, 21:33:21</p>
+        <p><span>最后更新:</span>2023-12-27, 10:26:57</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/" title="问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON">http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/">
+                    捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E5%A4%8D%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">问题复现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">问题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E6%AD%A5%E5%88%86%E6%9E%90"><span class="toc-number">3.1.</span> <span class="toc-text">初步分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%A7%E7%BB%AD%E5%88%86%E6%9E%90"><span class="toc-number">3.2.</span> <span class="toc-text">继续分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8D%A2%E4%B8%80%E7%A7%8D%E6%80%9D%E8%B7%AF"><span class="toc-number">3.3.</span> <span class="toc-text">换一种思路</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">4.</span> <span class="toc-text">结论</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/" title="下一篇: 捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/">问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/">捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/07/05/mysql-mtr-04-syntax/">特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/06/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/04/mysql-threadpool-main-solutions-details/">万字长文 | 业内 MySQL 线程池主流方案详解 - MariaDB/Percona/AliSQL/TXSQL/MySQL企业版</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2023 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>
