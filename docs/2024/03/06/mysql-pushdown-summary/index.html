@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <!--[if lt IE 9]>
+        <style>body {display: none; background: none !important} </style>
+        <meta http-equiv="Refresh" Content="0; url=//outdatedbrowser.com/" />
+    <![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no" />
+<meta name="author" content="DBKernel" />
+
+
+
+<meta name="description" content="作者：卢文双 资深数据库内核研发  本文首发于 2024-03-06 20:52:24 https:&#x2F;&#x2F;dbkernel.com  前言计算下推是数据库优化器优化查询性能的一种常见手段，早期的数据库系统提及的计算下推一般是指谓词下推，其理论源自关系代数理论。2000 年以后，随着 Oracle RAC 的盛行以及一众开源分布式数据库的崛起，存算分离的概念逐步流行，计算下推的涵盖范围由此从基本的谓词">
+<meta property="og:type" content="article">
+<meta property="og:title" content="特新介绍 | MySQL生态现有计算下推方案汇总">
+<meta property="og:url" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/index.html">
+<meta property="og:site_name" content="DBKernel">
+<meta property="og:description" content="作者：卢文双 资深数据库内核研发  本文首发于 2024-03-06 20:52:24 https:&#x2F;&#x2F;dbkernel.com  前言计算下推是数据库优化器优化查询性能的一种常见手段，早期的数据库系统提及的计算下推一般是指谓词下推，其理论源自关系代数理论。2000 年以后，随着 Oracle RAC 的盛行以及一众开源分布式数据库的崛起，存算分离的概念逐步流行，计算下推的涵盖范围由此从基本的谓词">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/no-icp-data-flow.png">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/use-icp-data-flow.png">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/use-icp-flow.jpeg">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/icp-query-like.png">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/icp-multi-columns-secondary-index.png">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/heatwave-architecture.png">
+<meta property="og:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/offset-architecture.png">
+<meta property="og:image" content="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png">
+<meta property="article:published_time" content="2024-03-06T12:52:24.000Z">
+<meta property="article:modified_time" content="2024-03-07T08:43:33.214Z">
+<meta property="article:author" content="DBKernel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="优化器">
+<meta property="article:tag" content="计算下推">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/no-icp-data-flow.png">
+
+<link rel="apple-touch-icon" href= "/apple-touch-icon.png">
+
+
+    <link rel="alternate" href="/atom.xml" title="DBKernel" type="application/atom+xml">
+
+
+
+    <link rel="shortcut icon" href="/favicon.png">
+
+
+
+    <link href="//cdn.bootcss.com/animate.css/3.5.1/animate.min.css" rel="stylesheet">
+
+
+
+    <link href="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.css" rel="stylesheet">
+
+
+
+    <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+    <link href="//cdn.bootcss.com/pace/1.0.2/themes/blue/pace-theme-minimal.css" rel="stylesheet">
+
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+
+
+
+<link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+
+
+<title>特新介绍 | MySQL生态现有计算下推方案汇总 | DBKernel</title>
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+<script>
+    var yiliaConfig = {
+        fancybox: true,
+        animate: true,
+        isHome: false,
+        isPost: true,
+        isArchive: false,
+        isTag: false,
+        isCategory: false,
+        fancybox_js: "//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.min.js",
+        scrollreveal: "//cdn.bootcss.com/scrollReveal.js/3.1.4/scrollreveal.min.js",
+        search: true
+    }
+</script>
+
+
+    <script>
+        yiliaConfig.jquery_ui = [true, "//cdn.bootcss.com/jqueryui/1.10.4/jquery-ui.min.js", "//cdn.bootcss.com/jqueryui/1.10.4/css/jquery-ui.min.css"];
+    </script>
+
+
+
+    <script> yiliaConfig.rootUrl = "\/";</script>
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            <img src="/img/avatar.png" class="animated zoomIn">
+        </a>
+        <hgroup>
+          <h1 class="header-author"><a href="/">DBKernel</a></h1>
+        </hgroup>
+
+        
+
+        
+            <form id="search-form">
+            <input type="text" id="local-search-input" name="q" placeholder="search..." class="search form-control" autocomplete="off" autocorrect="off" searchonload="false" />
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+            </form>
+            <div id="local-search-result"></div>
+            <p class='no-result'>No results found <i class='fa fa-spinner fa-pulse'></i></p>
+        
+
+
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        <div class="icon-wrap icon-link hide" data-idx="2">
+                            <div class="loopback_l"></div>
+                            <div class="loopback_r"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>返回菜单</li>
+                        <li>标签</li>
+                        
+                        <li>友情链接</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">主页</a></li>
+                        
+                            <li><a href="/archives/">所有文章</a></li>
+                        
+                            <li><a href="/tags/">标签云</a></li>
+                        
+                            <li><a href="/about/">关于我</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" rel="noopener" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" rel="noopener" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" rel="noopener" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/APUE/" rel="tag">APUE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/B-Tree/" rel="tag">B-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse/" rel="tag">ClickHouse</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ClickHouse%E5%92%8C%E4%BB%96%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC/" rel="tag">ClickHouse和他的朋友们</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Count/" rel="tag">Count</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag">C语言</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DAG-Scheduler/" rel="tag">DAG Scheduler</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GreenPlum/" rel="tag">GreenPlum</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HEAP%E5%BC%95%E6%93%8E/" rel="tag">HEAP引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LF-HASH/" rel="tag">LF_HASH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LICENCE/" rel="tag">LICENCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LSM-Tree/" rel="tag">LSM-Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MEMORY%E5%BC%95%E6%93%8E/" rel="tag">MEMORY引擎</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MTR/" rel="tag">MTR</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Makefile/" rel="tag">Makefile</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MariaDB/" rel="tag">MariaDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Materialized-View/" rel="tag">Materialized View</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MergeTree/" rel="tag">MergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Parser/" rel="tag">Parser</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Percona/" rel="tag">Percona</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PostgreSQL/" rel="tag">PostgreSQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-X2/" rel="tag">Postgres-X2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Postgres-XC/" rel="tag">Postgres-XC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RadonDB/" rel="tag">RadonDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ReplicatedMergeTree/" rel="tag">ReplicatedMergeTree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Select/" rel="tag">Select</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/StoneDB/" rel="tag">StoneDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UNIX/" rel="tag">UNIX</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WAL/" rel="tag">WAL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xenon/" rel="tag">Xenon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Xtrabackup/" rel="tag">Xtrabackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/auto-increment/" rel="tag">auto_increment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/daemon/" rel="tag">daemon</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/df/" rel="tag">df</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/du/" rel="tag">du</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcov/" rel="tag">gcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/getopt/" rel="tag">getopt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/github/" rel="tag">github</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/group-by/" rel="tag">group by</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/lcov/" rel="tag">lcov</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libpq/" rel="tag">libpq</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-constraint/" rel="tag">pg_constraint</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pg-depend/" rel="tag">pg_depend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pgbench/" rel="tag">pgbench</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pipeline/" rel="tag">pipeline</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/processor/" rel="tag">processor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/" rel="tag">主从同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="tag">内存分配</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag">内存管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9B%9E%E5%BD%92%E6%B5%8B%E8%AF%95/" rel="tag">回归测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E5%88%B6/" rel="tag">复制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90/" rel="tag">字节对齐</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%97%E8%8A%82%E5%BA%8F/" rel="tag">字节序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AD%98%E5%82%A8%E8%AE%A1%E7%AE%97%E5%88%86%E7%A6%BB/" rel="tag">存储计算分离</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E8%A1%8C%E6%9F%A5%E8%AF%A2/" rel="tag">并行查询</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E5%8D%8F%E8%AE%AE/" rel="tag">开源协议</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF%E8%AF%81/" rel="tag">开源许可证</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%85%A2%E6%97%A5%E5%BF%97/" rel="tag">慢日志</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9C%AC%E5%9C%B0%E4%BA%8B%E5%8A%A1/" rel="tag">本地事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95/" rel="tag">测试</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag">源码分析</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4/" rel="tag">系统运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag">编译器</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%BA%8F/" rel="tag">网络序</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">网络编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E4%B8%8B%E6%8E%A8/" rel="tag">计算下推</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" rel="tag">问题定位</a></li></ul>
+                    </div>
+                </section>
+                
+                
+                
+                <section class="switch-part switch-part3">
+                    <div id="js-friends">
+                    
+                      <a class="main-nav-link switch-friends-link" href="https://dbkernel.github.io/">GitHub</a>
+                    
+                    </div>
+                </section>
+                
+
+                
+                
+                <section class="switch-part switch-part4">
+                
+                    <div id="js-aboutme">目前从事云数据库MySQL数据库内核研发工作，曾做过Postgres-XC、Greenplum等分布式数据库的内核开发。热衷于研究主流数据库架构、源码，对关系型数据库 MySQL/PostgreSQL及分布式数据库有深入研究。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">DBKernel</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                <img src="/img/avatar.png" class="animated zoomIn">
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">DBKernel</a></h1>
+            </hgroup>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">主页</a></li>
+                
+                    <li><a href="/archives/">所有文章</a></li>
+                
+                    <li><a href="/tags/">标签云</a></li>
+                
+                    <li><a href="/about/">关于我</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fa Email" target="_blank" href="mailto:wenshuang_lu@163.com" title="Email"></a>
+                            
+                                <a class="fa GitHub" target="_blank" href="https://github.com/dbkernel" title="GitHub"></a>
+                            
+                                <a class="fa RSS" target="_blank" href="/atom.xml" title="RSS"></a>
+                            
+                                <a class="fa 知乎" target="_blank" href="https://www.zhihu.com/people/dbkernel/posts" title="知乎"></a>
+                            
+                                <a class="fa SegmentFault" target="_blank" href="https://segmentfault.com/u/dbkernel" title="SegmentFault"></a>
+                            
+                                <a class="fa 博客园" target="_blank" href="https://www.cnblogs.com/dbkernel" title="博客园"></a>
+                            
+                                <a class="fa CSDN" target="_blank" href="https://blog.csdn.net/dbkernel" title="CSDN"></a>
+                            
+                                <a class="fa 掘金" target="_blank" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts" title="掘金"></a>
+                            
+                                <a class="fa 网易云音乐" target="_blank" href="https://music.163.com/#/user/home?id=2109792568" title="网易云音乐"></a>
+                            
+                                <a class="fa QQ" target="_blank" href="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/qq/qq-mysql-group.jpeg" title="QQ"></a>
+                            
+                                <a class="fa 微信" target="_blank" href="https://dbkernel.github.io/images/wechat-gzh.jpeg" title="微信"></a>
+                            
+                        </ul>
+            </nav>
+        </header>                
+    </div>
+    <link class="menu-list" tags="标签" friends="友情链接" about="关于我"/>
+</nav>
+      <div class="body-wrap"><article id="post-mysql-pushdown-summary" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2024/03/06/mysql-pushdown-summary/" class="article-date">
+      <time datetime="2024-03-06T12:52:24.000Z" itemprop="datePublished">2024-03-06</time>
+</a>
+
+
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      特新介绍 | MySQL生态现有计算下推方案汇总
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
+    </div>
+
+
+        
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E4%BC%98%E5%8C%96%E5%99%A8/" rel="tag">优化器</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E4%B8%8B%E6%8E%A8/" rel="tag">计算下推</a></li></ul>
+    </div>
+
+        <br></br> <!--字数统计另起一行-->
+        
+	
+		<span class="post-wordcount" itemprop="wordCount">
+			字数统计: 4.6k(字) </a>
+		</span>
+	
+	
+		<span class="post-readcount" itemprop="timeRequired">
+			阅读时长: 20(分)
+		</span>
+	
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+        <p><strong>作者：卢文双 资深数据库内核研发</strong></p>
+<blockquote>
+<p><strong>本文首发于 2024-03-06 20:52:24</strong></p>
+<p><a target="_blank" rel="noopener" href="https://dbkernel.com/">https://dbkernel.com</a></p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>计算下推是数据库优化器优化查询性能的一种常见手段，早期的数据库系统提及的计算下推一般是指谓词下推，其理论源自关系代数理论。2000 年以后，随着 Oracle RAC 的盛行以及一众开源分布式数据库的崛起，存算分离的概念逐步流行，计算下推的涵盖范围由此从基本的谓词+投影下推延伸到了数据库所支持的一切可能计算的下推（JOIN、聚合、完整 query、部分 query 等）。</p>
+<p>对于单机数据库来说，尤其是 MySQL 这种采用经典火山模型的关系型数据库，最常见的就是谓词下推、投影下推，通常在查询优化的 RBO 阶段完成（有的下推在 CBO 阶段），通过将 Filter 和 Project 算子在抽象语法树（AST）中向下移动，提前对行/列进行裁剪，减少后续计算的数据量。</p>
+<p>当然，MySQL 中不仅仅是谓词下推、投影下推，还有条件下推、ICP 等，本文就盘点一下 MySQL 生态中有哪些计算下推。</p>
+<span id="more"></span>
+
+<hr>
+<h1 id="MySQL-原生方案"><a href="#MySQL-原生方案" class="headerlink" title="MySQL 原生方案"></a>MySQL 原生方案</h1><p>本小节介绍 MySQL 社区版中的计算下推方案。</p>
+<h2 id="1-索引条件下推-ICP"><a href="#1-索引条件下推-ICP" class="headerlink" title="1. 索引条件下推 ICP"></a>1. 索引条件下推 ICP</h2><h3 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h3><p>ICP（Index Condition Pushdown，索引下推），是 <strong>MySQL 5.6 版本</strong>推出的功能，用于优化 MySQL 查询。</p>
+<p>ICP 可以减少存储引擎查询回表的次数以及 MySQL server 层访问存储引擎的次数。</p>
+<p>ICP 的目标是<strong>减少整行记录读取的次数，从而减少 I/O 操作</strong>。</p>
+<p><strong>在没有使用 ICP 的情况下，索引（二级索引）扫描的过程如下：</strong></p>
+<ol>
+<li> 存储引擎读取二级索引记录；</li>
+<li> 根据二级索引中的主键值，定位并读取完整行记录（回表）；</li>
+<li> 存储引擎把记录交给 Server 层去检测该记录是否满足 where 条件。</li>
+</ol>
+<p><img src="/2024/03/06/mysql-pushdown-summary/no-icp-data-flow.png" alt="非ICP图解（图片来源于网络）" title="非ICP图解（图片来源于网络）"></p>
+<p><strong>在使用 ICP 的情况下，查询优化阶段会将部分或全部 where 条件下推，其扫描过程如下：</strong></p>
+<ol>
+<li> 存储引擎读取二级索引记录（不是完整行）；</li>
+<li><strong>判断当前二级索引列记录是否满足下推的 where 条件</strong>：<ol>
+<li> 如果条件不满足，则跳过该行，继续处理下一行索引记录；</li>
+<li> <strong>如果条件满足，使用索引中的主键去定位并读取完整的行记录（回表）</strong>；</li>
+</ol>
+</li>
+<li> 存储引擎把记录交给 Server 层，Server 层检测该记录是否满足 where 条件的其余部分。</li>
+</ol>
+<p><img src="/2024/03/06/mysql-pushdown-summary/use-icp-data-flow.png" alt="ICP图解（图片来源于网络）" title="ICP图解（图片来源于网络）"></p>
+<p><img src="/2024/03/06/mysql-pushdown-summary/use-icp-flow.jpeg" alt="ICP（图片来源于网络）" title="ICP（图片来源于网络）"></p>
+<h3 id="适用场景："><a href="#适用场景：" class="headerlink" title="适用场景："></a><strong>适用场景：</strong></h3><ul>
+<li><strong>单列/多列二级索引上的非范围扫描（比如 like）</strong>。示例：(c3) 是单列二级索引，<code>with index condition</code>部分就是 ICP 下推的条件</li>
+</ul>
+<p><img src="/2024/03/06/mysql-pushdown-summary/icp-query-like.png" alt="ICP-非范围扫描" title="ICP-非范围扫描"></p>
+<ul>
+<li><strong>where 条件不满足最左匹配原则的多列二级索引扫描</strong>。示例：(c2, c3, c4) 是多列二级索引，指定多列范围，c4&gt;5 范围无法下推到引擎层扫描范围 <code>QUICK_RANGE_SELECT::ranges</code></li>
+</ul>
+<p><img src="/2024/03/06/mysql-pushdown-summary/icp-multi-columns-secondary-index.png" alt="ICP-多列二级索引" title="ICP-多列二级索引"></p>
+<h3 id="使用限制-amp-适用条件："><a href="#使用限制-amp-适用条件：" class="headerlink" title="使用限制 &amp; 适用条件："></a><strong>使用限制 &amp; 适用条件：</strong></h3><ol>
+<li> 当需要访问全表记录时，ICP 可用于  range（范围扫描）、ref（非唯一索引的”=”操作）、eq_ref（唯一索引的”=”操作） 和 ref_or_null（ref + 支持空值，比如：WHERE col = … OR col IS NULL） 访问方法。</li>
+<li> ICP 可以用于 InnoDB 和 MyISAM 引擎表（包括分区表）。</li>
+<li> 对于 InnoDB 表，ICP 仅支持二级索引。而对于 InnoDB 聚簇索引，由于完整的记录会被读到 InnoDB 缓冲区，在这种情况下，使用 ICP 不会减少 I/O 操作。</li>
+<li> 虚拟列上创建的二级索引不支持 ICP。</li>
+<li> 使用子查询的 where 条件不支持 ICP。</li>
+<li> 由于引擎层无法调用位于 server 层的存储过程，因此，调用存储过程的 SQL 不支持 ICP。</li>
+<li> 触发器不支持 ICP。</li>
+</ol>
+<h3 id="开关（默认开启）："><a href="#开关（默认开启）：" class="headerlink" title="开关（默认开启）："></a><strong>开关（默认开启）：</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> optimizer_switch <span class="operator">=</span> <span class="string">&#x27;index_condition_pushdown=off&#x27;</span>; <span class="comment">-- 关闭 ICP</span></span><br><span class="line"><span class="keyword">SET</span> optimizer_switch <span class="operator">=</span> <span class="string">&#x27;index_condition_pushdown=on&#x27;</span>; <span class="comment">-- 启用 ICP</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="性能影响："><a href="#性能影响：" class="headerlink" title="性能影响："></a><strong>性能影响：</strong></h3><h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><p>准备：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 表结构（是否显示设置id为主键，对性能没什么影响，但执行计划不同）</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `icp` (</span><br><span class="line">  `id` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `age` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">30</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `memo` <span class="type">varchar</span>(<span class="number">600</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  KEY `age_idx` (`age`,`name`,`memo`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span>((i<span class="operator">=</span><span class="number">0</span>;i<span class="operator">&lt;</span>$rows_num;i<span class="operator">+</span><span class="operator">+</span>))</span><br><span class="line">do</span><br><span class="line">mysql <span class="operator">-</span>u$<span class="keyword">user</span> <span class="operator">-</span>h$host <span class="operator">-</span>P$port <span class="operator">-</span>e&quot;insert into $db.$tb values($i, 1, &#x27;a$i&#x27;, repeat(&#x27;a$i&#x27;, 100))&quot;</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 将其中三行数据的age从<span class="number">1</span>改为<span class="number">2</span></span><br><span class="line">mysql<span class="operator">&gt;</span> update icp2 <span class="keyword">set</span> age<span class="operator">=</span><span class="number">2</span> <span class="keyword">where</span> id<span class="operator">=</span><span class="number">10</span> <span class="keyword">or</span> id<span class="operator">=</span><span class="number">20</span> <span class="keyword">or</span> id<span class="operator">=</span><span class="number">20000</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"><span class="keyword">Rows</span> matched: <span class="number">3</span>  Changed: <span class="number">0</span>  Warnings: <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 表数据行数</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> icp;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">100000</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.41</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> icp <span class="keyword">where</span> age<span class="operator">=</span><span class="number">1</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="operator">|</span>    <span class="number">99997</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">6.37</span> sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>启用 ICP：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 启用 ICP</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">set</span> optimizer_switch<span class="operator">=</span>&quot;index_condition_pushdown=on&quot;;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> session status <span class="keyword">like</span> <span class="string">&#x27;%handler_read%&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name         <span class="operator">|</span> <span class="keyword">Value</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Handler_read_first    <span class="operator">|</span> <span class="number">3</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_key      <span class="operator">|</span> <span class="number">105</span>   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_last     <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_next     <span class="operator">|</span> <span class="number">139</span>   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_prev     <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd_next <span class="operator">|</span> <span class="number">7</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="number">7</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> icp <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">1</span> <span class="keyword">and</span> memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>; <span class="operator">/</span><span class="operator">/</span> 结果集<span class="number">19</span>行，耗时<span class="number">2.41</span>s</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> session status <span class="keyword">like</span> <span class="string">&#x27;%handler_read%&#x27;</span>; <span class="operator">/</span><span class="operator">/</span> read_key <span class="operator">+</span> <span class="number">1</span>，read_next <span class="operator">+</span> <span class="number">19</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name         <span class="operator">|</span> <span class="keyword">Value</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Handler_read_first    <span class="operator">|</span> <span class="number">3</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_key      <span class="operator">|</span> <span class="number">106</span>   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_last     <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_next     <span class="operator">|</span> <span class="number">158</span>   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_prev     <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd_next <span class="operator">|</span> <span class="number">7</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+-------+</span></span><br><span class="line"><span class="number">7</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> explain analyze <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> icp <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">1</span> <span class="keyword">and</span> memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">EXPLAIN: <span class="operator">-</span><span class="operator">&gt;</span> Index lookup <span class="keyword">on</span> icp <span class="keyword">using</span> age_idx (age<span class="operator">=</span><span class="number">1</span>), <span class="keyword">with</span> index <span class="keyword">condition</span>: (icp.memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>)  (cost<span class="operator">=</span><span class="number">5432.07</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">45945</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">219.708</span>.<span class="number">.1973</span><span class="number">.586</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">19</span> loops<span class="operator">=</span><span class="number">1</span>) <span class="operator">/</span><span class="operator">/</span> 只需要扫描<span class="number">19</span>行</span><br><span class="line"></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">1.97</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>禁用 ICP：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 禁用ICP</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">set</span> optimizer_switch<span class="operator">=</span>&quot;index_condition_pushdown=off&quot;;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> icp <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">1</span> <span class="keyword">and</span> memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>; <span class="operator">/</span><span class="operator">/</span> 该表总数据行数<span class="number">1</span>万，结果集<span class="number">19</span>行，耗时<span class="number">12.05</span>s</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> session status <span class="keyword">like</span> <span class="string">&#x27;%handler_read%&#x27;</span>; <span class="operator">/</span><span class="operator">/</span> read_key <span class="operator">+</span> <span class="number">1</span>，read_next <span class="operator">+</span> <span class="number">99997</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+--------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name         <span class="operator">|</span> <span class="keyword">Value</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+--------+</span></span><br><span class="line"><span class="operator">|</span> Handler_read_first    <span class="operator">|</span> <span class="number">3</span>      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_key      <span class="operator">|</span> <span class="number">107</span>    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_last     <span class="operator">|</span> <span class="number">0</span>      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_next     <span class="operator">|</span> <span class="number">100155</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_prev     <span class="operator">|</span> <span class="number">0</span>      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd      <span class="operator">|</span> <span class="number">0</span>      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Handler_read_rnd_next <span class="operator">|</span> <span class="number">7</span>      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+--------+</span></span><br><span class="line"><span class="number">7</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> explain analyze <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> icp <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">1</span> <span class="keyword">and</span> memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">EXPLAIN: <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Filter</span>: (icp.memo <span class="keyword">like</span> <span class="string">&#x27;%9999%&#x27;</span>)  (cost<span class="operator">=</span><span class="number">5432.07</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">5104</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">1415.435</span>.<span class="number">.12850</span><span class="number">.675</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">19</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> Index lookup <span class="keyword">on</span> icp <span class="keyword">using</span> age_idx (age<span class="operator">=</span><span class="number">1</span>)  (cost<span class="operator">=</span><span class="number">5432.07</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">45945</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.259</span>.<span class="number">.11118</span><span class="number">.374</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">99997</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">    <span class="operator">/</span><span class="operator">/</span> 需要先在引擎层执行索引扫描所有age<span class="operator">=</span><span class="number">1</span>的记录 <span class="number">99997</span> 行并回表得到完整行，再由server层根据 memo <span class="keyword">like</span> 条件过滤出 <span class="number">19</span> 行</span><br><span class="line"></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">12.86</span> sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h4><p>由以上测试情况可以看到，<strong>在二级索引是复合索引且前面的条件过滤性较低的情况下，打开 ICP 可以有效的降低 server 层和 engine 层之间交互的次数，从而有效的降低运行时间（从 12.86s 降低到 1.97s），但是，对于多个普通单列索引构成的 where 过滤条件，无论是否启用 ICP，优化器都会将过滤性高的索引条件下推到 engine 层执行 index range scan，因此，收益不大</strong>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 开启 ICP，下推 t1.a <span class="operator">&gt;</span> <span class="number">3</span>，扫描 <span class="number">4096</span> 行</span><br><span class="line">mysql<span class="operator">&gt;</span> explain analyze <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1 <span class="keyword">where</span> b<span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">and</span> a<span class="operator">&gt;</span><span class="number">3</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">EXPLAIN: <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Filter</span>: (t1.b <span class="operator">&gt;</span> <span class="number">1</span>)  (cost<span class="operator">=</span><span class="number">1843.46</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2048</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.389</span>.<span class="number">.281</span><span class="number">.599</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> Index <span class="keyword">range</span> scan <span class="keyword">on</span> t1 <span class="keyword">using</span> idx_a, <span class="keyword">with</span> index <span class="keyword">condition</span>: (t1.a <span class="operator">&gt;</span> <span class="number">3</span>)  (cost<span class="operator">=</span><span class="number">1843.46</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.385</span>.<span class="number">.278</span><span class="number">.402</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 关闭 ICP，优化器判定 t1.a 过滤性更强，按 idx_a 执行 Index <span class="keyword">range</span> scan，也是扫描 <span class="number">4096</span> 行</span><br><span class="line">mysql<span class="operator">&gt;</span> explain analyze <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1 <span class="keyword">where</span> b<span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">and</span> a<span class="operator">&gt;</span><span class="number">3</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">EXPLAIN: <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Filter</span>: ((t1.b <span class="operator">&gt;</span> <span class="number">1</span>) <span class="keyword">and</span> (t1.a <span class="operator">&gt;</span> <span class="number">3</span>))  (cost<span class="operator">=</span><span class="number">1843.46</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2048</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.762</span>.<span class="number">.224</span><span class="number">.012</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> Index <span class="keyword">range</span> scan <span class="keyword">on</span> t1 <span class="keyword">using</span> idx_a  (cost<span class="operator">=</span><span class="number">1843.46</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.748</span>.<span class="number">.218</span><span class="number">.553</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4096</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-引擎条件下推-ECP"><a href="#2-引擎条件下推-ECP" class="headerlink" title="2. 引擎条件下推 ECP"></a>2. 引擎条件下推 ECP</h2><p>ECP（Engine Condition Pushdown，引擎条件下推），该优化只支持 NDB 存储引擎，用于提高非索引列和常量之间直接比较的效率，在这种情况下，条件被下推到存储引擎做计算。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> a, b <span class="keyword">FROM</span> t1 <span class="keyword">WHERE</span> a <span class="operator">&lt;</span> <span class="number">2</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">           id: <span class="number">1</span></span><br><span class="line">  select_type: SIMPLE</span><br><span class="line">        <span class="keyword">table</span>: t1</span><br><span class="line">         type: <span class="keyword">range</span></span><br><span class="line">possible_keys: a</span><br><span class="line">          key: a</span><br><span class="line">      key_len: <span class="number">5</span></span><br><span class="line">          <span class="keyword">ref</span>: <span class="keyword">NULL</span></span><br><span class="line">         <span class="keyword">rows</span>: <span class="number">2</span></span><br><span class="line">        Extra: <span class="keyword">Using</span> <span class="keyword">where</span> <span class="keyword">with</span> pushed <span class="keyword">condition</span></span><br></pre></td></tr></table></figure>
+
+<p>对于 NDB 集群，这种优化可以消除在 集群的数据节点 和 发出查询的 MySQL 服务器 之间通过网络发送不匹配的行的资源浪费。</p>
+<h2 id="3-派生条件下推-DCP"><a href="#3-派生条件下推-DCP" class="headerlink" title="3. 派生条件下推 DCP"></a>3. 派生条件下推 DCP</h2><h3 id="功能介绍-1"><a href="#功能介绍-1" class="headerlink" title="功能介绍"></a>功能介绍</h3><p>DCP（Derived Condition Pushdown，派生表条件下推），从 <strong>MySQL 8.0.22 版本</strong>开始引入。</p>
+<p>对于 SQL 语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i, j <span class="keyword">FROM</span> t1) <span class="keyword">AS</span> dt <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> constant</span><br></pre></td></tr></table></figure>
+
+<p>在很多情况下可以将外部的 WHERE 条件下推到派生表，相当于 SQL 改写为了：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i, j <span class="keyword">FROM</span> t1 <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> constant) <span class="keyword">AS</span> dt</span><br></pre></td></tr></table></figure>
+
+<p>这<strong>减少了派⽣表返回的⾏数</strong>，从⽽加快查询的速度。</p>
+<h3 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h3><p><strong>DCP 适用于以下情况：</strong></p>
+<p>1、当派生表不使用聚合函数或窗口函数时，外部 WHERE 条件可以直接下推给它，包括具有多个谓词与 AND、OR 或与二者同时连接的 WHERE 条件。比如：查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> f1, f2 <span class="keyword">FROM</span> t1) <span class="keyword">AS</span> dt <span class="keyword">WHERE</span> f1 <span class="operator">&lt;</span> <span class="number">3</span> <span class="keyword">AND</span> f2 <span class="operator">&gt;</span> <span class="number">11</span></span><br></pre></td></tr></table></figure>
+
+<p>被重写为</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> f1, f2 <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> f1, f2 <span class="keyword">FROM</span> t1 <span class="keyword">WHERE</span> f1 <span class="operator">&lt;</span> <span class="number">3</span> <span class="keyword">AND</span> f2 <span class="operator">&gt;</span> <span class="number">11</span>) <span class="keyword">AS</span> dt</span><br></pre></td></tr></table></figure>
+
+<p>2、当派生表具有 GROUP BY 且未使用窗口函数时，如果外部 WHERE 条件引用了一个或多个不属于 GROUP BY 的列，那么该 WHERE 条件可以作为 HAVING 条件下推到派生表中。比如：查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i, j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1 <span class="keyword">GROUP</span> <span class="keyword">BY</span> i, j) <span class="keyword">AS</span> dt <span class="keyword">WHERE</span> sum <span class="operator">&gt;</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>被重写为</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i, j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1 <span class="keyword">GROUP</span> <span class="keyword">BY</span> i, j <span class="keyword">HAVING</span> sum <span class="operator">&gt;</span> <span class="number">100</span>) <span class="keyword">AS</span> dt</span><br></pre></td></tr></table></figure>
+
+<p>3、当派生表使用一个 GROUP BY 且外部 WHERE 条件中的列就是 GROUP BY 的列时，引用这些列的 WHERE 条件可以直接下推到派生表中。比如：查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i,j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1 <span class="keyword">GROUP</span> <span class="keyword">BY</span> i,j) <span class="keyword">AS</span> dt <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
+
+<p>被重写为</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i,j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1 <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> <span class="number">10</span> <span class="keyword">GROUP</span> <span class="keyword">BY</span> i,j) <span class="keyword">AS</span> dt</span><br></pre></td></tr></table></figure>
+
+<p>4、如果外部 WHERE 条件中同时包含了第 2 种与第 3 种的情况，即同时具有”引用属于 GROUP BY 的列的谓词“ 和 ”引用不属于 GROUP BY 的列的谓词“，则第一种谓词作为 WHERE 条件下推，第二种谓词下推后作为 HAVING 条件。比如：查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> i, j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1 <span class="keyword">GROUP</span> <span class="keyword">BY</span> i,j) <span class="keyword">AS</span> dt <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> <span class="number">10</span> <span class="keyword">AND</span> sum <span class="operator">&gt;</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>被重写为类似如下形式的 SQL</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> i, j, <span class="built_in">SUM</span>(k) <span class="keyword">AS</span> sum <span class="keyword">FROM</span> t1</span><br><span class="line">        <span class="keyword">WHERE</span> i <span class="operator">&gt;</span> <span class="number">10</span> <span class="operator">/</span><span class="operator">/</span> 第一种</span><br><span class="line">        <span class="keyword">GROUP</span> <span class="keyword">BY</span> i, j</span><br><span class="line">        <span class="keyword">HAVING</span> sum <span class="operator">&gt;</span> <span class="number">100</span> <span class="operator">/</span><span class="operator">/</span> 第二种</span><br><span class="line">    ) <span class="keyword">AS</span> dt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用限制"><a href="#使用限制" class="headerlink" title="使用限制"></a>使用限制</h3><p><strong>DCP 也存在如下使用限制：</strong></p>
+<ol>
+<li>如果派生表包含 UNION，不能使用 DCP 。该限制在   MySQL 8.0.29 基本被取消了，但以下两种情况除外：<ol>
+<li> 如果 UNION 的任何派生表是  recursive common table expression ，则不能将条件下推到 UNION 查询。</li>
+<li> 不能将”包含不确定表达式的条件“下推到派生表中。</li>
+</ol>
+</li>
+<li> 派生表不能使用 limit 子句。</li>
+<li> 包含子查询的条件不能被下推。</li>
+<li> 如果派生表是外部 join 的 inner table，不能使用 DCP。</li>
+<li> 如果派生表是一个  common table expression 并且被多次引用，则不能将条件下推到该派生表。</li>
+<li> 如果条件的形式是  <code>derived_column &gt; ?</code> ，可以下推使用参数的条件。但是，If a derived column in an outer WHERE condition is an expression having a ? in the underlying derived table, this condition cannot be pushed down.</li>
+</ol>
+<p><strong>开关（默认开启）：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> optimizer_switch<span class="operator">=</span>&quot;derived_condition_pushdown=on&quot;;</span><br><span class="line"><span class="keyword">set</span> optimizer_switch<span class="operator">=</span>&quot;derived_condition_pushdown=off&quot;;</span><br></pre></td></tr></table></figure>
+
+<p>源码分析可参考：</p>
+<ul>
+<li>MySQL · 性能优化 · 条件下推到物化表：<a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2016/07/08/">http://mysql.taobao.org/monthly/2016/07/08/</a></li>
+</ul>
+<h2 id="4-谓词下推"><a href="#4-谓词下推" class="headerlink" title="4. 谓词下推"></a>4. 谓词下推</h2><p><strong>何为谓词？</strong></p>
+<p>P : X→ {true, false} called a predicate on X .</p>
+<p>A predicate is a function that returns bool (or something that can be implicitly converted to bool）</p>
+<p><strong>谓词是返回 bool 型（或可隐式转换为 bool 型）的函数</strong>。</p>
+<p>一般来说，where 中的条件单元都是谓词：</p>
+<ul>
+<li>=, &gt;, &lt;, &gt;=, &lt;=, BETWEEN, LIKE, IS [NOT] NULL</li>
+<li>&lt;&gt;, IN, OR, NOT IN, NOT LIKE</li>
+</ul>
+<p>谓词下推是指将查询语句中的过滤表达式尽可能下推到距离数据源最近的地方做计算，以尽早完成数据的过滤，进而显著地减少数据传输或计算的开销。</p>
+<ul>
+<li>下推前：select count(1) from t1 A join t3 B on A.a = B.a where <strong>A.b &gt; 100 and B.b &gt; 100</strong>;</li>
+<li>下推后：select count(1) from (select * from t1 where <strong>a&gt;100</strong>) A join (select *  from t3 where <strong>b&lt;100</strong>) B on A.a = B.a;</li>
+</ul>
+<p><strong>MySQL/PG 优化器会自动做谓词下推的优化</strong>，比如：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> explain analyze <span class="keyword">select</span> <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">from</span> t1 A <span class="keyword">join</span> t3 B <span class="keyword">on</span> A.a <span class="operator">=</span> B.c <span class="keyword">where</span> A.b <span class="operator">&gt;</span> <span class="number">100</span> <span class="keyword">and</span> B.b <span class="operator">&gt;</span> <span class="number">100</span>\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">EXPLAIN: <span class="operator">-</span><span class="operator">&gt;</span> Aggregate: <span class="built_in">count</span>(<span class="number">1</span>)  (cost<span class="operator">=</span><span class="number">366.05</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">331</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">23.188</span>.<span class="number">.23</span><span class="number">.189</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> Nested loop <span class="keyword">inner</span> <span class="keyword">join</span>  (cost<span class="operator">=</span><span class="number">332.95</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">331</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">1.421</span>.<span class="number">.22</span><span class="number">.925</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">302</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">        <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Filter</span>: ((b.b <span class="operator">&gt;</span> <span class="number">100</span>) <span class="keyword">and</span> (b.c <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">null</span>))  (cost<span class="operator">=</span><span class="number">101.25</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">662</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">1.172</span>.<span class="number">.6</span><span class="number">.911</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">662</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">            <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Table</span> scan <span class="keyword">on</span> B  (cost<span class="operator">=</span><span class="number">101.25</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1000</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.535</span>.<span class="number">.6</span><span class="number">.242</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1000</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">        <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">Filter</span>: (a.b <span class="operator">&gt;</span> <span class="number">100</span>)  (cost<span class="operator">=</span><span class="number">0.25</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">0</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.023</span>.<span class="number">.0</span><span class="number">.024</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">0</span> loops<span class="operator">=</span><span class="number">662</span>)</span><br><span class="line">            <span class="operator">-</span><span class="operator">&gt;</span> Single<span class="operator">-</span><span class="type">row</span> index lookup <span class="keyword">on</span> A <span class="keyword">using</span> <span class="keyword">PRIMARY</span> (a<span class="operator">=</span>b.c)  (cost<span class="operator">=</span><span class="number">0.25</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span>) (actual <span class="type">time</span><span class="operator">=</span><span class="number">0.022</span>.<span class="number">.0</span><span class="number">.023</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> loops<span class="operator">=</span><span class="number">662</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Secondary-Engine-HTAP"><a href="#5-Secondary-Engine-HTAP" class="headerlink" title="5. Secondary Engine - HTAP"></a>5. Secondary Engine - HTAP</h2><p>问：该特性是什么版本引入的？</p>
+<blockquote>
+<p>从手册中对<code>SECONDARY_LOAD</code>的说明以及代码提交记录时间点，是在<strong>8.0.13</strong>引入的 Secondary Engine。之后，release log 中直到 8.0.19 版本才有相关 bug 修复记录。</p>
+</blockquote>
+<p><strong>引入 Secondary Engine，用于支持多引擎（建表语句中的 Engine 为 Primary Engine）</strong>，使用示例如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">INSTALL PLUGIN mock SONAME &quot;ha_mock.so&quot;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `se` (</span><br><span class="line">  `id` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `age` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">30</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `memo` <span class="type">varchar</span>(<span class="number">600</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  KEY `age_idx` (`age`,`name`,`memo`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4 SECONDARY_ENGINE<span class="operator">=</span>MOCK;</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 系统变量</span><br><span class="line"><span class="keyword">SET</span> <span class="variable">@use</span>_secondary_engine<span class="operator">=</span> &quot;ON&quot;;</span><br><span class="line"><span class="keyword">SET</span> <span class="variable">@use</span>_secondary_engine<span class="operator">=</span> &quot;OFF&quot;;</span><br><span class="line"><span class="keyword">SET</span> <span class="variable">@use</span>_secondary_engine<span class="operator">=</span> &quot;FORCED&quot;;</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 加载和卸载数据</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> SE SECONDARY_LOAD;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> SE SECONDARY_UNLOAD;</span><br></pre></td></tr></table></figure>
+
+<p>在支持 InnoDB 的同时，还可以把数据存放在其他的存储引擎上。 全量的数据都存储在 Primary Engine 上，某些指定表数据在 Secondary Engine 上也存放了一份，然后在访问这些数据的时候，会根据系统参数和 cost 选择存储引擎，提高查询效率。</p>
+<p>MySQL 官方集成了 RAPID 来为 MySQL 提供实时的数据分析服务，即<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/heatwave/en/" title="HeatWave">HeatWave</a>，同时支持 InnoDB 和 RAPID 执行引擎（未开源），也就是 HTAP。</p>
+<p><img src="/2024/03/06/mysql-pushdown-summary/heatwave-architecture.png" alt="HeatWave架构图" title="HeatWave架构图"></p>
+<p>不过，开源 MySQL 引入 Secondary Engine 机制，有助于集成其他存储引擎或者数据库，开源生态中<a target="_blank" rel="noopener" href="https://www.stoneatom.com/StonedbDocs?id=167" title="StoneDB">StoneDB</a>就是基于该特性来实现的 HTAP。</p>
+<h1 id="第三方方案"><a href="#第三方方案" class="headerlink" title="第三方方案"></a>第三方方案</h1><p>本小节只介绍 RDS 范畴的计算下推，对于 PolarDB、Aurora 这种存算分离架构不做讲述。</p>
+<h2 id="1-limit-offset、sum-下推"><a href="#1-limit-offset、sum-下推" class="headerlink" title="1. limit/offset、sum 下推"></a>1. limit/offset、sum 下推</h2><p>腾讯云 TXSQL（腾讯自研 MySQL 分支）支持了 limit/offset、sum 下推。</p>
+<h3 id="功能介绍-2"><a href="#功能介绍-2" class="headerlink" title="功能介绍"></a><strong>功能介绍</strong></h3><p>该功能<strong>将单表查询的 LIMIT/OFFSET 或 SUM 操作下推到 InnoDB</strong>，有效降低查询时延。</p>
+<ul>
+<li>LIMIT/OFFSET 下推到二级索引时，该功能将避免“回表”操作，有效降低扫描代价。</li>
+<li>SUM 操作下推到 InnoDB 时，在 InnoDB 层进行计算返回“最终”结果，节省 Server 层和 InnoDB 引擎层多次迭代“每行”记录的代价。</li>
+</ul>
+<h3 id="适用场景-1"><a href="#适用场景-1" class="headerlink" title="适用场景"></a>适用场景</h3><p>该功能主要针对单表查询下存在 LIMIT/OFFSET 或 SUM 的场景，如  <code>Select * from tbl Limit 10、Select * from tbl Limit 10,2</code>、<code>Select sum(c1) from tbl</code>  等语句。</p>
+<h4 id="无法优化的场景："><a href="#无法优化的场景：" class="headerlink" title="无法优化的场景："></a><strong>无法优化的场景</strong>：</h4><ul>
+<li>查询语句存在 distinct、group by、having。</li>
+<li>存在嵌套子查询。</li>
+<li>使用了 FULLTEXT 索引。</li>
+<li>存在 order by 并且优化器不能利用 index 实现 order by。</li>
+<li>使用多范围的 MRR。</li>
+<li>存在 SQL_CALC_FOUND_ROWS。</li>
+</ul>
+<h4 id="个人理解："><a href="#个人理解：" class="headerlink" title="个人理解："></a><strong>个人理解</strong>：</h4><p>下推的前提是不能影响结果集的正确性，因此：</p>
+<ul>
+<li>只能支持单表查询</li>
+<li>where 条件：<ul>
+<li>若无 where 条件，也可支持单表的全表扫描（Table Scan）</li>
+<li>若有 where 条件，则必须满足只对一条索引做范围扫描即可覆盖全部 where 条件才可下推，反之，则不能下推</li>
+</ul>
+</li>
+<li>不支持全文索引这种特殊的索引</li>
+<li>若存在无法被优化器消除的 distinct、group by、having、order by，则不能下推</li>
+<li>由于 MRR 机制、SQL_CALC_FOUND_ROWS 语法的特殊性，下推的收益不大</li>
+</ul>
+<h3 id="性能数据"><a href="#性能数据" class="headerlink" title="性能数据"></a><strong>性能数据</strong></h3><p>sysbench 导入一百万行数据后：</p>
+<ul>
+<li>执行  <code>select * from sbtest1 limit 1000000,1;</code>  的时间从 6.3 秒下降到 2.8 秒。<ul>
+<li><strong>对于高并发、二级索引扫描且需回表主键列的情况，收益会更大，可能有 8 倍以上的提升</strong>。</li>
+</ul>
+</li>
+<li>执行  <code>select sum(k) from sbtest1; </code>的时间从 5.4 秒下降到 1.5 秒。</li>
+</ul>
+<h3 id="机制（个人理解）"><a href="#机制（个人理解）" class="headerlink" title="机制（个人理解）"></a>机制（个人理解）</h3><p>无论是 limit/offset 下推，还是 sum 下推，都借鉴了 ICP 的机制，思路大同小异。这里以 offset 为例，说下我的理解：</p>
+<ol>
+<li> 在 Server 层做查询优化时，为了避免下推后导致结果集有误，需先判断是否满足下推条件（单表查询、InnoDB 引擎、非「无法优化的场景」），若满足，则将 offset 条件下推到引擎层，同时屏蔽掉 Server 层的 offset 逻辑。</li>
+<li> 若下推了 offset 算子，比如 offset 100，则需要在引擎层跳过 100 行，后续逻辑与下推前相同。</li>
+</ol>
+<p><strong>个人对 offset 下推的理解</strong>：</p>
+<p><img src="/2024/03/06/mysql-pushdown-summary/offset-architecture.png" alt="offset下推图解" title="offset下推图解"></p>
+<h3 id="延伸"><a href="#延伸" class="headerlink" title="延伸"></a>延伸</h3><p><strong>问：其他聚合函数是否可以下推优化？</strong></p>
+<p>从官方手册（ <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/aggregate-functions.html" title="https://dev.mysql.com/doc/refman/8.0/en/aggregate-functions.html">https://dev.mysql.com/doc/refman/8.0/en/aggregate-functions.html</a>）支持的聚合函数来看：</p>
+<ul>
+<li>至少<code>AVG()</code>也是可以很容易支持的。</li>
+<li>对于<code>COUNT()</code>函数，由于 MySQL 8.0 支持了并行扫描，暂时来看优化的意义不大。</li>
+<li>对于<code>MIN()</code>、<code>MAX()</code>函数，优化器会使用索引来优化，基本只扫描一行即可，无下推必要。</li>
+<li>其他聚合函数不太常用，下推优化意义不大。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>正文说的很清晰了，就不强行总结了（^_^）</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li>MySQL ICP： <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/index-condition-pushdown-optimization.html" title="https://dev.mysql.com/doc/refman/8.0/en/index-condition-pushdown-optimization.html">https://dev.mysql.com/doc/refman/8.0/en/index-condition-pushdown-optimization.html</a></li>
+<li>MySQL ECP：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/engine-condition-pushdown-optimization.html" title="https://dev.mysql.com/doc/refman/8.0/en/engine-condition-pushdown-optimization.html">https://dev.mysql.com/doc/refman/8.0/en/engine-condition-pushdown-optimization.html</a></li>
+<li>MySQL DCP：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/derived-condition-pushdown-optimization.html" title="https://dev.mysql.com/doc/refman/8.0/en/derived-condition-pushdown-optimization.html">https://dev.mysql.com/doc/refman/8.0/en/derived-condition-pushdown-optimization.html</a></li>
+<li>Secondary Engine：<a target="_blank" rel="noopener" href="http://mysql.taobao.org/monthly/2020/11/04/" title="http://mysql.taobao.org/monthly/2020/11/04/">http://mysql.taobao.org/monthly/2020/11/04/</a></li>
+<li>腾讯自研内核 TXSQL 计算下推功能：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/document/product/236/63445" title="https://cloud.tencent.com/document/product/236/63445">https://cloud.tencent.com/document/product/236/63445</a></li>
+</ul>
+<hr>
+<p>欢迎关注我的微信公众号【数据库内核】：分享主流开源数据库和存储引擎相关技术。</p>
+<img src="https://dbkernel-1306518848.cos.ap-beijing.myqcloud.com/wechat/my-wechat-official-account.png" width="400" height="400" alt="欢迎关注公众号数据库内核" align="center"/>
+
+<table>
+<thead>
+<tr>
+<th>标题</th>
+<th>网址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GitHub</td>
+<td><a href="https://dbkernel.github.io/">https://dbkernel.github.io</a></td>
+</tr>
+<tr>
+<td>知乎</td>
+<td><a target="_blank" rel="noopener" href="https://www.zhihu.com/people/dbkernel/posts">https://www.zhihu.com/people/dbkernel/posts</a></td>
+</tr>
+<tr>
+<td>思否（SegmentFault）</td>
+<td><a target="_blank" rel="noopener" href="https://segmentfault.com/u/dbkernel">https://segmentfault.com/u/dbkernel</a></td>
+</tr>
+<tr>
+<td>掘金</td>
+<td><a target="_blank" rel="noopener" href="https://juejin.im/user/5e9d3ed251882538083fed1f/posts">https://juejin.im/user/5e9d3ed251882538083fed1f/posts</a></td>
+</tr>
+<tr>
+<td>CSDN</td>
+<td><a target="_blank" rel="noopener" href="https://blog.csdn.net/dbkernel">https://blog.csdn.net/dbkernel</a></td>
+</tr>
+<tr>
+<td>博客园（cnblogs）</td>
+<td><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dbkernel">https://www.cnblogs.com/dbkernel</a></td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2024/03/06/mysql-pushdown-summary/">特新介绍 | MySQL生态现有计算下推方案汇总</a></p>
+        <p><span>文章作者:</span><a href="/" title="回到主页">DBKernel</a></p>
+        <p><span>发布时间:</span>2024-03-06, 20:52:24</p>
+        <p><span>最后更新:</span>2024-03-07, 16:43:33</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2024/03/06/mysql-pushdown-summary/" title="特新介绍 | MySQL生态现有计算下推方案汇总">http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://dbkernel.github.io/2024/03/06/mysql-pushdown-summary/　　作者: DBKernel" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target = "_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+    <nav id="article-nav">
+        
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/">
+                    问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON的执行
+                </a>
+            </div>
+        
+    </nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">文章目录</strong>
+        
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL-%E5%8E%9F%E7%94%9F%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">MySQL 原生方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%B4%A2%E5%BC%95%E6%9D%A1%E4%BB%B6%E4%B8%8B%E6%8E%A8-ICP"><span class="toc-number">2.1.</span> <span class="toc-text">1. 索引条件下推 ICP</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.1.1.</span> <span class="toc-text">功能介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="toc-number">2.1.2.</span> <span class="toc-text">适用场景：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E9%99%90%E5%88%B6-amp-%E9%80%82%E7%94%A8%E6%9D%A1%E4%BB%B6%EF%BC%9A"><span class="toc-number">2.1.3.</span> <span class="toc-text">使用限制 &amp; 适用条件：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%85%B3%EF%BC%88%E9%BB%98%E8%AE%A4%E5%BC%80%E5%90%AF%EF%BC%89%EF%BC%9A"><span class="toc-number">2.1.4.</span> <span class="toc-text">开关（默认开启）：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E5%BD%B1%E5%93%8D%EF%BC%9A"><span class="toc-number">2.1.5.</span> <span class="toc-text">性能影响：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.1.5.1.</span> <span class="toc-text">示例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">2.1.5.2.</span> <span class="toc-text">结论</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BC%95%E6%93%8E%E6%9D%A1%E4%BB%B6%E4%B8%8B%E6%8E%A8-ECP"><span class="toc-number">2.2.</span> <span class="toc-text">2. 引擎条件下推 ECP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%B4%BE%E7%94%9F%E6%9D%A1%E4%BB%B6%E4%B8%8B%E6%8E%A8-DCP"><span class="toc-number">2.3.</span> <span class="toc-text">3. 派生条件下推 DCP</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D-1"><span class="toc-number">2.3.1.</span> <span class="toc-text">功能介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">2.3.2.</span> <span class="toc-text">适用场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E9%99%90%E5%88%B6"><span class="toc-number">2.3.3.</span> <span class="toc-text">使用限制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%B0%93%E8%AF%8D%E4%B8%8B%E6%8E%A8"><span class="toc-number">2.4.</span> <span class="toc-text">4. 谓词下推</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Secondary-Engine-HTAP"><span class="toc-number">2.5.</span> <span class="toc-text">5. Secondary Engine - HTAP</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%96%B9%E6%96%B9%E6%A1%88"><span class="toc-number">3.</span> <span class="toc-text">第三方方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-limit-offset%E3%80%81sum-%E4%B8%8B%E6%8E%A8"><span class="toc-number">3.1.</span> <span class="toc-text">1. limit&#x2F;offset、sum 下推</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D-2"><span class="toc-number">3.1.1.</span> <span class="toc-text">功能介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF-1"><span class="toc-number">3.1.2.</span> <span class="toc-text">适用场景</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%97%A0%E6%B3%95%E4%BC%98%E5%8C%96%E7%9A%84%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="toc-number">3.1.2.1.</span> <span class="toc-text">无法优化的场景：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%EF%BC%9A"><span class="toc-number">3.1.2.2.</span> <span class="toc-text">个人理解：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE"><span class="toc-number">3.1.3.</span> <span class="toc-text">性能数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%BA%E5%88%B6%EF%BC%88%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%EF%BC%89"><span class="toc-number">3.1.4.</span> <span class="toc-text">机制（个人理解）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BB%B6%E4%BC%B8"><span class="toc-number">3.1.5.</span> <span class="toc-text">延伸</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+        
+    </div>
+    <style>
+        .left-col .switch-btn,
+        .left-col .switch-area {
+            display: none;
+        }
+        .toc-level-4 i,
+        .toc-level-4 ol {
+            display: none !important;
+        }
+    </style>
+
+    <input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+    <script>
+        yiliaConfig.toc = ["隐藏目录", "显示目录", !!"true"];
+    </script>
+
+
+
+    
+<div class="share">
+    
+        <div class="bdsharebuttonbox">
+            <a href="#" class="fa fa-twitter bds_twi" data-cmd="twi" title="分享到推特"></a>
+            <a href="#" class="fa fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="fa fa-qq bds_sqq" data-cmd="sqq" title="分享给 QQ 好友"></a>
+            <a href="#" class="fa fa-files-o bds_copy" data-cmd="copy" title="复制网址"></a>
+            <a href="#" class="fa fa fa-envelope-o bds_mail" data-cmd="mail" title="通过邮件分享"></a>
+            <a href="#" class="fa fa-weixin bds_weixin" data-cmd="weixin" title="生成文章二维码"></a>
+            <a href="#" class="fa fa-share-alt bds_more" data-cmd="more"></i></a>
+        </div>
+        <script>
+            window._bd_share_config={
+                "common":{"bdSnsKey":{},"bdText":"特新介绍 | MySQL生态现有计算下推方案汇总　| DBKernel　","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    
+
+    
+</div>
+
+
+
+
+
+
+
+    
+
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+        
+
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+
+        
+            <a href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/" title="下一篇: 问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON的执行">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/03/06/mysql-pushdown-summary/">特新介绍 | MySQL生态现有计算下推方案汇总</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/03/mysql-bug-waiting-for-semisync-ack-block-set-global-super-read-only/">问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON的执行</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/30/mysql-bug-write-slow-log-when-replica-do-apply-events/">捉虫日记 | MySQL 8.0从库某些情况下记录重放的CREATE TABLE、DROP TABLE语句到慢日志(slow log)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/07/05/mysql-mtr-04-syntax/">特性介绍 | MySQL测试框架 MTR 系列教程（四）：语法篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/06/05/mysql-mtr-03-source-code/">源码分析 | MySQL测试框架 MTR 系列教程（三）：源码篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/04/mysql-threadpool-main-solutions-details/">万字长文 | 业内 MySQL 线程池主流方案详解 - MariaDB/Percona/AliSQL/TXSQL/MySQL企业版</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/05/01/mysql-mtr-02-advanced/">特性介绍 | MySQL 测试框架 MTR 系列教程（二）：进阶篇 - 内存/线程/代码覆盖率/单元/压力测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/03/18/mysql-mtr-01-introduction/">特性介绍 | MySQL 测试框架 MTR 系列教程（一）：入门篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/07/06/StoneDB-an-integrated-real-time-HTAP-database/">推荐 | 一体化实时 HTAP 数据库 StoneDB，如何替换 MySQL 并实现近百倍性能提升</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/08/19/how-to-choose-open-source-licence/">技术分享 | 如何为你的代码选择一个合适的开源协议？</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/26/clickhouse-and-friends-15-groupby/">源码分析 | ClickHouse和他的朋友们（15）Group By 为什么这么快</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/21/clickhouse-and-friends-14-compute-storage/">源码分析 | ClickHouse和他的朋友们（14）存储计算分离方案与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/15/clickhouse-and-friends-13-replicated-merge-tree/">源码分析 | ClickHouse和他的朋友们（13）ReplicatedMergeTree表引擎及同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/09/03/clickhouse-and-friends-12-materialized-view/">源码分析 | ClickHouse和他的朋友们（12）神奇的物化视图(Materialized View)与原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/28/clickhouse-and-friends-11-mysql-gtid-replication/">源码分析 | ClickHouse和他的朋友们（11）MySQL实时复制之GTID模式</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/27/percona-xtrabackup-2.4-vs-8.0/">问题定位 | Peronca Xtrabackup 8.0近日踩坑总结 - xtrabackup 2.4和8.0区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/08/20/clickhouse-and-friends-10-merge-tree-wal/">源码分析 | ClickHouse和他的朋友们（10）MergeTree Write-Ahead Log</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/28/clickhouse-and-friends-09-mysql-replication/">源码分析 | ClickHouse和他的朋友们（9）MySQL实时复制与实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/07/26/clickhouse-and-friends-08-parser/">源码分析 | ClickHouse和他的朋友们 (８) 纯手工打造的SQL解析器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/30/clickhouse-and-friends-06-merge-tree-disk-layout/">源码分析 | ClickHouse和他的朋友们（6）MergeTree存储结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/22/clickhouse-and-friends-05-merge-tree-algo/">源码分析 | ClickHouse和他的朋友们（5）存储引擎技术进化与MergeTree</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/12/clickhouse-and-friends-04-processor/">源码分析 | ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/08/clickhouse-and-friends-03-mysql-protocol-write-stack/">源码分析 | ClickHouse和他的朋友们（3）MySQL Protocol和Write调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/07/clickhouse-and-friends-02-mysql-protocol-read-stack/">源码分析 | ClickHouse和他的朋友们（2）MySQL Protocol和Read调用栈</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/06/05/clickhouse-and-friends-01-development/">源码分析 | ClickHouse和他的朋友们（1）编译、开发、测试</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-select-count-functions-01-concepts-and-differences/">特性介绍 | MySQL select count(*) 、count(1)、count(列) 详解（1）：概念及区别</a></li><li class="post-list-item"><a class="post-list-link" href="/2020/05/06/mysql-try_acquire_lock_impl-crash-in-5720/">捉虫日记 | MySQL 5.7.20 try_acquire_lock_impl 异常导致mysql crash</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/12/09/mysql-auto_increment-details-01-concepts-and-usage/">特性介绍 | MySQL 自增列详解（1）：自增列概念及使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/04/22/mysql-memory-engine-slave-has-local-transactions/">引擎特性 | MySQL MEMORY(HEAP) 存储引擎导致 Slave 节点有本地事务</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/09/16/process-for-starting-the-linux-os/">特性介绍 | Linux 操作系统启动流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/23/description-of-the-crontab-command/">实用工具 | Linux 定时任务 crontab 命令详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/11/21/greenplum-parallel-query-optimization-strategy/">特性分析 | GreenPlum 的并行查询优化策略详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/25/postgresql-error-wal-segment-has-already-been-removed/">问题定位 | PostgreSQL 报错 requested WAL segment has already been removed</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/test-postgresql-code-coverage-using-gcov-and-lcov/">源码分析 | 使用 gcov 和 lcov 测试 PostgreSQL 代码覆盖率</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/30/postgresql-regression-test-details/">源码分析 | PostgreSQL 回归测试详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/15/how-to-install-postgres-xc-on-linux/">最佳实践 | 源码编译安装配置 Postgres-XC 集群并用 pg_basebackup 配置 Datanode 热备</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/21/greenplum-primary-mirror-sync-mechanism/">特性分析 | GreenPlum Primary/Mirror 同步机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/14/how-to-install-greenplum-on-linux/">最佳实践 | CentOS 和 Ubuntu 下安装配置 GreenPlum 数据库集群 - 源码 & 安装包</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/23/example-of-postgresql-pgbench/">实用工具 | PostgreSQL 数据库压力测试工具 pgbench 使用示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/21/postgresql-primary-standby-streaming-replication/">特性分析 | PostgreSQL Primary/Standby 主备流复制机制</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/12/example-of-postgresql-libpq/">应用案例 | PostgreSQL libpq 网络库接口操作数据库示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/04/postgresql-dependency-constraint-details/">特性介绍 | PostgreSQL 的依赖约束详解 - 系统表 pg_depend & pg_constraint</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/05/04/c-compiler-memory-allocation-principles/">程序人生 | C 语言编译器对内存空间的分配原则</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/01/03/unix-getaddrinfo-function-detailed-usage/">程序人生 | unix 网络编程之 getaddrinfo 函数详解及使用举例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/08/example-of-linux-daemon-program-design/">程序人生 | Linux Daemon 程序设计示例</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/05/how-to-install-configure-samba-service-in-ubuntu/">系统运维 | Ubuntu 下安装配置samba 服务的详细过程</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/08/04/c-traps-and-pitfalls-reading-notes/">程序人生 | 我的《C陷阱与缺陷》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-2/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（下）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/21/c-language-byte-alignment-problem-in-detail-part-1/">程序人生 | C语言字节对齐问题详解 - 对齐/字节序/位序/网络序等（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/makefile-common-templates/">程序人生 | Makefile 常用模板 - 静态链接库/动态链接库/可执行文件</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-du/">程序人生 | UNIX环境高级编程技巧之 du 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/07/10/advanced-programming-in-the-unix-environment-df/">程序人生 | UNIX环境高级编程技巧之 df 指令实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/03/12/linux-memory-management-parsing/">特性介绍 | Linux 内存管理机制解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2014/01/10/advanced-programming-in-the-unix-environment-getopt/">程序人生 | UNIX 环境高级编程技巧之 getopt & getopt_long 使用示例</a></li></ul>
+
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                <i class="fa fa-copyright"></i>
+                2014-2024 DBKernel
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank" title="快速、简洁且高效的博客框架">Hexo</a>  Theme <a href="https://github.com/MOxFIVE/hexo-theme-yelee" target="_blank" title="简而不减 Hexo 双栏博客主题  v3.5">Yelee</a> by MOxFIVE <i class="fa fa-heart animated infinite pulse"></i>
+            </div>
+        </div>
+        
+            <script src="/js/busuanzi.js"></script>
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="visit">
+                
+                    <span id="busuanzi_container_site_pv">
+                        <!--%= __('visit_counter.site_pv') %-->
+                        <span id="site-visit" title="本站访问量">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_pv"></span>
+                        </span>
+                    </span>
+                    <span id="busuanzi_container_site_uv">
+                        <!--%= __('visit_counter.site_uv') %-->
+                        <span id="site-visit" title="本站访客数">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span id="busuanzi_value_site_uv"></span>
+                        </span>
+                    </span>
+                
+                
+                    <span>| </span>
+                
+                
+                    <span id="busuanzi_container_page_pv">
+                        <!--%= __('visit_counter.page_pv') %-->
+                        <span id="page-visit"  title="本页阅读量">
+                            <i class="fa fa-eye animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    </span>
+                    <!--span id="busuanzi_container_page_uv">
+                        <span id="page-visit"  title="本页访客数">
+                            <i class="fa fa-user animated infinite pulse" aria-hidden="true"></i>
+                            <span id="busuanzi_value_page_uv"></span>
+                        </span>
+                    </span-->
+                
+            </div>
+        
+    </div>
+</footer>
+    </div>
+    
+    
+<script src="/js/GithubRepoWidget.js"></script>
+
+
+<script data-main="/js/main.js" src="//cdn.bootcss.com/require.js/2.2.0/require.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var iPad = window.navigator.userAgent.indexOf('iPad');
+            if (iPad > -1 || $(".left-col").css("display") === "none") {
+                var bgColorList = ["#9db3f4", "#414141", "#e5a859", "#f5dfc6", "#c084a0", "#847e72", "#cd8390", "#996731"];
+                var bgColor = Math.ceil(Math.random() * (bgColorList.length - 1));
+                $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
+            }
+            else {
+                var backgroundnum = 5;
+                var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+                $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
+            }
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#" title="返回顶部"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments" onclick="load$hide();" title="查看评论"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer" title="转到底部"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    // Open in New Window
+    
+        var oOpenInNew = {
+             github: ".github-widget a", 
+            
+             post: ".article-entry a[href], .copyright a[href]", 
+            
+            
+            
+             archives: ".archive-article-title", 
+             miniArchives: "a.post-list-link", 
+            
+             friends: "#js-friends a", 
+             socail: ".social a" 
+        }
+        for (var x in oOpenInNew) {
+            $(oOpenInNew[x]).attr("target", "_blank");
+        }
+    
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+  </div>
+</body>
+</html>

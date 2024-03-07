@@ -1,5 +1,5 @@
 ---
-title: 问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON
+title: 问题分析 | 为什么主库Waiting for semi-sync ACK from slave会阻塞set global super_read_only=ON的执行
 date: 2023-12-03 21:33:21
 categories:
   - MySQL
