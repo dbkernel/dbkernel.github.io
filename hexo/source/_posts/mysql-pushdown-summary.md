@@ -1,5 +1,5 @@
 ---
-title: 特新介绍 | MySQL生态现有计算下推方案汇总
+title: 特性介绍 | MySQL生态现有计算下推方案汇总
 date: 2024-03-06 20:52:24
 categories:
   - MySQL

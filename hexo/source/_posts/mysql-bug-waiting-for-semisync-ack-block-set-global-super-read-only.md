@@ -33,11 +33,11 @@ set global rpl_semi_sync_master_timeout=10000000000;
 
 一、如果主库执行的是`flush xxx`等非事务型语句，则不会阻塞`set global super_read_only=on`的执行：
 
-![](./no-block.png "未阻塞的情况")
+![未阻塞的情况](./no-block.png "未阻塞的情况")
 
 二、如果主库执行的是事务型的语句，比如`create database`、`insert into`，则会阻塞`set global super_read_only=on`的执行：
 
-![](./has-block.png "阻塞的情况")
+![阻塞的情况](./has-block.png "阻塞的情况")
 
 ## 问题分析
 

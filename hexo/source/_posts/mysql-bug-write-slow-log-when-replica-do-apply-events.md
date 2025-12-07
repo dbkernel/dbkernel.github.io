@@ -16,6 +16,8 @@ toc: true
 >
 > https://dbkernel.com
 
+## 问题描述
+
 当主从复制采用 binlog 的行模式时，如果从库启用 slow_query_log、log_slow_replica_statements 且从库重放 CREATE TABLE、DROP TABLE 时因特殊情况（比如被从库其他 SQL 占用 MDL 锁）执行耗时较长，会被从库记录到慢日志（slow log），而 ALTER TABLE 却不会被记录到慢日志。
 
 > ALTER TABLE 等管理语句是否会记录到慢日志，受参数 slow_query_log、log_slow_admin_statements 控制。
