@@ -8,18 +8,18 @@
 [submodule "hexo/themes/yilia-plus"]
 	path = hexo/themes/yilia-plus
 	url = https://github.com/lu-front-end/hexo-theme-yilia-plus.git
-[submodule "hugo/themes/stack"]
-	path = hugo/themes/stack
-	url = https://github.com/lu-front-end/hugo-theme-stack.git
-[submodule "hugo/themes/toha"]
-	path = hugo/themes/toha
-	url = https://github.com/lu-front-end/toha.git
+[submodule "hugo/themes/DoIt"]
+	path = hugo/themes/DoIt
+	url = https://github.com/HEIGE-PCloud/DoIt.git
+[submodule "hugo/themes/blowfish"]
+	path = hugo/themes/blowfish
+	url = https://github.com/nunocoracao/blowfish.git
+[submodule "hugo/themes/FixIt"]
+	path = hugo/themes/FixIt
+	url = https://github.com/hugo-fixit/FixIt.git
 [submodule "hugo/themes/LoveIt"]
 	path = hugo/themes/LoveIt
-	url = https://github.com/lu-front-end/LoveIt.git
+	url = https://github.com/dillonzq/LoveIt.git
 [submodule "hugo/themes/FeelIt"]
 	path = hugo/themes/FeelIt
-	url = https://github.com/lu-front-end/FeelIt.git
-[submodule "hugo/themes/bootstrap"]
-	path = hugo/themes/bootstrap
-	url = https://github.com/lu-front-end/hugo-theme-bootstrap.git
+	url = https://github.com/khusika/FeelIt.git
