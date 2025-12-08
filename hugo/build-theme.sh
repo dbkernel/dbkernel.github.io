@@ -406,6 +406,9 @@ deploy_site() {
     # 创建 .nojekyll 文件（GitHub Pages 需要）
     touch "../../$DOCS_DIR/.nojekyll"
 
+    # 复制 SEO 相关文件
+    copy_seo_files "../../$DOCS_DIR"
+
     echo ""
     echo -e "${GREEN}✓${NC} 部署完成！"
     echo "  输出目录: ../../$DOCS_DIR"
@@ -415,6 +418,69 @@ deploy_site() {
     echo -e "${GREEN}访问地址: $GITHUB_BASE_URL${NC}"
 
     cd ..
+}
+
+# 复制 SEO 文件
+copy_seo_files() {
+    local output_dir=$1
+    local depends_dir="../../depends"
+
+    echo ""
+    echo -e "${BLUE}复制 SEO 相关文件...${NC}"
+
+    # 检查 depends 目录是否存在
+    if [ ! -d "$depends_dir" ]; then
+        echo -e "${YELLOW}警告: depends 目录不存在: $depends_dir${NC}"
+        echo -e "${YELLOW}跳过 SEO 文件复制${NC}"
+        return
+    fi
+
+    # 检查输出目录是否存在
+    if [ ! -d "$output_dir" ]; then
+        echo -e "${RED}错误: 输出目录不存在: $output_dir${NC}"
+        return
+    fi
+
+    # 获取绝对路径，确保路径正确
+    local abs_depends="$(cd "$depends_dir" && pwd)"
+    local abs_output="$(cd "$output_dir" && pwd)"
+
+    echo -e "  源目录: ${BLUE}$abs_depends${NC}"
+    echo -e "  目标目录: ${BLUE}$abs_output${NC}"
+
+    # SEO 文件列表
+    local SEO_FILES=(
+        "google557be7742b81daa1.html"
+        "robots.txt"
+        "BingSiteAuth.xml"
+        "CNAME"
+    )
+
+    local copied=0
+    local skipped=0
+
+    for file in "${SEO_FILES[@]}"; do
+        local src="$abs_depends/$file"
+        local dst="$abs_output/$file"
+
+        if [ -f "$src" ]; then
+            if cp "$src" "$dst" 2>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} $file"
+                copied=$((copied + 1))
+            else
+                echo -e "  ${RED}✗${NC} $file (复制失败)"
+                echo -e "    源: $src"
+                echo -e "    目标: $dst"
+                skipped=$((skipped + 1))
+            fi
+        else
+            echo -e "  ${YELLOW}⚠${NC} $file (源文件不存在)"
+            echo -e "    检查路径: $src"
+            skipped=$((skipped + 1))
+        fi
+    done
+
+    echo -e "${GREEN}✓ SEO 文件复制完成 (成功: $copied, 跳过: $skipped)${NC}"
 }
 
 # 清理临时文件
