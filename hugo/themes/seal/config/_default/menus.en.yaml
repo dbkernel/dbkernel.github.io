@@ -1,0 +1,38 @@
+# 主导航菜单
+main:
+  - identifier: projects
+    name: "Projects"
+    weight: "1"
+    url: "/projects"
+  - name: "RadonDB MySQL Kubernetes"
+    weight: '1'
+    url: "/projects/mysql"
+    parent: projects
+  - name: "Radon"
+    weight: '3'
+    url: "/projects/radon"
+    parent: projects
+  - name: "Xenon"
+    weight: '2'
+    url: "/projects/xenon"
+    parent: projects
+
+  - identifier: docs
+    name: "Docs"
+    weight: "2"
+    url: "/docs"
+  - identifier: /docs/mysql
+    name: "RadonDB MySQL Kubernetes"
+    weight: '1'
+    url: "/docs/mysql"
+    parent: docs
+
+  - name: "Blogs"
+    url: "/posts"
+    weight: "3"
+  - name: "News"
+    url: "/news"
+    weight: "4"
+  - name: "About Us"
+    url: "/about"
+    weight: "5"

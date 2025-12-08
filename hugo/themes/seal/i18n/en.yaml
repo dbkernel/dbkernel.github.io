@@ -1,0 +1,74 @@
+header-pc:
+  other: "Cloud native and database on Kubernetes"
+header-mb1:
+  other: "Cloud-Native"
+header-mb2:
+  other: "Databases on Kubernetes"
+header-desc:
+  other: "Share mainstream open-source database technology"
+header-pe:
+  other: "Provide enterprise"
+header-se:
+  other: "services"
+vadio-pc:
+  other: "Deploy RadonDB MySQL on Kubernetes"
+vadio-mb1:
+  other: "Deploy RadonDB MySQL"
+vadio-mb2:
+  other: "on Kubernetes"
+more:
+  other: "Learn more"
+projects:
+  other: "Open-source projects"
+mysql:
+  other: "RadonDB MySQL Kubernetes"
+radon:
+  other: "Radon"
+xenon:
+  other: "Xenon"
+resources:
+  other: "Resources"
+blogs:
+  other: "Blogs"
+news:
+  other: "News"
+forum:
+  other: "Forum"
+services:
+  other: "Services"
+qr:
+  other: "WeChat official account"
+business:
+  other: "Business consultation"
+email:
+  other: "Subscribe"
+emaildec:
+  other: "Receive the latest news, articles and updates from RadonDB"
+enterinfo:
+  other: "Please enter your email address"
+subscribe:
+  other: "Subscribe"
+start:
+  other: "Start"
+docs:
+  other: "Articles"
+history:
+  other: "History"
+aboutTitle:
+  other: "About Us"
+docMenu: 
+  other: "Navigation"
+issue:
+  other: "New Docs Issue"
+pdf:
+  other: "Download PDF"
+mainFeature:
+  other: "Key features"
+quickStart:
+  other: "Quick start"
+read:
+  other: "Reading"
+architecture:
+  other: "Architecture"
+deploy:
+  other: "Deployment"

@@ -1,0 +1,127 @@
+.post-header {
+  width: 100%;
+  height: 98px;
+  background: top right / 100% no-repeat url("/images/post-header-bg.svg");
+}
+.post-container {
+  padding: 40px 130px 120px;
+  font-size: 16px;
+  line-height: 24px;
+  .breadcrumb {
+    a {
+      color: #79879c;
+    }
+  }
+  .post-page {
+    width: 75%;
+    margin-top: 40px;
+    padding: 60px;
+    background: #ffffff;
+    border-radius: 10px;
+    flex: 1;
+    .author {
+      font-size: 16px;
+      line-height: 20px;
+    }
+    .date {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 20px;
+      color: #79879c;
+    }
+    .title {
+      margin: 30px 0 10px 0;
+      font-weight: 600;
+      font-size: 36px;
+      line-height: 50px;
+    }
+  }
+  .catalog-container {
+    position: sticky;
+    width: 260px;
+    margin-left: 60px;
+    margin-top: 40px;
+    height: 100%;
+    top: 150px;
+  }
+  .catalog {
+    h1 {
+      font-size: 24px;
+      line-height: 34px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e9e9e9;
+    }
+    a {
+      color: #242e42;
+    }
+    nav {
+      margin-top: 16px;
+      & > ul > li {
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 500;
+        margin-top: 12px;
+        & > ul > li {
+          font-size: 14px;
+          line-height: 22px;
+          font-weight: 400;
+          text-indent: 16px;
+          margin-top: 6px;
+          & > ul > li {
+            font-size: 12px;
+            line-height: 20px;
+            text-indent: 30px;
+          }
+        }
+      }
+    }
+  }
+}
+@media screen and (max-width: 768px) {
+  .fixed {
+    .post-header {
+      height: 4.17rem;
+      .nav-container {
+        padding-top: 0.83rem;
+      }
+    }
+    .post-container {
+      margin-top: 4rem;
+    }
+  }
+  .post-header {
+    height: auto;
+    background-image: url("images/common/header-bg-mb.svg");
+  }
+  .post-container {
+    padding: 1.33rem 1.67rem;
+    font-size: 1rem;
+    .breadcrumb {
+      flex-wrap: wrap;
+    }
+    .catalog-container {
+      display: none;
+    }
+    .post-page {
+      width: 100%;
+      background-color: transparent;
+      margin-top: 1.33rem;
+      padding: 0;
+      .author {
+        font-size: 1.17rem;
+        line-height: 1.63rem;
+      }
+      .date {
+        font-size: 1rem;
+        line-height: 1.4rem;
+      }
+      .title {
+        font-size: 1.67rem;
+        line-height: 2.33rem;
+      }
+      .post-tag {
+        display: none;
+      }
+    }
+  }
+}

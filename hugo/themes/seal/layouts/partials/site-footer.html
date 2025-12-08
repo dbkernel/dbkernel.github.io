@@ -1,0 +1,76 @@
+<footer class="footer" role="contentinfo">
+  <img class="logo mb" src="{{ .Site.Params.site_logo }}" />
+
+  <div class="content flex-row space-between">
+    <div class="hide-content">
+      <div class="column-head" onclick="toggleParentClass(this,'hide-content')"><span>{{ i18n "projects" }}</span><span
+          class="mb folder"></span></div>
+      <div class="column-content">
+        <a href="{{ "/projects/mysql/" | relLangURL }}">{{i18n "mysql"}}</a>
+        <a href="{{ "/projects/radon/" | relLangURL }}">{{i18n "radon"}}</a>
+        <a href="{{ "/projects/xenon/" | relLangURL }}">{{i18n "xenon"}}</a>
+      </div>
+    </div>
+    <div class="hide-content">
+      <div class="column-head" onclick="toggleParentClass(this,'hide-content')"><span>{{ i18n "resources" }}</span><span
+          class="mb folder"></span></div>
+      <div class="column-content">
+        <a href="{{ "/posts" | relLangURL }}">{{ i18n "blogs" }}</a>
+        <a href="{{ "/news" | relLangURL }}">{{ i18n "news" }}</a>
+        <a href="https://kubesphere.com.cn/forum/t/RadonDB">{{ i18n "forum" }}</a>
+        <a class="github" href="https://github.com/radondb">
+          <img src="/images/common/github.svg" />
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+    <div class="hide-content">
+      <div class="column-head" onclick="toggleParentClass(this,'hide-content')"><span>{{ i18n "services" }}</span><span class="mb folder"></span>
+      </div>
+      <div class="column-content">
+        <a href="https://www.qingcloud.com/">{{ i18n "business"}}</a>
+      </div>
+      <div class="wechat">
+        <div class="pc column-head">{{ i18n "qr" }}</div>
+        <img class="pc" src="/images/wechat.png" />
+      </div>
+    </div>
+    <div class="other class" id="mc_embed_signup">
+      <img class="logo pc" src="{{ .Site.Params.site_logo }}" />
+      <div class="column-head">{{ i18n "email" }}</div>
+      <p>{{ i18n "emaildec" }}</p>
+      <form action="https://yunify.us14.list-manage.com/subscribe/post?u=41abdf34dd4875c3cde859dc0&amp;id=7f94076da5"
+        method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank"
+        novalidate>
+        <div id="mc_embed_signup_scroll">
+          <div class="mc-field-group">
+            <input type="email" value="" name="EMAIL" class="required email" placeholder="{{ i18n "enterinfo" }}" id="mce-EMAIL">
+          </div>
+          <div id="mce-responses" class="clear foot">
+            <div class="response" id="mce-error-response" style="display:none"></div>
+            <div class="response" id="mce-success-response" style="display:none"></div>
+          </div>
+          <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+          <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text"
+              name="b_41abdf34dd4875c3cde859dc0_7f94076da5" tabindex="-1" value=""></div>
+          <div class="optionalParent">
+            <div class="clear foot">
+              <input type="submit" value="{{ i18n "subscribe" }}" name="subscribe" id="mc-embedded-subscribe" class="button">
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="wechat mb">
+      <img src="/images/wechat.png" />
+      <div>请关注 RadonDB 开源社区微信公众号</div>
+    </div>
+    <script type='text/javascript' src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script>
+    <script
+      type='text/javascript'>(function ($) { window.fnames = new Array(); window.ftypes = new Array(); fnames[0] = 'EMAIL'; ftypes[0] = 'email'; fnames[1] = 'FNAME'; ftypes[1] = 'text'; fnames[2] = 'LNAME'; ftypes[2] = 'text'; fnames[3] = 'ADDRESS'; ftypes[3] = 'address'; fnames[4] = 'PHONE'; ftypes[4] = 'phone'; fnames[5] = 'BIRTHDAY'; ftypes[5] = 'birthday'; }(jQuery)); var $mcj = jQuery.noConflict(true);</script>
+      <!--End mc_embed_signup-->
+  </div>
+  <div class="copyright"><a href=" " rel="external nofollow" target="_blank">
+    京ICP备13019086号-17</a > &copy; {{ with .Site.Copyright | default .Site.Title }} {{ . | safeHTML }} {{
+    now.Format "2006"}} {{ end }}</div>
+</footer> 

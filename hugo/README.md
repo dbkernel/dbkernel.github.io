@@ -117,5 +117,8 @@ git push
 
 ## TODO
 
-- [ ] FixIt 主题中无 exampleSites 之类的目录，因此，暂未适配。【从官方说明来看，只要将 themes/FixIt/* 覆盖到当前 site 目录，并修改 theme 即可 】
-- [ ] 目前示例配置都是从 themes/{主题}/exampleSite 中拷贝的，暂未用到 example-sites/ 目录，后续若存在定制化配置时，需要将脚本拷贝示例配置的路径改为 example-sites/{主题}/ 目录。
+- [ ] FixIt 主题中无 exampleSites 之类的目录，因此，暂未适配。
+  - [ ] 从官方说明来看，只要将 `themes/FixIt/*` 覆盖到当前 site 目录，并修改 theme 即可。
+  - [ ] 直接进入 `themes/FixIt` 目录，执行 `hugo server -D` 测试，发现只有菜单栏，完全没有预期效果；而其他主题定义的配置基本都在 `themes/{主题}/exampleSite` 中；基于此，暂无解决方法。
+- [ ] 目前示例配置都是从 `themes/{主题}/exampleSite` 中拷贝的，暂未用到 `example-sites/` 目录，后续若存在定制化配置时，需要将脚本拷贝示例配置的路径改为 example-sites/{主题}/ 目录。
+- [ ] `themes/seal` 是基于开源项目修改而来的。

@@ -1,0 +1,4 @@
+{{ $scss := resources.Match "**/*.scss" }}
+{{ $scss = $scss | resources.Concat "main.scss" }}
+{{ $style := $scss | css.Sass | resources.Minify | resources.Fingerprint }}
+<link rel="stylesheet" href="{{ $style.RelPermalink }}">
